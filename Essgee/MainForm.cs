@@ -29,6 +29,7 @@ namespace Essgee
 		readonly static Dictionary<string, string> fileExtensionFilterDictionary = new Dictionary<string, string>()
 		{
 			{ ".sg", "SG-1000 ROMs" },
+			{ ".sc", "SC-3000 ROMs" },
 			{ ".sms", "Master System ROMs" },
 			{ ".gg", "Game Gear ROMs" }
 		};
@@ -477,7 +478,8 @@ namespace Essgee
 			var titleStringBuilder = new StringBuilder();
 
 			var version = new Version(Application.ProductVersion);
-			titleStringBuilder.Append($"{Application.ProductName} v{version.Major}.{version.Minor}");
+			var versionMinor = (version.Minor != 0 ? $".{version.Minor}" : string.Empty);
+			titleStringBuilder.Append($"{Application.ProductName} v{version.Major:D3}{versionMinor}");
 
 			if (emulatorHandler != null)
 			{
@@ -760,8 +762,9 @@ namespace Essgee
 			var description = Assembly.GetExecutingAssembly().GetAttribute<AssemblyDescriptionAttribute>().Description;
 			var copyright = Assembly.GetExecutingAssembly().GetAttribute<AssemblyCopyrightAttribute>().Copyright;
 			var version = new Version(Application.ProductVersion);
+			var versionMinor = (version.Minor != 0 ? $".{version.Minor}" : string.Empty);
 
-			MessageBox.Show($"{Application.ProductName} v{version.Major}.{version.Minor} - {description}\n\n{copyright.Replace(" - ", Environment.NewLine)}", $"About {Application.ProductName}", MessageBoxButtons.OK, MessageBoxIcon.Information);
+			MessageBox.Show($"{Application.ProductName} v{version.Major:D3}{versionMinor} - {description}\n\n{copyright.Replace(" - ", Environment.NewLine)}", $"About {Application.ProductName}", MessageBoxButtons.OK, MessageBoxIcon.Information);
 		}
 	}
 }
