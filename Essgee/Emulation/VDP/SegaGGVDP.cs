@@ -37,10 +37,9 @@ namespace Essgee.Emulation.VDP
 		protected override void WriteColorToFramebuffer(ushort colorValue, int address)
 		{
 			byte r = (byte)((colorValue >> 0) & 0xF), g = (byte)((colorValue >> 4) & 0xF), b = (byte)((colorValue >> 8) & 0xF);
-			outputFramebuffer[address] = (byte)((b << 4) | b);
+			outputFramebuffer[address + 0] = (byte)((b << 4) | b);
 			outputFramebuffer[address + 1] = (byte)((g << 4) | g);
 			outputFramebuffer[address + 2] = (byte)((r << 4) | r);
-			outputFramebuffer[address + 3] = 0xFF;
 		}
 
 		protected override void WriteDataPort(byte value)

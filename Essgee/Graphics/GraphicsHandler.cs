@@ -116,7 +116,7 @@ namespace Essgee.Graphics
 		private void CreateTextures()
 		{
 			for (int i = 0; i < textures.Length; i++)
-				textures[i] = new Texture(textureSize.Width, textureSize.Height, PixelFormat.Rgba8888, shaderBundle.Manifest.Filter, shaderBundle.Manifest.Wrap);
+				textures[i] = new Texture(textureSize.Width, textureSize.Height, PixelFormat.Rgb888, shaderBundle.Manifest.Filter, shaderBundle.Manifest.Wrap);
 			lastTextureUpdate = 0;
 		}
 

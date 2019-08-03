@@ -342,15 +342,13 @@ namespace Essgee.Emulation.CPU
 
 		private ushort ReadMemory16(ushort address)
 		{
-			byte low = ReadMemory8(address);
-			byte high = ReadMemory8((ushort)(address + 1));
-			return (ushort)((high << 8) | low);
+			return (ushort)((memoryReadDelegate((ushort)(address + 1)) << 8) | memoryReadDelegate(address));
 		}
 
 		private void WriteMemory16(ushort address, ushort value)
 		{
-			WriteMemory8(address, (byte)(value & 0xFF));
-			WriteMemory8((ushort)(address + 1), (byte)(value >> 8));
+			memoryWriteDelegate(address, (byte)(value & 0xFF));
+			memoryWriteDelegate((ushort)(address + 1), (byte)(value >> 8));
 		}
 
 		private byte ReadPort(byte port)

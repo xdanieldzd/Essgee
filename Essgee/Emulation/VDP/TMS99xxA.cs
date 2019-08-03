@@ -107,25 +107,25 @@ namespace Essgee.Emulation.VDP
 		protected byte textColor => (byte)((registers[0x07] >> 4) & 0x0F);
 
 		/* http://www.smspower.org/Development/Palette */
-		readonly byte[][] colorValuesBgra = new byte[][]
+		readonly byte[][] colorValuesBgr = new byte[][]
 		{
-			/*              B     G     R     A */
-			new byte[] { 0x00, 0x00, 0x00, 0xFF },  /* Transparent */
-			new byte[] { 0x00, 0x00, 0x00, 0xFF },  /* Black */
-			new byte[] { 0x3B, 0xB7, 0x47, 0xFF },  /* Medium green */
-			new byte[] { 0x6F, 0xCF, 0x7C, 0xFF },  /* Light green */
-			new byte[] { 0xFF, 0x4E, 0x5D, 0xFF },  /* Dark blue */
-			new byte[] { 0xFF, 0x72, 0x80, 0xFF },  /* Light blue */
-			new byte[] { 0x47, 0x62, 0xB6, 0xFF },  /* Dark red */
-			new byte[] { 0xED, 0xC8, 0x5D, 0xFF },  /* Cyan */
-			new byte[] { 0x48, 0x6B, 0xD7, 0xFF },  /* Medium red */
-			new byte[] { 0x6C, 0x8F, 0xFB, 0xFF },  /* Light red */
-			new byte[] { 0x41, 0xCD, 0xC3, 0xFF },  /* Dark yellow */
-			new byte[] { 0x76, 0xDA, 0xD3, 0xFF },  /* Light yellow */
-			new byte[] { 0x2F, 0x9F, 0x3E, 0xFF },  /* Dark green */
-			new byte[] { 0xC7, 0x64, 0xB6, 0xFF },  /* Magenta */
-			new byte[] { 0xCC, 0xCC, 0xCC, 0xFF },  /* Gray */
-			new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }   /* White */
+			/*              B     G     R */
+			new byte[] { 0x00, 0x00, 0x00 },	/* Transparent */
+			new byte[] { 0x00, 0x00, 0x00 },	/* Black */
+			new byte[] { 0x3B, 0xB7, 0x47 },	/* Medium green */
+			new byte[] { 0x6F, 0xCF, 0x7C },	/* Light green */
+			new byte[] { 0xFF, 0x4E, 0x5D },	/* Dark blue */
+			new byte[] { 0xFF, 0x72, 0x80 },	/* Light blue */
+			new byte[] { 0x47, 0x62, 0xB6 },	/* Dark red */
+			new byte[] { 0xED, 0xC8, 0x5D },	/* Cyan */
+			new byte[] { 0x48, 0x6B, 0xD7 },	/* Medium red */
+			new byte[] { 0x6C, 0x8F, 0xFB },	/* Light red */
+			new byte[] { 0x41, 0xCD, 0xC3 },	/* Dark yellow */
+			new byte[] { 0x76, 0xDA, 0xD3 },	/* Light yellow */
+			new byte[] { 0x2F, 0x9F, 0x3E },	/* Dark green */
+			new byte[] { 0xC7, 0x64, 0xB6 },	/* Magenta */
+			new byte[] { 0xCC, 0xCC, 0xCC },	/* Gray */
+			new byte[] { 0xFF, 0xFF, 0xFF }		/* White */
 		};
 
 		protected const byte screenUsageEmpty = 0;
@@ -208,7 +208,7 @@ namespace Essgee.Emulation.VDP
 
 			/* Create arrays */
 			screenUsage = new byte[NumTotalPixelsPerScanline * NumTotalScanlines];
-			outputFramebuffer = new byte[(NumTotalPixelsPerScanline * NumTotalScanlines) * 4];
+			outputFramebuffer = new byte[(NumTotalPixelsPerScanline * NumTotalScanlines) * 3];
 
 			/* Scanline parameters */
 			if (!isPalChip)
@@ -360,12 +360,12 @@ namespace Essgee.Emulation.VDP
 
 		protected void SetPixel(int y, int x, ushort colorValue)
 		{
-			WriteColorToFramebuffer(colorValue, ((y * NumTotalPixelsPerScanline) + (x % NumTotalPixelsPerScanline)) * 4);
+			WriteColorToFramebuffer(colorValue, ((y * NumTotalPixelsPerScanline) + (x % NumTotalPixelsPerScanline)) * 3);
 		}
 
 		protected void SetPixel(int y, int x, byte b, byte g, byte r)
 		{
-			WriteColorToFramebuffer(b, g, r, ((y * NumTotalPixelsPerScanline) + (x % NumTotalPixelsPerScanline)) * 4);
+			WriteColorToFramebuffer(b, g, r, ((y * NumTotalPixelsPerScanline) + (x % NumTotalPixelsPerScanline)) * 3);
 		}
 
 		protected byte GetScreenUsageFlag(int y, int x)
@@ -676,15 +676,13 @@ namespace Essgee.Emulation.VDP
 			outputFramebuffer[address + 0] = b;
 			outputFramebuffer[address + 1] = g;
 			outputFramebuffer[address + 2] = r;
-			outputFramebuffer[address + 3] = 0xFF;
 		}
 
 		protected virtual void WriteColorToFramebuffer(ushort colorValue, int address)
 		{
-			outputFramebuffer[address + 0] = colorValuesBgra[colorValue & 0x0F][0];
-			outputFramebuffer[address + 1] = colorValuesBgra[colorValue & 0x0F][1];
-			outputFramebuffer[address + 2] = colorValuesBgra[colorValue & 0x0F][2];
-			outputFramebuffer[address + 3] = colorValuesBgra[colorValue & 0x0F][3];
+			outputFramebuffer[address + 0] = colorValuesBgr[colorValue & 0x0F][0];
+			outputFramebuffer[address + 1] = colorValuesBgr[colorValue & 0x0F][1];
+			outputFramebuffer[address + 2] = colorValuesBgr[colorValue & 0x0F][2];
 		}
 
 		protected virtual byte ReadVram(ushort address)

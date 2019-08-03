@@ -7,8 +7,6 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 
-using OpenTK;
-using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 
 using GlPixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
@@ -158,6 +156,7 @@ namespace Essgee.Graphics
 			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)magFilter);
 			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)wrapMode);
 			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)wrapMode);
+			GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
 			GL.TexImage2D(TextureTarget.Texture2D, 0, pixelInternalFormat, Width, Height, 0, glPixelFormat, PixelType.UnsignedByte, IntPtr.Zero);
 			GL.BindTexture(TextureTarget.Texture2D, 0);
 
