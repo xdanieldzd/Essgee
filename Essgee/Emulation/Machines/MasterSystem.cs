@@ -11,9 +11,11 @@ using Essgee.Emulation.VDP;
 using Essgee.Emulation.PSG;
 using Essgee.Emulation.Cartridges;
 using Essgee.EventArguments;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.Machines
 {
+	[MachineIndex(2)]
 	public class MasterSystem : IMachine
 	{
 		const double masterClockNtsc = 10738635;
@@ -50,6 +52,7 @@ namespace Essgee.Emulation.Machines
 		public string ManufacturerName => "Sega";
 		public string ModelName => "Master System";
 		public string DatFilename => "Sega - Master System - Mark III.dat";
+		public (string Extension, string Description) FileFilter => (".sms", "Master System ROMs");
 		public double RefreshRate { get; private set; }
 
 		ICartridge bootstrap, cartridge;

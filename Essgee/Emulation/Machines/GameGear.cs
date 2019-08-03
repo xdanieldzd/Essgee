@@ -10,9 +10,11 @@ using Essgee.Emulation.VDP;
 using Essgee.Emulation.PSG;
 using Essgee.Emulation.Cartridges;
 using Essgee.EventArguments;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.Machines
 {
+	[MachineIndex(3)]
 	public class GameGear : IMachine
 	{
 		const double masterClock = 10738635;
@@ -46,6 +48,7 @@ namespace Essgee.Emulation.Machines
 		public string ManufacturerName => "Sega";
 		public string ModelName => "Game Gear";
 		public string DatFilename => "Sega - Game Gear.dat";
+		public (string Extension, string Description) FileFilter => (".gg", "Game Gear ROMs");
 		public double RefreshRate => refreshRate;
 
 		ICartridge bootstrap, cartridge;

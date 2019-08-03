@@ -11,6 +11,7 @@ using Essgee.Emulation.PSG;
 using Essgee.Emulation.Cartridges;
 using Essgee.Emulation.Peripherals;
 using Essgee.EventArguments;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.Machines
 {
@@ -19,6 +20,7 @@ namespace Essgee.Emulation.Machines
 	 * Tape cassette notes: PPI port B bit 7 == input from cassette, port C bit 4 == output to cassette
 	 */
 
+	[MachineIndex(1)]
 	public class SC3000 : IMachine
 	{
 		const double masterClockNtsc = 10738635;
@@ -55,6 +57,7 @@ namespace Essgee.Emulation.Machines
 		public string ManufacturerName => "Sega";
 		public string ModelName => "SC-3000";
 		public string DatFilename => "Sega - SG-1000.dat";      // TODO: SC-3000 .dat does not exist?
+		public (string Extension, string Description) FileFilter => (".sc", "SC-3000 ROMs");
 		public double RefreshRate { get; private set; }
 
 		ICartridge cartridge;

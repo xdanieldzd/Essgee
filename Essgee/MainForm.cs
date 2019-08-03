@@ -26,14 +26,6 @@ namespace Essgee
 {
 	public partial class MainForm : Form
 	{
-		readonly static Dictionary<string, string> fileExtensionFilterDictionary = new Dictionary<string, string>()
-		{
-			{ ".sg", "SG-1000 ROMs" },
-			{ ".sc", "SC-3000 ROMs" },
-			{ ".sms", "Master System ROMs" },
-			{ ".gg", "Game Gear ROMs" }
-		};
-
 		readonly static double baseScreenSize = 240.0;
 		readonly static double aspectRatio = (4.0 / 3.0);
 		readonly static int maxScreenSizeFactor = 3;
@@ -307,12 +299,17 @@ namespace Essgee
 			var filters = new List<string>();
 			var extensionsList = new List<string>();
 
-			foreach (var extensionEntry in fileExtensionFilterDictionary)
+			foreach (var machineType in Assembly.GetExecutingAssembly().GetTypes().Where(x => typeof(IMachine).IsAssignableFrom(x) && !x.IsInterface).OrderBy(x => x.GetCustomAttribute<MachineIndexAttribute>()?.Index))
 			{
-				extensionsList.Add($"*{extensionEntry.Key}");
+				if (machineType == null) continue;
 
-				var currentFilter = $"*{extensionEntry.Key};*.zip";
-				filters.Add($"{extensionEntry.Value} ({currentFilter})|{currentFilter}");
+				var instance = (IMachine)Activator.CreateInstance(machineType);
+				var (filterExtension, filterDescription) = instance.FileFilter;
+
+				extensionsList.Add($"*{filterExtension}");
+
+				var currentFilter = $"*{filterExtension};*.zip";
+				filters.Add($"{filterDescription} ({currentFilter})|{currentFilter}");
 			}
 			extensionsList.Add("*.zip");
 
@@ -374,7 +371,7 @@ namespace Essgee
 		{
 			powerOnToolStripMenuItem.DropDownItems.Clear();
 
-			foreach (var machineType in Assembly.GetExecutingAssembly().GetTypes().Where(x => typeof(IMachine).IsAssignableFrom(x) && !x.IsInterface))
+			foreach (var machineType in Assembly.GetExecutingAssembly().GetTypes().Where(x => typeof(IMachine).IsAssignableFrom(x) && !x.IsInterface).OrderBy(x => x.GetCustomAttribute<MachineIndexAttribute>()?.Index))
 			{
 				if (machineType == null) continue;
 

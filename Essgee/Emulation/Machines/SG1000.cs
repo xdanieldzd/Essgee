@@ -11,9 +11,11 @@ using Essgee.Emulation.PSG;
 using Essgee.Emulation.Cartridges;
 using Essgee.Emulation.Peripherals;
 using Essgee.EventArguments;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.Machines
 {
+	[MachineIndex(0)]
 	public class SG1000 : IMachine
 	{
 		const double masterClockNtsc = 10738635;
@@ -50,6 +52,7 @@ namespace Essgee.Emulation.Machines
 		public string ManufacturerName => "Sega";
 		public string ModelName => "SG-1000";
 		public string DatFilename => "Sega - SG-1000.dat";
+		public (string Extension, string Description) FileFilter => (".sg", "SG-1000 ROMs");
 		public double RefreshRate { get; private set; }
 
 		ICartridge cartridge;
