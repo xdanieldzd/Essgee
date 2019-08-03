@@ -1,5 +1,5 @@
 # Essgee
-Essgee is an emulator for various 8-bit consoles and handhelds by Sega, supporting the SG-1000, SC-3000 (partially) Mark III/Master System and Game Gear. It is written in C# and uses OpenTK for graphics and sound output, as well as Newtonsoft.Json for JSON parsing.
+Essgee is an emulator for various 8-bit consoles and handhelds by Sega, supporting the SG-1000, SC-3000 (partially) Mark III/Master System and Game Gear. It is written in C# and uses [OpenTK](https://www.nuget.org/packages/OpenTK.GLControl) and [OpenTK.GLControl](https://www.nuget.org/packages/OpenTK) for graphics and sound output, as well as [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json) for JSON parsing.
 
 It also improves just enough on [its](https://github.com/xdanieldzd/MasterFudge) [predecessors](https://github.com/xdanieldzd/MasterFudgeMk2) to no longer be called "fudged", hence its new, pun-y name.
 
@@ -25,7 +25,14 @@ It also improves just enough on [its](https://github.com/xdanieldzd/MasterFudge)
 * Support for various cartridge types, ex. standard Sega mapper, Codemasters mapper and various Korean mappers
 
 ## Screenshots
-TODO
+* __Girl's Garden__ (SG-1000):<br><br>
+ ![Screenshot 1](https://raw.githubusercontent.com/xdanieldzd/Essgee/master/Screenshots/SG1000-Garden.png)<br><br>
+* __Sega SC-3000 BASIC Level 3__ (SC-3000):<br><br>
+ ![Screenshot 2](https://raw.githubusercontent.com/xdanieldzd/Essgee/master/Screenshots/SC3000-BasicLv3.png)<br><br>
+* __Sonic the Hedgehog__ (Master System):<br><br>
+ ![Screenshot 3](https://raw.githubusercontent.com/xdanieldzd/Essgee/master/Screenshots/SMS-Sonic1.png)<br><br>
+* __GG Aleste II / Power Strike II__ (Game Gear):<br><br>
+ ![Screenshot 4](https://raw.githubusercontent.com/xdanieldzd/Essgee/master/Screenshots/GG-AlesteII.png)<br><br>
 
 ## Acknowledgements & Attribution
 * Essgee uses [DejaVu](https://dejavu-fonts.github.io) Sans Condensed as its OSD font; see the [DejaVu Fonts License](https://dejavu-fonts.github.io/License.html) for applicable information.
