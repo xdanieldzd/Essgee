@@ -165,7 +165,12 @@ namespace Essgee.Emulation.VDP
 
 		public virtual void Reset()
 		{
+			for (int i = 0; i < registers.Length; i++) registers[i] = 0;
 			for (int i = 0; i < vram.Length; i++) vram[i] = 0;
+
+			for (int i = 0; i < spriteBuffer.Length; i++)
+				for (int j = 0; j < spriteBuffer[i].Length; j++)
+					spriteBuffer[i][j] = (-1, 0, 0, 0, 0);
 
 			isSecondControlWrite = false;
 			controlWord = 0x0000;
@@ -597,6 +602,8 @@ namespace Essgee.Emulation.VDP
 
 		protected void RenderLineSprites(int y)
 		{
+			if (y < scanlineActiveDisplay || y >= scanlineBottomBorder) return;
+
 			/* Determine coordinates in active display */
 			int activeDisplayY = (y - scanlineActiveDisplay);
 

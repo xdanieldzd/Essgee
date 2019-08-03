@@ -129,7 +129,7 @@ namespace Essgee
 			gameMetadataHandler = new GameMetadataHandler(onScreenDisplayHandler);
 		}
 
-		private void StartupEmulation(Type machineType)
+		private void InitializeEmulation(Type machineType)
 		{
 			if (emulatorHandler != null)
 				ShutdownEmulation();
@@ -148,8 +148,6 @@ namespace Essgee
 			emulatorHandler.SetFpsLimiting(Program.Configuration.LimitFps);
 
 			emulatorHandler.SetConfiguration(Program.Configuration.Machines[machineType.Name]);
-
-			emulatorHandler.Startup();
 
 			pauseToolStripMenuItem.DataBindings.Clear();
 			pauseToolStripMenuItem.DataBindings.Add(nameof(pauseToolStripMenuItem.Checked), emulatorHandler, nameof(emulatorHandler.IsPaused), false, DataSourceUpdateMode.OnPropertyChanged);
@@ -172,32 +170,15 @@ namespace Essgee
 			else
 			{
 				if (!newTemporaryPauseState)
-				{
 					soundHandler?.ClearSampleBuffer();
-					//graphicsHandler?.FlushTextures();	// TODO: verify this really isn't needed?? causes screen to go blank when pausing normally??
-				}
 
 				emulatorHandler.IsPaused = lastTemporaryPauseState = newTemporaryPauseState;
 			}
-
-			// TODO: verify new temppause code works properly, old code below
-
-			/*if (newTemporaryPauseState)
-			{
-				lastTemporaryPauseState = emulatorHandler.IsPaused;
-				emulatorHandler.IsPaused = newTemporaryPauseState;
-			}
-			else
-			{
-				emulatorHandler.IsPaused = lastUserPauseState;
-				soundHandler?.ClearSampleBuffer();
-				graphicsHandler?.FlushTextures();
-			}*/
 		}
 
 		private void PowerOnWithoutCartridge(Type machineType)
 		{
-			StartupEmulation(machineType);
+			InitializeEmulation(machineType);
 			lastGameMetadata = null;
 
 			SizeAndPositionWindow();
@@ -205,7 +186,7 @@ namespace Essgee
 
 			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = true;
 
-			emulatorHandler.Reset();
+			emulatorHandler.Startup();
 
 			onScreenDisplayHandler.EnqueueMessage($"Power on without cartridge.");
 		}
@@ -214,7 +195,7 @@ namespace Essgee
 		{
 			var (machineType, romData) = fileName.TryLoadCartridge();
 
-			StartupEmulation(machineType);
+			InitializeEmulation(machineType);
 
 			lastGameMetadata = gameMetadataHandler.GetGameMetadata(emulatorHandler.Information.DatFileName, fileName, Crc32.Calculate(romData), romData.Length);
 
@@ -230,7 +211,7 @@ namespace Essgee
 
 			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = true;
 
-			emulatorHandler.Reset();
+			emulatorHandler.Startup();
 
 			onScreenDisplayHandler.EnqueueMessage($"Loaded '{lastGameMetadata?.KnownName ?? "unrecognized game"}'.");
 		}
@@ -279,6 +260,7 @@ namespace Essgee
 
 			emulatorHandler.Save();
 
+			emulatorHandler.SendLogMessage -= EmulatorHandler_SendLogMessage;
 			emulatorHandler.EmulationReset -= EmulatorHandler_EmulationReset;
 			emulatorHandler.RenderScreen -= EmulatorHandler_RenderScreen;
 			emulatorHandler.SizeScreen -= EmulatorHandler_SizeScreen;
@@ -289,7 +271,8 @@ namespace Essgee
 			emulatorHandler.Shutdown();
 			while (emulatorHandler.IsRunning) { }
 
-			graphicsHandler.FlushTextures();
+			emulatorHandler = null;
+			GC.Collect();
 
 			onScreenDisplayHandler.EnqueueMessage("Emulation stopped.");
 		}
@@ -532,18 +515,6 @@ namespace Essgee
 		private void MainForm_Shown(object sender, EventArgs e)
 		{
 			InitializeHandlers();
-
-			/*for (int i = 0; i < 10; i++)
-			{
-				foreach (string file in Program.Configuration.RecentFiles)
-				{
-					System.Threading.Thread.Sleep(50);
-					LoadAndRunCartridge(file);
-					renderControl.Invalidate();
-					Application.DoEvents();
-					System.Threading.Thread.Sleep(250);
-				}
-			}*/
 		}
 
 		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -646,8 +617,13 @@ namespace Essgee
 		{
 			CheckInvokeMethod(delegate ()
 			{
+				if (e.Width != lastFramebufferSize.width || e.Height != lastFramebufferSize.height)
+				{
+					lastFramebufferSize = (e.Width, e.Height);
+					graphicsHandler?.SetTextureSize(e.Width, e.Height);
+				}
 				lastFramebufferData = e.FrameData;
-				graphicsHandler.SetTextureData(e.FrameData);
+				graphicsHandler?.SetTextureData(e.FrameData);
 			});
 		}
 

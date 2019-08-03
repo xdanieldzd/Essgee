@@ -172,8 +172,7 @@ namespace Essgee.Graphics
 		public void SetData(byte[] data)
 		{
 			if (data == null) throw new ArgumentNullException(nameof(data), "Image data is null");
-			//if (data.Length != dataSize) throw new ArgumentException($"Image data size mismatch; excepted {dataSize} bytes, got {data.Length} bytes", nameof(data));
-			if (data.Length != dataSize) return;
+			if (data.Length != dataSize) throw new ArgumentException($"Image data size mismatch; excepted {dataSize} bytes, got {data.Length} bytes", nameof(data));
 
 			currentData = data;
 

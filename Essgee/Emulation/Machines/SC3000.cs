@@ -236,7 +236,7 @@ namespace Essgee.Emulation.Machines
 			double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
 			if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-				OnRenderScreen(new RenderScreenEventArgs(vdp.OutputFramebuffer));
+				OnRenderScreen(new RenderScreenEventArgs(vdp.NumTotalPixelsPerScanline, vdp.NumTotalScanlines, vdp.OutputFramebuffer));
 
 			if (resetButtonPressed)
 			{

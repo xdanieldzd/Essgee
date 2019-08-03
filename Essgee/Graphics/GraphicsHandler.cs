@@ -53,7 +53,7 @@ namespace Essgee.Graphics
 		{
 			onScreenDisplayHandler = osdHandler;
 #if DEBUG
-			//GL.Enable(EnableCap.DebugOutput);
+			GL.Enable(EnableCap.DebugOutput);
 #endif
 			GLRenderer = GL.GetString(StringName.Renderer);
 			GLVersion = GL.GetString(StringName.Version);
@@ -66,7 +66,7 @@ namespace Essgee.Graphics
 			vertexBuffer.SetIndices(indices);
 
 			textures = new Texture[ShaderBundle.MaxNumSourceSamplers];
-			for (int i = 0; i < textures.Length; i++) textures[i] = new Texture(16, 16, PixelFormat.Rgba8888);
+
 			lastTextureUpdate = 0;
 
 			projectionMatrix = Matrix4.Identity;
@@ -139,7 +139,7 @@ namespace Essgee.Graphics
 		public void FlushTextures()
 		{
 			for (int i = 0; i < shaderBundle.Manifest.Samplers; i++)
-				textures[i].ClearData();
+				textures[i]?.ClearData();
 
 			lastTextureUpdate = 0;
 
@@ -190,7 +190,7 @@ namespace Essgee.Graphics
 			}
 
 			for (int i = 0; i < shaderBundle.Manifest.Samplers; i++)
-				textures[i].Activate(TextureUnit.Texture0 + i);
+				textures[i]?.Activate(TextureUnit.Texture0 + i);
 
 			shaderBundle.Activate();
 			vertexBuffer.Render();

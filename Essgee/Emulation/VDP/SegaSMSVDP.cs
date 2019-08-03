@@ -662,6 +662,8 @@ namespace Essgee.Emulation.VDP
 
 		private void RenderLineMode4Sprites(int y)
 		{
+			if (y < scanlineActiveDisplay || y >= scanlineBottomBorder) return;
+
 			/* Determine coordinates in active display */
 			int activeDisplayY = (y - scanlineActiveDisplay);
 
