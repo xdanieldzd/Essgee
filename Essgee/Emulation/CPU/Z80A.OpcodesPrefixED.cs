@@ -10,8 +10,7 @@ namespace Essgee.Emulation.CPU
 	{
 		static SimpleOpcodeDelegate[] opcodesPrefixED = new SimpleOpcodeDelegate[]
 		{
-            /* 0x00 */
-            new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0x00 */
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
@@ -27,8 +26,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
-            /* 0x10 */
-            new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0x10 */
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
@@ -44,8 +43,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
-            /* 0x20 */
-            new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0x20 */
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
@@ -61,8 +60,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
-            /* 0x30 */
-            new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0x30 */
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
@@ -78,8 +77,9 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
-            /* 0x40 */
-            new SimpleOpcodeDelegate((c) => { c.PortInput(ref c.bc.High, c.bc.Low); }),
+			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0x40 */
+			new SimpleOpcodeDelegate((c) => { c.PortInput(ref c.bc.High, c.bc.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.WritePort(c.bc.Low, c.bc.High); }),
 			new SimpleOpcodeDelegate((c) => { c.Subtract16(ref c.hl, c.bc.Word, true); }),
 			new SimpleOpcodeDelegate((c) => { c.LoadMemory16(c.ReadMemory16(c.pc), c.bc.Word); c.pc += 2; }),
@@ -95,8 +95,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.Return(); c.iff1 = c.iff2; }),
 			new SimpleOpcodeDelegate((c) => { c.im = 0; }),
 			new SimpleOpcodeDelegate((c) => { c.r = c.af.High; }),
-            /* 0x50 */
-            new SimpleOpcodeDelegate((c) => { c.PortInput(ref c.de.High, c.bc.Low); }),
+			/* 0x50 */
+			new SimpleOpcodeDelegate((c) => { c.PortInput(ref c.de.High, c.bc.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.WritePort(c.bc.Low, c.de.High); }),
 			new SimpleOpcodeDelegate((c) => { c.Subtract16(ref c.hl, c.de.Word, true); }),
 			new SimpleOpcodeDelegate((c) => { c.LoadMemory16(c.ReadMemory16(c.pc), c.de.Word); c.pc += 2; }),
@@ -112,8 +112,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.iff1 = c.iff2; c.Return(); }),
 			new SimpleOpcodeDelegate((c) => { c.im = 2; }),
 			new SimpleOpcodeDelegate((c) => { c.LoadRegister8(ref c.af.High, c.r, true); }),
-            /* 0x60 */
-            new SimpleOpcodeDelegate((c) => { c.PortInput(ref c.hl.High, c.bc.Low); }),
+			/* 0x60 */
+			new SimpleOpcodeDelegate((c) => { c.PortInput(ref c.hl.High, c.bc.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.WritePort(c.bc.Low, c.hl.High); }),
 			new SimpleOpcodeDelegate((c) => { c.Subtract16(ref c.hl, c.hl.Word, true); }),
 			new SimpleOpcodeDelegate((c) => { c.LoadMemory16(c.ReadMemory16(c.pc), c.hl.Word); c.pc += 2; }),
@@ -129,8 +129,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.iff1 = c.iff2; c.Return(); }),
 			new SimpleOpcodeDelegate((c) => { c.im = 0; }),
 			new SimpleOpcodeDelegate((c) => { c.RotateLeft4B(); }),
-            /* 0x70 */
-            new SimpleOpcodeDelegate((c) => { c.PortInputFlagsOnly(c.bc.Low); }),
+			/* 0x70 */
+			new SimpleOpcodeDelegate((c) => { c.PortInputFlagsOnly(c.bc.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.WritePort(c.bc.Low, 0x00); }),
 			new SimpleOpcodeDelegate((c) => { c.Subtract16(ref c.hl, c.sp, true); }),
 			new SimpleOpcodeDelegate((c) => { c.LoadMemory16(c.ReadMemory16(c.pc), c.sp); c.pc += 2; }),
@@ -146,8 +146,7 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.iff1 = c.iff2; c.Return(); }),
 			new SimpleOpcodeDelegate((c) => { c.im = 2; }),
 			new SimpleOpcodeDelegate((c) => { /* NOP */ }),
-            /* 0x80 */
-            new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0x80 */
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
@@ -163,8 +162,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
-            /* 0x90 */
-            new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0x90 */
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
@@ -180,8 +179,9 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
-            /* 0xA0 */
-            new SimpleOpcodeDelegate((c) => { c.LoadIncrement(); }),
+			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0xA0 */
+			new SimpleOpcodeDelegate((c) => { c.LoadIncrement(); }),
 			new SimpleOpcodeDelegate((c) => { c.CompareIncrement(); }),
 			new SimpleOpcodeDelegate((c) => { c.PortInputIncrement(); }),
 			new SimpleOpcodeDelegate((c) => { c.PortOutputIncrement(); }),
@@ -197,8 +197,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { /* AD - nothing */ }),
 			new SimpleOpcodeDelegate((c) => { /* AE - nothing */ }),
 			new SimpleOpcodeDelegate((c) => { /* AF - nothing */ }),
-            /* 0xB0 */
-            new SimpleOpcodeDelegate((c) => { c.LoadIncrementRepeat(); }),
+			/* 0xB0 */
+			new SimpleOpcodeDelegate((c) => { c.LoadIncrementRepeat(); }),
 			new SimpleOpcodeDelegate((c) => { c.CompareIncrementRepeat(); }),
 			new SimpleOpcodeDelegate((c) => { c.PortInputIncrementRepeat(); }),
 			new SimpleOpcodeDelegate((c) => { c.PortOutputIncrementRepeat(); }),
@@ -214,8 +214,7 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { /* BD - nothing */ }),
 			new SimpleOpcodeDelegate((c) => { /* BE - nothing */ }),
 			new SimpleOpcodeDelegate((c) => { /* BF - nothing */ }),
-            /* 0xC0 */
-            new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0xC0 */
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
@@ -231,8 +230,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
-            /* 0xD0 */
-            new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0xD0 */
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
@@ -248,8 +247,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
-            /* 0xE0 */
-            new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0xE0 */
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
@@ -265,8 +264,9 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
-            /* 0xF0 */
-            new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
+			/* 0xF0 */
+			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
 			new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),

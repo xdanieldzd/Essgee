@@ -10,8 +10,8 @@ namespace Essgee.Emulation.CPU
 	{
 		static SimpleOpcodeDelegate[] opcodesPrefixCB = new SimpleOpcodeDelegate[]
 		{
-            /* 0x00 */
-            new SimpleOpcodeDelegate((c) => { c.RotateLeftCircular(ref c.bc.High); }),
+			/* 0x00 */
+			new SimpleOpcodeDelegate((c) => { c.RotateLeftCircular(ref c.bc.High); }),
 			new SimpleOpcodeDelegate((c) => { c.RotateLeftCircular(ref c.bc.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.RotateLeftCircular(ref c.de.High); }),
 			new SimpleOpcodeDelegate((c) => { c.RotateLeftCircular(ref c.de.Low); }),
@@ -27,8 +27,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.RotateRightCircular(ref c.hl.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.RotateRightCircular(c.hl.Word); }),
 			new SimpleOpcodeDelegate((c) => { c.RotateRightCircular(ref c.af.High); }),
-            /* 0x10 */
-            new SimpleOpcodeDelegate((c) => { c.RotateLeft(ref c.bc.High); }),
+			/* 0x10 */
+			new SimpleOpcodeDelegate((c) => { c.RotateLeft(ref c.bc.High); }),
 			new SimpleOpcodeDelegate((c) => { c.RotateLeft(ref c.bc.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.RotateLeft(ref c.de.High); }),
 			new SimpleOpcodeDelegate((c) => { c.RotateLeft(ref c.de.Low); }),
@@ -44,8 +44,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.RotateRight(ref c.hl.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.RotateRight(c.hl.Word); }),
 			new SimpleOpcodeDelegate((c) => { c.RotateRight(ref c.af.High); }),
-            /* 0x20 */
-            new SimpleOpcodeDelegate((c) => { c.ShiftLeftArithmetic(ref c.bc.High); }),
+			/* 0x20 */
+			new SimpleOpcodeDelegate((c) => { c.ShiftLeftArithmetic(ref c.bc.High); }),
 			new SimpleOpcodeDelegate((c) => { c.ShiftLeftArithmetic(ref c.bc.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.ShiftLeftArithmetic(ref c.de.High); }),
 			new SimpleOpcodeDelegate((c) => { c.ShiftLeftArithmetic(ref c.de.Low); }),
@@ -61,8 +61,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.ShiftRightArithmetic(ref c.hl.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.ShiftRightArithmetic(c.hl.Word); }),
 			new SimpleOpcodeDelegate((c) => { c.ShiftRightArithmetic(ref c.af.High); }),
-            /* 0x30 */
-            new SimpleOpcodeDelegate((c) => { c.ShiftLeftLogical(ref c.bc.High); }),
+			/* 0x30 */
+			new SimpleOpcodeDelegate((c) => { c.ShiftLeftLogical(ref c.bc.High); }),
 			new SimpleOpcodeDelegate((c) => { c.ShiftLeftLogical(ref c.bc.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.ShiftLeftLogical(ref c.de.High); }),
 			new SimpleOpcodeDelegate((c) => { c.ShiftLeftLogical(ref c.de.Low); }),
@@ -78,8 +78,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.ShiftRightLogical(ref c.hl.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.ShiftRightLogical(c.hl.Word); }),
 			new SimpleOpcodeDelegate((c) => { c.ShiftRightLogical(ref c.af.High); }),
-            /* 0x40 */
-            new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.High, 0); }),
+			/* 0x40 */
+			new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.High, 0); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.Low, 0); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.de.High, 0); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.de.Low, 0); }),
@@ -95,8 +95,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.hl.Low, 1); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.hl.Word, 1); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.af.High, 1); }),
-            /* 0x50 */
-            new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.High, 2); }),
+			/* 0x50 */
+			new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.High, 2); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.Low, 2); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.de.High, 2); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.de.Low, 2); }),
@@ -112,8 +112,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.hl.Low, 3); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.hl.Word, 3); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.af.High, 3); }),
-            /* 0x60 */
-            new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.High, 4); }),
+			/* 0x60 */
+			new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.High, 4); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.Low, 4); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.de.High, 4); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.de.Low, 4); }),
@@ -129,8 +129,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.hl.Low, 5); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.hl.Word, 5); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.af.High, 5); }),
-            /* 0x70 */
-            new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.High, 6); }),
+			/* 0x70 */
+			new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.High, 6); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.bc.Low, 6); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.de.High, 6); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.de.Low, 6); }),
@@ -146,8 +146,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.hl.Low, 7); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.hl.Word, 7); }),
 			new SimpleOpcodeDelegate((c) => { c.TestBit(c.af.High, 7); }),
-            /* 0x80 */
-            new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.High, 0); }),
+			/* 0x80 */
+			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.High, 0); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.Low, 0); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.de.High, 0); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.de.Low, 0); }),
@@ -163,8 +163,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.hl.Low, 1); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(c.hl.Word, 1); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.af.High, 1); }),
-            /* 0x90 */
-            new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.High, 2); }),
+			/* 0x90 */
+			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.High, 2); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.Low, 2); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.de.High, 2); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.de.Low, 2); }),
@@ -180,8 +180,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.hl.Low, 3); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(c.hl.Word, 3); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.af.High, 3); }),
-            /* 0xA0 */
-            new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.High, 4); }),
+			/* 0xA0 */
+			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.High, 4); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.Low, 4); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.de.High, 4); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.de.Low, 4); }),
@@ -197,8 +197,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.hl.Low, 5); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(c.hl.Word, 5); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.af.High, 5); }),
-            /* 0xB0 */
-            new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.High, 6); }),
+			/* 0xB0 */
+			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.High, 6); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.bc.Low, 6); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.de.High, 6); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.de.Low, 6); }),
@@ -214,8 +214,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.hl.Low, 7); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(c.hl.Word, 7); }),
 			new SimpleOpcodeDelegate((c) => { c.ResetBit(ref c.af.High, 7); }),
-            /* 0xC0 */
-            new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.High, 0); }),
+			/* 0xC0 */
+			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.High, 0); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.Low, 0); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.de.High, 0); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.de.Low, 0); }),
@@ -231,8 +231,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.hl.Low, 1); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(c.hl.Word, 1); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.af.High, 1); }),
-            /* 0xD0 */
-            new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.High, 2); }),
+			/* 0xD0 */
+			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.High, 2); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.Low, 2); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.de.High, 2); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.de.Low, 2); }),
@@ -248,8 +248,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.hl.Low, 3); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(c.hl.Word, 3); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.af.High, 3); }),
-            /* 0xE0 */
-            new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.High, 4); }),
+			/* 0xE0 */
+			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.High, 4); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.Low, 4); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.de.High, 4); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.de.Low, 4); }),
@@ -265,8 +265,8 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.hl.Low, 5); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(c.hl.Word, 5); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.af.High, 5); }),
-            /* 0xF0 */
-            new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.High, 6); }),
+			/* 0xF0 */
+			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.High, 6); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.bc.Low, 6); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.de.High, 6); }),
 			new SimpleOpcodeDelegate((c) => { c.SetBit(ref c.de.Low, 6); }),

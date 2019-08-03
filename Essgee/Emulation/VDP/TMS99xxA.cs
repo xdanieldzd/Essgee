@@ -109,24 +109,24 @@ namespace Essgee.Emulation.VDP
 		/* http://www.smspower.org/Development/Palette */
 		readonly byte[][] colorValuesBgra = new byte[][]
 		{
-            /*              B     G     R     A */
-            new byte[] { 0x00, 0x00, 0x00, 0xFF },  /* Transparent */
-            new byte[] { 0x00, 0x00, 0x00, 0xFF },  /* Black */
-            new byte[] { 0x3B, 0xB7, 0x47, 0xFF },  /* Medium green */
-            new byte[] { 0x6F, 0xCF, 0x7C, 0xFF },  /* Light green */
-            new byte[] { 0xFF, 0x4E, 0x5D, 0xFF },  /* Dark blue */
-            new byte[] { 0xFF, 0x72, 0x80, 0xFF },  /* Light blue */
-            new byte[] { 0x47, 0x62, 0xB6, 0xFF },  /* Dark red */
-            new byte[] { 0xED, 0xC8, 0x5D, 0xFF },  /* Cyan */
-            new byte[] { 0x48, 0x6B, 0xD7, 0xFF },  /* Medium red */
-            new byte[] { 0x6C, 0x8F, 0xFB, 0xFF },  /* Light red */
-            new byte[] { 0x41, 0xCD, 0xC3, 0xFF },  /* Dark yellow */
-            new byte[] { 0x76, 0xDA, 0xD3, 0xFF },  /* Light yellow */
-            new byte[] { 0x2F, 0x9F, 0x3E, 0xFF },  /* Dark green */
-            new byte[] { 0xC7, 0x64, 0xB6, 0xFF },  /* Magenta */
-            new byte[] { 0xCC, 0xCC, 0xCC, 0xFF },  /* Gray */
-            new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }   /* White */
-        };
+			/*              B     G     R     A */
+			new byte[] { 0x00, 0x00, 0x00, 0xFF },  /* Transparent */
+			new byte[] { 0x00, 0x00, 0x00, 0xFF },  /* Black */
+			new byte[] { 0x3B, 0xB7, 0x47, 0xFF },  /* Medium green */
+			new byte[] { 0x6F, 0xCF, 0x7C, 0xFF },  /* Light green */
+			new byte[] { 0xFF, 0x4E, 0x5D, 0xFF },  /* Dark blue */
+			new byte[] { 0xFF, 0x72, 0x80, 0xFF },  /* Light blue */
+			new byte[] { 0x47, 0x62, 0xB6, 0xFF },  /* Dark red */
+			new byte[] { 0xED, 0xC8, 0x5D, 0xFF },  /* Cyan */
+			new byte[] { 0x48, 0x6B, 0xD7, 0xFF },  /* Medium red */
+			new byte[] { 0x6C, 0x8F, 0xFB, 0xFF },  /* Light red */
+			new byte[] { 0x41, 0xCD, 0xC3, 0xFF },  /* Dark yellow */
+			new byte[] { 0x76, 0xDA, 0xD3, 0xFF },  /* Light yellow */
+			new byte[] { 0x2F, 0x9F, 0x3E, 0xFF },  /* Dark green */
+			new byte[] { 0xC7, 0x64, 0xB6, 0xFF },  /* Magenta */
+			new byte[] { 0xCC, 0xCC, 0xCC, 0xFF },  /* Gray */
+			new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }   /* White */
+		};
 
 		protected const byte screenUsageEmpty = 0;
 		protected const byte screenUsageSprite = (1 << 0);
@@ -317,7 +317,7 @@ namespace Essgee.Emulation.VDP
 					else if (isModeGraphics2)
 						RenderLineGraphics2Background(y);
 					else if (isModeMulticolor)
-						throw new Exception("multicolor");
+						throw new Exception("TMS99xxA: Multicolor screenmode not implemented");
 					else if (isModeText)
 						RenderLineTextBackground(y);
 				}

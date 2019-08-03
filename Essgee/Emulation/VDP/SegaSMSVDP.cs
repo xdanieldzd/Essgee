@@ -78,22 +78,22 @@ namespace Essgee.Emulation.VDP
 		// (not that we'll really use this, aside from for F-16 Fighting Falcon, as SG1000 games should always be loaded into the SG1000 core...)
 		readonly byte[] legacyColorMap = new byte[]
 		{
-			0x00,                                   /* Transparent */
-            0x00,                                   /* Black */
-            0x08,                                   /* Medium green */
-            0x0C,                                   /* Light green */
-            0x10,                                   /* Dark blue */
-            0x30,                                   /* Light blue */
-            0x01,                                   /* Dark red */
-            0x3C,                                   /* Cyan */
-            0x02,                                   /* Medium red */
-            0x03,                                   /* Light red */
-            0x05,                                   /* Dark yellow */
-            0x0F,                                   /* Light yellow */
-            0x04,                                   /* Dark green */
-            0x33,                                   /* Magenta */
-            0x15,                                   /* Gray */
-            0x3F                                    /* White */
+			0x00,	/* Transparent */
+			0x00,	/* Black */
+			0x08,	/* Medium green */
+			0x0C,	/* Light green */
+			0x10,	/* Dark blue */
+			0x30,	/* Light blue */
+			0x01,	/* Dark red */
+			0x3C,	/* Cyan */
+			0x02,	/* Medium red */
+			0x03,	/* Light red */
+			0x05,	/* Dark yellow */
+			0x0F,	/* Light yellow */
+			0x04,	/* Dark green */
+			0x33,	/* Magenta */
+			0x15,	/* Gray */
+			0x3F	/* White */
         };
 
 		readonly byte[][] vCounterTables = new byte[][]
@@ -462,7 +462,7 @@ namespace Essgee.Emulation.VDP
 					else if (isModeGraphics2)
 						RenderLineGraphics2Background(y);
 					else if (isModeMulticolor)
-						throw new Exception("multicolor");
+						throw new Exception("SMS VDP: TMS multicolor screenmode not implemented");
 					else if (isModeText)
 						RenderLineTextBackground(y);
 				}

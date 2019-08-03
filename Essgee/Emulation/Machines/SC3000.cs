@@ -408,11 +408,11 @@ namespace Essgee.Emulation.Machines
 
 		/* Basic memory maps (via SC-3000 Service Manual, chp 2-8)
 		 *
-		 *		IIa		IIb		IIIa	IIIb
-		 * 8000	--		CartRAM	CartRAM	CartRAM
-		 * 8800 --		--		CartRAM	CartRAM
-		 * C000 WRAM	WRAM	WRAM	CartRAM
-		 * C800 --		--		--		CartRAM
+		 *      IIa     IIb     IIIa    IIIb
+		 * 8000 --      CartRAM CartRAM CartRAM
+		 * 8800 --      --      CartRAM CartRAM
+		 * C000 WRAM    WRAM    WRAM    CartRAM
+		 * C800 --      --      --      CartRAM
 		 */
 
 		private byte ReadMemory(ushort address)
