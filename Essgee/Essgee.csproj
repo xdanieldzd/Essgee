@@ -1,0 +1,214 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{6273AB85-97EC-4AB2-89E9-C5016D699904}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Essgee</RootNamespace>
+    <AssemblyName>Essgee</AssemblyName>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>EssgeeIcon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenTK, Version=3.0.1.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
+      <HintPath>..\packages\OpenTK.3.0.1\lib\net20\OpenTK.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenTK.GLControl, Version=3.0.1.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
+      <HintPath>..\packages\OpenTK.GLControl.3.0.1\lib\net20\OpenTK.GLControl.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Emulation\Cartridges\KoreanMapperCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\KoreanMSX8kMapperCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\KoreanSpriteMapperCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Multicart4PakAllActionCartridge.cs" />
+    <Compile Include="Emulation\Configuration\SC3000.cs" />
+    <Compile Include="Emulation\Machines\SC3000.cs" />
+    <Compile Include="EventArguments\SendLogMessageEventArgs.cs" />
+    <Compile Include="Utilities\BindableToolStripMenuItem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Emulation\Configuration\GameGear.cs" />
+    <Compile Include="Emulation\Machines\GameGear.cs" />
+    <Compile Include="Emulation\PSG\SegaGGPSG.cs" />
+    <Compile Include="Emulation\VDP\SegaGGVDP.cs" />
+    <Compile Include="SettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SettingsForm.Designer.cs">
+      <DependentUpon>SettingsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Utilities\HexadecimalJsonConverter.cs" />
+    <Compile Include="Utilities\InterfaceDictionaryConverter.cs" />
+    <Compile Include="Utilities\Crc32.cs" />
+    <Compile Include="Emulation\Cartridges\CodemastersCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\ICartridge.cs" />
+    <Compile Include="Emulation\Configuration\IConfiguration.cs" />
+    <Compile Include="Emulation\Configuration\MasterSystem.cs" />
+    <Compile Include="Emulation\Configuration\SG1000.cs" />
+    <Compile Include="Emulation\EmulatorHandler.cs" />
+    <Compile Include="Emulation\Machines\IMachine.cs" />
+    <Compile Include="Emulation\Machines\MasterSystem.cs" />
+    <Compile Include="Emulation\Cartridges\SegaMapperCartridge.cs" />
+    <Compile Include="Emulation\PSG\SegaSMSPSG.cs" />
+    <Compile Include="Emulation\VDP\SegaSMSVDP.cs" />
+    <Compile Include="Enumerations.cs" />
+    <Compile Include="EventArguments\ChangeViewportEventArgs.cs" />
+    <Compile Include="EventArguments\SizeScreenEventArgs.cs" />
+    <Compile Include="Metadata\GameMetadata.cs" />
+    <Compile Include="Metadata\GameMetadataHandler.cs" />
+    <Compile Include="Graphics\Enumerations.cs" />
+    <Compile Include="Graphics\FastMethodInvoker.cs" />
+    <Compile Include="Graphics\GraphicsHandler.cs" />
+    <Compile Include="Graphics\OnScreenDisplayHandler.cs" />
+    <Compile Include="Graphics\RenderControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Graphics\Shaders\BundleManifest.cs" />
+    <Compile Include="Graphics\Shaders\GLSLShader.cs" />
+    <Compile Include="Graphics\Shaders\ShaderBundle.cs" />
+    <Compile Include="Graphics\Texture.cs" />
+    <Compile Include="Graphics\VertexBuffer.cs" />
+    <Compile Include="Graphics\VertexElement.cs" />
+    <Compile Include="Sound\SoundHandler.cs" />
+    <Compile Include="Configuration.cs" />
+    <Compile Include="Emulation\Peripherals\Intel8255.cs" />
+    <Compile Include="Emulation\Cartridges\SegaSGCartridge.cs" />
+    <Compile Include="Emulation\Enumerations.cs" />
+    <Compile Include="Emulation\CPU\Z80A.cs" />
+    <Compile Include="Emulation\CPU\Z80A.CycleCounts.cs" />
+    <Compile Include="Emulation\CPU\Z80A.Disassembly.cs" />
+    <Compile Include="Emulation\CPU\Z80A.OpcodesNoPrefix.cs" />
+    <Compile Include="Emulation\CPU\Z80A.OpcodesPrefixCB.cs" />
+    <Compile Include="Emulation\CPU\Z80A.OpcodesPrefixDDFD.cs" />
+    <Compile Include="Emulation\CPU\Z80A.OpcodesPrefixDDFDCB.cs" />
+    <Compile Include="Emulation\CPU\Z80A.OpcodesPrefixED.cs" />
+    <Compile Include="Emulation\CPU\Z80A.Register.cs" />
+    <Compile Include="Emulation\BitUtilities.cs" />
+    <Compile Include="Emulation\Machines\SG1000.cs" />
+    <Compile Include="Emulation\PSG\SN76489.cs" />
+    <Compile Include="Emulation\VDP\TMS99xxA.cs" />
+    <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="EventArguments\EnqueueSamplesEventArgs.cs" />
+    <Compile Include="EventArguments\PollInputEventArgs.cs" />
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="EventArguments\RenderScreenEventArgs.cs" />
+    <Compile Include="Utilities\TypeNameJsonConverter.cs" />
+    <Content Include="EssgeeIcon.ico" />
+    <EmbeddedResource Include="Assets\OsdFont.png" />
+    <EmbeddedResource Include="Assets\Shaders\Basic\Fragment.glsl" />
+    <EmbeddedResource Include="Assets\Shaders\Basic\Manifest.json" />
+    <EmbeddedResource Include="SettingsForm.resx">
+      <DependentUpon>SettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="Assets\MetadataDatabase.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\No-Intro\Sega - Game Gear.dat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\No-Intro\Sega - Master System - Mark III.dat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\No-Intro\Sega - SG-1000.dat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Shaders\LCD-Blur\Fragment.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Shaders\LCD-Blur\Manifest.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Shaders\Pseudo-Monitor\Fragment.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Shaders\Pseudo-Monitor\Manifest.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Shaders\Pseudo-TV\Fragment.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Shaders\Pseudo-TV\Manifest.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="OpenTK.dll.config" />
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <ProjectExtensions />
+</Project>

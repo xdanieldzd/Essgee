@@ -1,0 +1,230 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+
+using OpenTK;
+using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL;
+
+using GlPixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
+using GdiPixelFormat = System.Drawing.Imaging.PixelFormat;
+
+namespace Essgee.Graphics
+{
+	public class Texture : IDisposable
+	{
+		static readonly Dictionary<GdiPixelFormat, PixelFormat> gdiPixelFormatMap = new Dictionary<GdiPixelFormat, PixelFormat>()
+		{
+			{ GdiPixelFormat.Format32bppArgb, PixelFormat.Rgba8888 },
+			{ GdiPixelFormat.Format24bppRgb, PixelFormat.Rgb888 }
+		};
+
+		static readonly Dictionary<PixelFormat, (PixelInternalFormat, GlPixelFormat, int)> glPixelFormatMap = new Dictionary<PixelFormat, (PixelInternalFormat, GlPixelFormat, int)>()
+		{
+			{ PixelFormat.Rgba8888, (PixelInternalFormat.Rgba, GlPixelFormat.Bgra, 4) },
+			{ PixelFormat.Rgb888, (PixelInternalFormat.Rgb, GlPixelFormat.Bgr, 3) }
+		};
+
+		readonly static int maxTextureSize;
+		readonly static bool isPboSupported;
+
+		int textureHandle, pboHandle;
+
+		public int Width { get; private set; }
+		public int Height { get; private set; }
+
+		PixelInternalFormat pixelInternalFormat;
+		GlPixelFormat glPixelFormat;
+		int bytesPerPixel, dataSize;
+		byte[] currentData;
+
+		TextureMinFilter minFilter;
+		TextureMagFilter magFilter;
+		TextureWrapMode wrapMode;
+
+		bool disposed = false;
+
+		static Texture()
+		{
+			maxTextureSize = GL.GetInteger(GetPName.MaxTextureSize);
+			isPboSupported = GL.GetString(StringName.Extensions).Contains("GL_ARB_pixel_buffer_object");
+		}
+
+		public Texture(int width, int height, PixelFormat pixelFormat, FilterMode filter = FilterMode.Linear, WrapMode wrap = WrapMode.Repeat)
+		{
+			InitializeRaw(width, height, pixelFormat, filter, wrap);
+		}
+
+		public Texture(Bitmap image, FilterMode filter = FilterMode.Linear, WrapMode wrap = WrapMode.Repeat)
+		{
+			if (!gdiPixelFormatMap.ContainsKey(image.PixelFormat))
+				throw new ArgumentException($"Unsupported pixel format {image.PixelFormat}", nameof(image));
+
+			InitializeRaw(image.Width, image.Height, gdiPixelFormatMap[image.PixelFormat], filter, wrap);
+
+			var bitmapData = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadOnly, image.PixelFormat);
+			var imageData = new byte[bitmapData.Height * bitmapData.Stride];
+			Marshal.Copy(bitmapData.Scan0, imageData, 0, imageData.Length);
+			SetData(imageData);
+			image.UnlockBits(bitmapData);
+		}
+
+		~Texture()
+		{
+			Dispose(false);
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposed)
+				return;
+
+			if (disposing)
+			{
+				if (GL.IsTexture(textureHandle))
+					GL.DeleteTexture(textureHandle);
+
+				if (isPboSupported && GL.IsBuffer(pboHandle))
+					GL.DeleteBuffer(pboHandle);
+			}
+
+			disposed = true;
+		}
+
+		private void InitializeRaw(int width, int height, PixelFormat pixelFormat, FilterMode filter, WrapMode wrap)
+		{
+			if (width <= 0 || width > maxTextureSize) throw new ArgumentOutOfRangeException(nameof(width), $"Invalid width {width}");
+			Width = width;
+
+			if (height <= 0 || height > maxTextureSize) throw new ArgumentOutOfRangeException(nameof(height), $"Invalid height {height}");
+			Height = height;
+
+			if (!glPixelFormatMap.ContainsKey(pixelFormat)) throw new ArgumentException($"Unsupported pixel format {pixelFormat}", nameof(pixelFormat));
+			(pixelInternalFormat, glPixelFormat, bytesPerPixel) = glPixelFormatMap[pixelFormat];
+
+			dataSize = (width * height * bytesPerPixel);
+
+			switch (filter)
+			{
+				case FilterMode.Linear:
+					minFilter = TextureMinFilter.Linear;
+					magFilter = TextureMagFilter.Linear;
+					break;
+
+				case FilterMode.Nearest:
+					minFilter = TextureMinFilter.Nearest;
+					magFilter = TextureMagFilter.Nearest;
+					break;
+
+				default:
+					throw new ArgumentException("Invalid filter mode", nameof(filter));
+			}
+
+			switch (wrap)
+			{
+				case WrapMode.Repeat: wrapMode = TextureWrapMode.Repeat; break;
+				case WrapMode.Border: wrapMode = TextureWrapMode.ClampToBorder; break;
+				case WrapMode.Edge: wrapMode = TextureWrapMode.ClampToEdge; break;
+				case WrapMode.Mirror: wrapMode = TextureWrapMode.MirroredRepeat; break;
+				default: throw new ArgumentException("Invalid wrap mode", nameof(wrap));
+			}
+
+			GenerateHandles();
+			InitializeTexture();
+		}
+
+		private void GenerateHandles()
+		{
+			textureHandle = GL.GenTexture();
+			if (isPboSupported)
+				pboHandle = GL.GenBuffer();
+		}
+
+		private void InitializeTexture()
+		{
+			GL.BindTexture(TextureTarget.Texture2D, textureHandle);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)minFilter);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)magFilter);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)wrapMode);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)wrapMode);
+			GL.TexImage2D(TextureTarget.Texture2D, 0, pixelInternalFormat, Width, Height, 0, glPixelFormat, PixelType.UnsignedByte, IntPtr.Zero);
+			GL.BindTexture(TextureTarget.Texture2D, 0);
+
+			if (isPboSupported)
+			{
+				GL.BindBuffer(BufferTarget.PixelUnpackBuffer, pboHandle);
+				GL.BufferData(BufferTarget.PixelUnpackBuffer, dataSize, IntPtr.Zero, BufferUsageHint.StreamDraw);
+				GL.BindBuffer(BufferTarget.PixelUnpackBuffer, 0);
+			}
+		}
+
+		public void SetData(byte[] data)
+		{
+			if (data == null) throw new ArgumentNullException(nameof(data), "Image data is null");
+			//if (data.Length != dataSize) throw new ArgumentException($"Image data size mismatch; excepted {dataSize} bytes, got {data.Length} bytes", nameof(data));
+			if (data.Length != dataSize) return;
+
+			currentData = data;
+
+			if (isPboSupported)
+				SetDataPBO(currentData);
+			else
+				SetDataNormal(currentData);
+		}
+
+		public byte[] GetData()
+		{
+			return currentData;
+		}
+
+		public void ClearData()
+		{
+			var emptyData = new byte[dataSize];
+			SetData(emptyData);
+		}
+
+		private void SetDataPBO(byte[] data)
+		{
+			GL.BindTexture(TextureTarget.Texture2D, textureHandle);
+			GL.BindBuffer(BufferTarget.PixelUnpackBuffer, pboHandle);
+			GL.BufferData(BufferTarget.PixelUnpackBuffer, dataSize, IntPtr.Zero, BufferUsageHint.StreamDraw);
+			var ptr = GL.MapBuffer(BufferTarget.PixelUnpackBuffer, BufferAccess.WriteOnly);
+			if (ptr != IntPtr.Zero)
+			{
+				Marshal.Copy(data, 0, ptr, dataSize);
+				GL.UnmapBuffer(BufferTarget.PixelUnpackBuffer);
+			}
+			GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, Width, Height, glPixelFormat, PixelType.UnsignedByte, IntPtr.Zero);
+			GL.BindBuffer(BufferTarget.PixelUnpackBuffer, 0);
+		}
+
+		private void SetDataNormal(byte[] data)
+		{
+			GL.BindTexture(TextureTarget.Texture2D, textureHandle);
+			GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, Width, Height, glPixelFormat, PixelType.UnsignedByte, data);
+		}
+
+		public void Activate()
+		{
+			Activate(TextureUnit.Texture0);
+		}
+
+		public void Activate(TextureUnit textureUnit)
+		{
+			if (textureHandle == -1) throw new InvalidOperationException("Invalid texture handle");
+			GL.ActiveTexture(textureUnit);
+			GL.BindTexture(TextureTarget.Texture2D, textureHandle);
+		}
+	}
+}
