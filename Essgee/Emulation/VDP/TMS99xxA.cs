@@ -16,7 +16,7 @@ namespace Essgee.Emulation.VDP
 		public const int NumActiveScanlines = 192;
 		public const int NumActivePixelsPerScanline = 256;
 
-		public virtual int NumTotalPixelsPerScanline => 342;
+		public readonly int NumTotalPixelsPerScanline = 342;
 		public virtual int NumTotalScanlines => (isPalChip ? NumTotalScanlinesPal : NumTotalScanlinesNtsc);
 
 		protected int numVisibleScanlines;
@@ -673,7 +673,7 @@ namespace Essgee.Emulation.VDP
 
 		protected virtual void WriteColorToFramebuffer(byte b, byte g, byte r, int address)
 		{
-			outputFramebuffer[address] = b;
+			outputFramebuffer[address + 0] = b;
 			outputFramebuffer[address + 1] = g;
 			outputFramebuffer[address + 2] = r;
 			outputFramebuffer[address + 3] = 0xFF;
@@ -681,7 +681,10 @@ namespace Essgee.Emulation.VDP
 
 		protected virtual void WriteColorToFramebuffer(ushort colorValue, int address)
 		{
-			Buffer.BlockCopy(colorValuesBgra[(colorValue & 0x0F)], 0, outputFramebuffer, address, 4);
+			outputFramebuffer[address + 0] = colorValuesBgra[colorValue & 0x0F][0];
+			outputFramebuffer[address + 1] = colorValuesBgra[colorValue & 0x0F][1];
+			outputFramebuffer[address + 2] = colorValuesBgra[colorValue & 0x0F][2];
+			outputFramebuffer[address + 3] = colorValuesBgra[colorValue & 0x0F][3];
 		}
 
 		protected virtual byte ReadVram(ushort address)

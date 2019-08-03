@@ -9,9 +9,9 @@ namespace Essgee.Emulation.VDP
 	/* Sega 315-5124 (Mark III, SMS) and 315-5246 (SMS 2); we're actually implementing a mixture of the two right now... */
 	public class SegaSMSVDP : TMS99xxA
 	{
-		protected virtual int NumActiveScanlinesLow => 192;
-		protected virtual int NumActiveScanlinesMed => 224;
-		protected virtual int NumActiveScanlinesHigh => 240;
+		public const int NumActiveScanlinesLow = 192;
+		public const int NumActiveScanlinesMed = 224;
+		public const int NumActiveScanlinesHigh = 240;
 
 		protected const int NumSpritesMode4 = 64;
 		protected const int NumSpritesPerLineMode4 = 8;
@@ -22,24 +22,24 @@ namespace Essgee.Emulation.VDP
 		protected int lineInterruptCounter;
 		protected int screenHeight;
 
-		bool isLineInterruptEnabled { get { return BitUtilities.IsBitSet(registers[0x00], 4); } }
+		bool isLineInterruptEnabled => BitUtilities.IsBitSet(registers[0x00], 4);
 		bool isLineInterruptPending;
 
-		bool isColumn0MaskEnabled { get { return BitUtilities.IsBitSet(registers[0x00], 5); } }
-		bool isVScrollPartiallyDisabled { get { return BitUtilities.IsBitSet(registers[0x00], 7); } }  /* Columns 24-31, i.e. pixels 192-255 */
-		bool isHScrollPartiallyDisabled { get { return BitUtilities.IsBitSet(registers[0x00], 6); } }  /* Rows 0-1, i.e. pixels 0-15 */
+		bool isColumn0MaskEnabled => BitUtilities.IsBitSet(registers[0x00], 5);
+		bool isVScrollPartiallyDisabled => BitUtilities.IsBitSet(registers[0x00], 7);       /* Columns 24-31, i.e. pixels 192-255 */
+		bool isHScrollPartiallyDisabled => BitUtilities.IsBitSet(registers[0x00], 6);       /* Rows 0-1, i.e. pixels 0-15 */
 
-		bool isBitM4Set { get { return BitUtilities.IsBitSet(registers[0x00], 2); } }
+		bool isBitM4Set => BitUtilities.IsBitSet(registers[0x00], 2);
 
-		protected override bool isModeGraphics1 { get { return !(isBitM1Set || isBitM2Set || isBitM3Set || isBitM4Set); } }
-		protected override bool isModeText { get { return (isBitM1Set && !(isBitM2Set || isBitM3Set || isBitM4Set)); } }
-		protected override bool isModeGraphics2 { get { return (isBitM2Set && !(isBitM1Set || isBitM3Set || isBitM4Set)); } }
-		protected override bool isModeMulticolor { get { return (isBitM3Set && !(isBitM1Set || isBitM2Set || isBitM4Set)); } }
+		protected override bool isModeGraphics1 => !(isBitM1Set || isBitM2Set || isBitM3Set || isBitM4Set);
+		protected override bool isModeText => (isBitM1Set && !(isBitM2Set || isBitM3Set || isBitM4Set));
+		protected override bool isModeGraphics2 => (isBitM2Set && !(isBitM1Set || isBitM3Set || isBitM4Set));
+		protected override bool isModeMulticolor => (isBitM3Set && !(isBitM1Set || isBitM2Set || isBitM4Set));
 
-		protected bool isSMS240LineMode { get { return (!isBitM1Set && isBitM2Set && isBitM3Set && isBitM4Set); } }
-		protected bool isSMS224LineMode { get { return (isBitM1Set && isBitM2Set && !isBitM3Set && isBitM4Set); } }
+		protected bool isSMS240LineMode => (!isBitM1Set && isBitM2Set && isBitM3Set && isBitM4Set);
+		protected bool isSMS224LineMode => (isBitM1Set && isBitM2Set && !isBitM3Set && isBitM4Set);
 
-		bool isSpriteShiftLeft8 { get { return BitUtilities.IsBitSet(registers[0x00], 3); } }
+		bool isSpriteShiftLeft8 => BitUtilities.IsBitSet(registers[0x00], 3);
 
 		protected override ushort nametableBaseAddress
 		{
@@ -326,8 +326,8 @@ namespace Essgee.Emulation.VDP
 		const byte screenUsageBgLowPriority = screenUsageBackground;
 		const byte screenUsageBgHighPriority = (1 << 2);
 
-		public int ScreenHeight { get { return screenHeight; } }
-		public int CurrentScanline { get { return currentScanline; } }
+		public int ScreenHeight => screenHeight;
+		public int CurrentScanline => currentScanline;
 
 		public SegaSMSVDP() : base()
 		{
