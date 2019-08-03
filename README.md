@@ -1,5 +1,5 @@
 # Essgee
-Essgee is an emulator for various 8-bit consoles and handhelds by Sega, supporting the SG-1000, SC-3000 (partially) Mark III/Master System and Game Gear. It is written in C# and uses [OpenTK](https://www.nuget.org/packages/OpenTK.GLControl) and [OpenTK.GLControl](https://www.nuget.org/packages/OpenTK) for graphics and sound output, as well as [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json) for JSON parsing.
+Essgee is an emulator for various 8-bit consoles and handhelds by Sega, supporting the SG-1000, SC-3000 (partially) Mark III/Master System and Game Gear. It is written in C# and uses .NET Framework v4.7.1, [OpenTK](https://www.nuget.org/packages/OpenTK.GLControl) and [OpenTK.GLControl](https://www.nuget.org/packages/OpenTK) for graphics and sound output, as well as [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json) for JSON parsing.
 
 It also improves just enough on [its](https://github.com/xdanieldzd/MasterFudge) [predecessors](https://github.com/xdanieldzd/MasterFudgeMk2) to no longer be called "fudged", hence its new, pun-y name.
 
