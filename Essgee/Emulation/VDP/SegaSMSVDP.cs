@@ -56,22 +56,8 @@ namespace Essgee.Emulation.VDP
 					return (ushort)((registers[0x02] & 0x0F) << 10);
 			}
 		}
-		protected override ushort spriteAttribTableBaseAddress
-		{
-			get
-			{
-				if (isBitM4Set) return (ushort)((registers[0x05] & 0x7E) << 7);
-				else return (ushort)((registers[0x05] & 0x7F) << 7);
-			}
-		}
-		protected override ushort spritePatternGenBaseAddress
-		{
-			get
-			{
-				if (isBitM4Set) return (ushort)((registers[0x06] & 0x04) << 11);
-				else return (ushort)((registers[0x06] & 0x07) << 11);
-			}
-		}
+		protected override ushort spriteAttribTableBaseAddress => (ushort)((registers[0x05] & (isBitM4Set ? 0x7E : 0x7F)) << 7);
+		protected override ushort spritePatternGenBaseAddress => (ushort)((registers[0x06] & (isBitM4Set ? 0x04 : 0x07)) << 11);
 
 		/* http://www.smspower.org/Development/Palette */
 		// TODO: verify these, SMSPower has some mistakes (RGB approx correct, palette value wrong)
@@ -471,10 +457,10 @@ namespace Essgee.Emulation.VDP
 
 				if (EnableSprites)
 				{
-					if (!isModeText && !isBitM4Set)
-						RenderLineSprites(y);
-					else if (isBitM4Set)
+					if (isBitM4Set)
 						RenderLineMode4Sprites(y);
+					else if (!isModeText && !isBitM4Set)
+						RenderLineSprites(y);
 				}
 			}
 			else if (y >= scanlineBottomBorder && y < scanlineBottomBlanking) SetLine(y, 1, backgroundColor);
