@@ -184,7 +184,7 @@ namespace Essgee
 
 			ApplyConfigOverrides(machineType);
 
-			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = true;
+			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = true;
 
 			emulatorHandler.Startup();
 
@@ -209,7 +209,7 @@ namespace Essgee
 			AddToRecentFiles(fileName);
 			CreateRecentFilesMenu();
 
-			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = true;
+			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = true;
 
 			emulatorHandler.Startup();
 
@@ -289,6 +289,8 @@ namespace Essgee
 
 			emulatorHandler = null;
 			GC.Collect();
+
+			graphicsHandler?.FlushTextures();
 
 			onScreenDisplayHandler.EnqueueMessage("Emulation stopped.");
 		}
@@ -701,6 +703,17 @@ namespace Essgee
 		private void resetToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			emulatorHandler?.Reset();
+		}
+
+		private void stopToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			ShutdownEmulation();
+
+			lastGameMetadata = null;
+
+			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = false;
+
+			SetWindowTitleAndStatus();
 		}
 
 		private void settingsToolStripMenuItem_Click(object sender, EventArgs e)

@@ -41,6 +41,7 @@
 			this.emulationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.pauseToolStripMenuItem = new Essgee.Utilities.BindableToolStripMenuItem();
 			this.resetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.stopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
 			this.powerOnToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -138,6 +139,7 @@
 			this.emulationToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.pauseToolStripMenuItem,
             this.resetToolStripMenuItem,
+            this.stopToolStripMenuItem,
             this.toolStripMenuItem4,
             this.powerOnToolStripMenuItem});
 			this.emulationToolStripMenuItem.Name = "emulationToolStripMenuItem";
@@ -149,26 +151,34 @@
 			this.pauseToolStripMenuItem.CheckOnClick = true;
 			this.pauseToolStripMenuItem.Enabled = false;
 			this.pauseToolStripMenuItem.Name = "pauseToolStripMenuItem";
-			this.pauseToolStripMenuItem.Size = new System.Drawing.Size(135, 22);
+			this.pauseToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.pauseToolStripMenuItem.Text = "&Pause";
 			// 
 			// resetToolStripMenuItem
 			// 
 			this.resetToolStripMenuItem.Enabled = false;
 			this.resetToolStripMenuItem.Name = "resetToolStripMenuItem";
-			this.resetToolStripMenuItem.Size = new System.Drawing.Size(135, 22);
+			this.resetToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.resetToolStripMenuItem.Text = "&Reset";
 			this.resetToolStripMenuItem.Click += new System.EventHandler(this.resetToolStripMenuItem_Click);
+			// 
+			// stopToolStripMenuItem
+			// 
+			this.stopToolStripMenuItem.Enabled = false;
+			this.stopToolStripMenuItem.Name = "stopToolStripMenuItem";
+			this.stopToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.stopToolStripMenuItem.Text = "&Stop";
+			this.stopToolStripMenuItem.Click += new System.EventHandler(this.stopToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem4
 			// 
 			this.toolStripMenuItem4.Name = "toolStripMenuItem4";
-			this.toolStripMenuItem4.Size = new System.Drawing.Size(132, 6);
+			this.toolStripMenuItem4.Size = new System.Drawing.Size(177, 6);
 			// 
 			// powerOnToolStripMenuItem
 			// 
 			this.powerOnToolStripMenuItem.Name = "powerOnToolStripMenuItem";
-			this.powerOnToolStripMenuItem.Size = new System.Drawing.Size(135, 22);
+			this.powerOnToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.powerOnToolStripMenuItem.Text = "&Power On...";
 			// 
 			// optionsToolStripMenuItem
@@ -348,5 +358,6 @@
 		private System.Windows.Forms.ToolStripMenuItem powerOnToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem takeScreenshotToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem6;
+		private System.Windows.Forms.ToolStripMenuItem stopToolStripMenuItem;
 	}
 }
