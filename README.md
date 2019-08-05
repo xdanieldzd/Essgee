@@ -3,6 +3,13 @@ Essgee is an emulator for various 8-bit consoles and handhelds by Sega, supporti
 
 It also improves just enough on [its](https://github.com/xdanieldzd/MasterFudge) [predecessors](https://github.com/xdanieldzd/MasterFudgeMk2) to no longer be called "fudged", hence its new, pun-y name.
 
+### Table of Contents ###
+* [Usage](#usage): How to use Essgee
+* [Status](#status): Current emulation accuracy, emulated features, etc.
+* [Notes](#notes): Issues and other caveats
+* [Screenshots](#screenshots)
+* [Acknowledgements & Attribution](#acknowledgements--attribution)
+
 ## Usage
 Run `Essgee.exe` to start the emulator. Open a ROM to run via the __File__ menu, recently opened files can also be found there. The emulator recognizes ROMs for each emulated system by the file extension, so ensure SG-1000 ROMs are suffixed `.sg`, SC-3000 ones `.sc`, Mark III/Master System ones `.sms` and Game Gear ones `.gg`. Zipped files can be loaded as well; in that case, the first file in the archive recognized as a valid ROM will be loaded.
 
