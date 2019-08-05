@@ -98,6 +98,15 @@ namespace Essgee.Emulation.Machines
 		bool keyboardMode;
 		bool changeInputButtonPressed;
 
+		enum TapeUpdateModes
+		{
+			Reading,
+			Writing
+		}
+
+		bool isTapePlaying;
+		bool tapePlayButtonPressed;
+
 		int currentMasterClockCyclesInFrame, totalMasterClockCyclesInFrame;
 
 		Configuration.SC3000 configuration;
@@ -177,6 +186,9 @@ namespace Essgee.Emulation.Machines
 
 			keyboardMode = true;
 			changeInputButtonPressed = false;
+
+			isTapePlaying = false;
+			tapePlayButtonPressed = false;
 
 			OnEmulationReset(EventArgs.Empty);
 		}
@@ -275,6 +287,15 @@ namespace Essgee.Emulation.Machines
 				SendLogMessage(this, new SendLogMessageEventArgs($"Selected {modeString} mode."));
 			}
 			changeInputButtonPressed = keysDown.Contains(configuration.InputChangeMode);
+
+			/* Toggle tape playback */
+			if (keysDown.Contains(configuration.InputPlayTape) && !tapePlayButtonPressed)
+			{
+				isTapePlaying = !isTapePlaying;
+				var playString = (isTapePlaying ? "playing" : "stopped");
+				SendLogMessage(this, new SendLogMessageEventArgs($"Tape is {playString}."));
+			}
+			tapePlayButtonPressed = keysDown.Contains(configuration.InputPlayTape);
 
 			if (keyboardMode)
 			{
@@ -406,6 +427,28 @@ namespace Essgee.Emulation.Machines
 			ppi.PortBInput = (byte)((ppi.PortBInput & 0xF0) | (portB & 0x0F));
 		}
 
+		private void UpdateTape(TapeUpdateModes updateMode)
+		{
+			if (!isTapePlaying) return;
+
+			// TODO: errr, try to actually emulate this? so far just seems to write repeating bit patterns, no ex. recognizable basic program data...
+
+			switch (updateMode)
+			{
+				case TapeUpdateModes.Reading:
+					var read = ((ppi.PortBInput >> 7) & 0b1);   // TODO: correct?
+
+					//
+					break;
+
+				case TapeUpdateModes.Writing:
+					var write = ((ppi.PortCOutput >> 4) & 0b1); // TODO: correct?
+
+					//
+					break;
+			}
+		}
+
 		/* Basic memory maps (via SC-3000 Service Manual, chp 2-8)
 		 *
 		 *      IIa     IIb     IIIa    IIIb
@@ -450,7 +493,7 @@ namespace Essgee.Emulation.Machines
 					return vdp.ReadPort(port);
 
 				case 0xC0:
-					// TODO: (try to) handle tape recorder
+					UpdateTape(TapeUpdateModes.Reading);
 					UpdateInput();
 					return ppi.ReadPort(port);
 
@@ -473,8 +516,8 @@ namespace Essgee.Emulation.Machines
 					break;
 
 				case 0xC0:
-					// TODO: (try to) handle tape recorder
 					ppi.WritePort(port, value);
+					UpdateTape(TapeUpdateModes.Writing);
 					break;
 
 				default:

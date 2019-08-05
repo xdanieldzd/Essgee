@@ -25,6 +25,10 @@ namespace Essgee.Emulation.Configuration
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys InputChangeMode { get; set; }
 
+		[DropDownControl("General", "Play Tape", typeof(Keys))]
+		[JsonConverter(typeof(StringEnumConverter))]
+		public Keys InputPlayTape { get; set; }
+
 		[DropDownControl("Controller Port 1", "D-Pad Up", typeof(Keys))]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad1Up { get; set; }
@@ -69,6 +73,7 @@ namespace Essgee.Emulation.Configuration
 
 			InputReset = Keys.F12;
 			InputChangeMode = Keys.F1;
+			InputPlayTape = Keys.F2;
 
 			Joypad1Up = Keys.Up;
 			Joypad1Down = Keys.Down;
