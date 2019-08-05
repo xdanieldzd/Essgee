@@ -8,6 +8,8 @@ using System.Windows.Forms;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
+using Essgee.Utilities;
+
 namespace Essgee.Emulation.Configuration
 {
 	[RootPagePriority(3)]
@@ -19,6 +21,7 @@ namespace Essgee.Emulation.Configuration
 
 		[CheckBoxControl("General", "Use Bootstrap ROM")]
 		public bool UseBootstrap { get; set; }
+		[IsBootstrapRomPath]
 		[FileBrowserControl("General", "Bootstrap Path", "Game Gear Bootstrap ROM (*.gg;*.zip)|*.gg;*.zip")]
 		public string BootstrapRom { get; set; }
 

@@ -53,6 +53,7 @@ namespace Essgee.Emulation.Machines
 		public string ModelName => "Master System";
 		public string DatFilename => "Sega - Master System - Mark III.dat";
 		public (string Extension, string Description) FileFilter => (".sms", "Master System ROMs");
+		public bool HasBootstrap => true;
 		public double RefreshRate { get; private set; }
 
 		ICartridge bootstrap, cartridge;

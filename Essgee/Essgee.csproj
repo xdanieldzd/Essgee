@@ -81,6 +81,7 @@
     <Compile Include="SettingsForm.Designer.cs">
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Utilities\IsBootstrapRomPathAttribute.cs" />
     <Compile Include="Utilities\HexadecimalJsonConverter.cs" />
     <Compile Include="Utilities\InterfaceDictionaryConverter.cs" />
     <Compile Include="Utilities\Crc32.cs" />

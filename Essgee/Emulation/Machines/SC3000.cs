@@ -58,6 +58,7 @@ namespace Essgee.Emulation.Machines
 		public string ModelName => "SC-3000";
 		public string DatFilename => "Sega - SG-1000.dat";      // TODO: SC-3000 .dat does not exist?
 		public (string Extension, string Description) FileFilter => (".sc", "SC-3000 ROMs");
+		public bool HasBootstrap => false;
 		public double RefreshRate { get; private set; }
 
 		ICartridge cartridge;

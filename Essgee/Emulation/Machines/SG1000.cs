@@ -53,6 +53,7 @@ namespace Essgee.Emulation.Machines
 		public string ModelName => "SG-1000";
 		public string DatFilename => "Sega - SG-1000.dat";
 		public (string Extension, string Description) FileFilter => (".sg", "SG-1000 ROMs");
+		public bool HasBootstrap => false;
 		public double RefreshRate { get; private set; }
 
 		ICartridge cartridge;

@@ -23,6 +23,7 @@ namespace Essgee.Emulation.Machines
 		string ModelName { get; }
 		string DatFilename { get; }
 		(string Extension, string Description) FileFilter { get; }
+		bool HasBootstrap { get; }
 		double RefreshRate { get; }
 
 		Dictionary<string, dynamic> GetDebugInformation();

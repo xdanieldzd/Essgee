@@ -179,14 +179,17 @@ namespace Essgee
 		private void PowerOnWithoutCartridge(Type machineType)
 		{
 			InitializeEmulation(machineType);
+
 			lastGameMetadata = null;
 
-			SizeAndPositionWindow();
-			SetWindowTitleAndStatus();
+			ApplyConfigOverrides(machineType);
 
 			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = true;
 
 			emulatorHandler.Startup();
+
+			SizeAndPositionWindow();
+			SetWindowTitleAndStatus();
 
 			onScreenDisplayHandler.EnqueueMessage($"Power on without cartridge.");
 		}
@@ -206,25 +209,35 @@ namespace Essgee
 			AddToRecentFiles(fileName);
 			CreateRecentFilesMenu();
 
-			SizeAndPositionWindow();
-			SetWindowTitleAndStatus();
-
 			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = true;
 
 			emulatorHandler.Startup();
+
+			SizeAndPositionWindow();
+			SetWindowTitleAndStatus();
 
 			onScreenDisplayHandler.EnqueueMessage($"Loaded '{lastGameMetadata?.KnownName ?? "unrecognized game"}'.");
 		}
 
 		private void ApplyConfigOverrides(Type machineType)
 		{
-			if (lastGameMetadata == null) return;
-
+			var forcePowerOnWithoutCart = false;
 			var hasTVStandardOverride = false;
 			var hasRegionOverride = false;
 
 			var overrideConfig = Program.Configuration.Machines[machineType.Name].CloneObject();
-			if (lastGameMetadata.PreferredTVStandard != TVStandard.Auto)
+
+			if (lastGameMetadata == null)
+			{
+				var property = overrideConfig.GetType().GetProperty("UseBootstrap");
+				if (property != null)
+				{
+					property.SetValue(overrideConfig, true);
+					forcePowerOnWithoutCart = true;
+				}
+			}
+
+			if (lastGameMetadata != null && lastGameMetadata.PreferredTVStandard != TVStandard.Auto)
 			{
 				var property = overrideConfig.GetType().GetProperty("TVStandard");
 				if (property != null)
@@ -234,7 +247,7 @@ namespace Essgee
 				}
 			}
 
-			if (lastGameMetadata.PreferredRegion != Emulation.Region.Auto)
+			if (lastGameMetadata != null && lastGameMetadata.PreferredRegion != Emulation.Region.Auto)
 			{
 				var property = overrideConfig.GetType().GetProperty("Region");
 				if (property != null)
@@ -244,13 +257,16 @@ namespace Essgee
 				}
 			}
 
+			if (forcePowerOnWithoutCart)
+				onScreenDisplayHandler.EnqueueMessageWarning($"Bootstrap ROM is disabled in settings; enabling it for this startup.");
+
 			if (hasTVStandardOverride)
-				onScreenDisplayHandler.EnqueueMessageWarning($"Overriding TV standard setting; running game as {lastGameMetadata.PreferredTVStandard}.");
+				onScreenDisplayHandler.EnqueueMessageWarning($"Overriding TV standard setting; running game as {lastGameMetadata?.PreferredTVStandard}.");
 
 			if (hasRegionOverride)
-				onScreenDisplayHandler.EnqueueMessageWarning($"Overriding region setting; running game as {lastGameMetadata.PreferredRegion}.");
+				onScreenDisplayHandler.EnqueueMessageWarning($"Overriding region setting; running game as {lastGameMetadata?.PreferredRegion}.");
 
-			if (hasTVStandardOverride || hasRegionOverride)
+			if (forcePowerOnWithoutCart || hasTVStandardOverride || hasRegionOverride)
 				emulatorHandler.SetConfiguration(overrideConfig);
 		}
 
@@ -359,15 +375,23 @@ namespace Essgee
 				if (machineType == null) continue;
 
 				var instance = (IMachine)Activator.CreateInstance(machineType);
-				var menuItem = new ToolStripMenuItem(instance.ModelName) { Tag = machineType };
-				menuItem.Click += (s, e) =>
+				if (!instance.HasBootstrap) continue;
+
+				var configuration = Program.Configuration.Machines[machineType.Name];
+				var bootstrapPathProperty = configuration.GetType().GetProperties().Where(x => x.GetCustomAttribute<IsBootstrapRomPathAttribute>() != null).FirstOrDefault();
+
+				if (bootstrapPathProperty?.GetValue(configuration) is string bootstrapPath)
 				{
-					if ((s as ToolStripMenuItem).Tag is Type machine)
+					var menuItem = new ToolStripMenuItem(instance.ModelName) { Tag = machineType, Enabled = File.Exists(bootstrapPath) };
+					menuItem.Click += (s, e) =>
 					{
-						PowerOnWithoutCartridge(machine);
-					}
-				};
-				powerOnToolStripMenuItem.DropDownItems.Add(menuItem);
+						if ((s as ToolStripMenuItem).Tag is Type machine)
+						{
+							PowerOnWithoutCartridge(machine);
+						}
+					};
+					powerOnToolStripMenuItem.DropDownItems.Add(menuItem);
+				}
 			}
 		}
 

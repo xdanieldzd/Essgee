@@ -49,6 +49,7 @@ namespace Essgee.Emulation.Machines
 		public string ModelName => "Game Gear";
 		public string DatFilename => "Sega - Game Gear.dat";
 		public (string Extension, string Description) FileFilter => (".gg", "Game Gear ROMs");
+		public bool HasBootstrap => true;
 		public double RefreshRate => refreshRate;
 
 		ICartridge bootstrap, cartridge;
