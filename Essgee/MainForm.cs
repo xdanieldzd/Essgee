@@ -718,6 +718,8 @@ namespace Essgee
 					emulatorHandler.SetConfiguration(Program.Configuration.Machines[machineType.Name]);
 					ApplyConfigOverrides(machineType);
 				}
+
+				CreatePowerOnMenu();
 			}
 
 			Program.SaveConfiguration();

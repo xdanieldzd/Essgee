@@ -244,6 +244,16 @@ namespace Essgee
 					textBox.DataBindings[nameof(textBox.Text)].ReadValue();
 				}
 			};
+			browseButtonControl.MouseUp += (s, e) =>
+			{
+				if (e.Button == MouseButtons.Middle || e.Button == MouseButtons.Right)
+				{
+					var (textBox, config, prop) = (ValueTuple<TextBox, IConfiguration, PropertyInfo>)(s as Control).Tag;
+
+					prop.SetValue(config, string.Empty);
+					textBox.DataBindings[nameof(textBox.Text)].ReadValue();
+				}
+			};
 
 			return (new Control[] { labelControl, textBoxControl, browseButtonControl }, new int[] { 1, 1, 1 });
 		}
