@@ -3,6 +3,19 @@ Essgee is an emulator for various 8-bit consoles and handhelds by Sega, supporti
 
 It also improves just enough on [its](https://github.com/xdanieldzd/MasterFudge) [predecessors](https://github.com/xdanieldzd/MasterFudgeMk2) to no longer be called "fudged", hence its new, pun-y name.
 
+## Usage
+Run `Essgee.exe` to start the emulator. Open a ROM to run via the __File__ menu, recently opened files can also be found there. The emulator recognizes ROMs for each emulated system by the file extension, so ensure SG-1000 ROMs are suffixed `.sg`, SC-3000 ones `.sc`, Mark III/Master System ones `.sms` and Game Gear ones `.gg`. Zipped files can be loaded as well; in that case, the first file in the archive recognized as a valid ROM will be loaded.
+
+Emulator settings can be changed via the __Options__ menu, each option should be self-explanatory. System-specific settings can be found in the __Settings__ dialog. These include controller configurations, region and TV standard selection, bootstrap ROM paths and similar things.
+
+The emulation can be controlled via the __Emulation__ menu. Once a game is running, it can be paused, reset or stopped from there. This menu also contains the __Power On__ submenu, which allows powering up a system with no cartridge inserted, if a bootstrap ROM image is selected. Systems that do not contain a bootstrap ROM cannot be booted like this.
+
+Certain ROMs have configuration overrides, stored in the file `Assets\MetadataDatabase.json`, which are automatically applied when loading such a file. These include, for example, specific mappers (ex. for Codemasters games), region and TV standard overrides, and RAM size settings. These games might otherwise not work or misbehave, hence the need for this file. They're not game-specific hacks, but rather workaround for when the game won't work with ex. the default TV standard specified in the settings, because it was made for 50 Hz PAL systems and does not run correctly at 60 Hz.
+
+The shader __Basic__ is integrated into the emulator, while the others are stored in the `Assets\Shaders` directory. Essgee's shader system is comparatively limited in features and not compatible with shaders from other emulators.
+
+The SC-3000 keyboard is (currently) not configurable; the current layout can be found in the source code, in the file `Essgee\Emulation\Machines\SC3000.cs`, although you'll also need the layout of the SC-3000 keyboard matrix to make sense of it like this. Because the controllers and keyboard are both emulated via the PC keyboard, a toggle has been added to allow either the emulated keyboard or the controllers to be active. Press the input mode key (as configured via the SC-3000 tab in the __Settings__ dialog) to switch between keyboard or controller inputs.
+
 ## Status
 
 ### CPUs
