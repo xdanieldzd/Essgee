@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Essgee.Emulation.CPU
 {
-	public partial class Z80A
+	public partial class Z80A : ICPU
 	{
 		[Flags]
-		public enum Flags : byte
+		enum Flags : byte
 		{
 			Carry = (1 << 0),               /* C */
 			Subtract = (1 << 1),            /* N */
@@ -26,9 +26,9 @@ namespace Essgee.Emulation.CPU
 		public delegate byte PortReadDelegate(byte port);
 		public delegate void PortWriteDelegate(byte port, byte value);
 
-		public delegate void SimpleOpcodeDelegate(Z80A c);
-		public delegate void DDFDOpcodeDelegate(Z80A c, ref Register register);
-		public delegate void DDFDCBOpcodeDelegate(Z80A c, ref Register register, ushort address);
+		delegate void SimpleOpcodeDelegate(Z80A c);
+		delegate void DDFDOpcodeDelegate(Z80A c, ref Register register);
+		delegate void DDFDCBOpcodeDelegate(Z80A c, ref Register register, ushort address);
 
 		MemoryReadDelegate memoryReadDelegate;
 		MemoryWriteDelegate memoryWriteDelegate;
@@ -70,6 +70,11 @@ namespace Essgee.Emulation.CPU
 			if (memoryWriteDelegate == null) throw new Exception("Z80A: Memory write method is null");
 			if (portReadDelegate == null) throw new Exception("Z80A: Port read method is null");
 			if (portWriteDelegate == null) throw new Exception("Z80A: Port write method is null");
+		}
+
+		public virtual void Shutdown()
+		{
+			//
 		}
 
 		public virtual void Reset()
@@ -216,22 +221,22 @@ namespace Essgee.Emulation.CPU
 			sp = value;
 		}
 
-		protected void IncrementRefresh()
+		private void IncrementRefresh()
 		{
 			r = (byte)(((r + 1) & 0x7F) | (r & 0x80));
 		}
 
-		protected void SetFlag(Flags flags)
+		private void SetFlag(Flags flags)
 		{
 			af.Low |= (byte)flags;
 		}
 
-		protected void ClearFlag(Flags flags)
+		private void ClearFlag(Flags flags)
 		{
 			af.Low &= (byte)~flags;
 		}
 
-		protected void SetClearFlagConditional(Flags flags, bool condition)
+		private void SetClearFlagConditional(Flags flags, bool condition)
 		{
 			if (condition)
 				af.Low |= (byte)flags;
@@ -239,19 +244,19 @@ namespace Essgee.Emulation.CPU
 				af.Low &= (byte)~flags;
 		}
 
-		protected bool IsFlagSet(Flags flags)
+		private bool IsFlagSet(Flags flags)
 		{
 			return (((Flags)af.Low & flags) == flags);
 		}
 
-		protected void CalculateAndSetParity(byte value)
+		private void CalculateAndSetParity(byte value)
 		{
 			int bitsSet = 0;
 			while (value != 0) { bitsSet += (value & 0x01); value >>= 1; }
 			SetClearFlagConditional(Flags.ParityOrOverflow, (bitsSet == 0 || (bitsSet % 2) == 0));
 		}
 
-		protected ushort CalculateIXIYAddress(Register register)
+		private ushort CalculateIXIYAddress(Register register)
 		{
 			return (ushort)(register.Word + (sbyte)ReadMemory8(pc++));
 		}
@@ -260,14 +265,20 @@ namespace Essgee.Emulation.CPU
 
 		#region Interrupt and Halt State Handling
 
-		public void SetInterruptLine(InterruptState state)
+		public void SetInterruptLine(InterruptType type, InterruptState state)
 		{
-			intState = state;
-		}
+			switch (type)
+			{
+				case InterruptType.Maskable:
+					intState = state;
+					break;
 
-		public void SetNonMaskableInterruptLine(InterruptState state)
-		{
-			nmiState = state;
+				case InterruptType.NonMaskable:
+					nmiState = state;
+					break;
+
+				default: throw new Exception("Z80A: Unknown interrupt type");
+			}
 		}
 
 		private void ServiceInterrupt()

@@ -66,6 +66,7 @@
     <Compile Include="Emulation\Cartridges\KoreanSpriteMapperCartridge.cs" />
     <Compile Include="Emulation\Cartridges\Multicart4PakAllActionCartridge.cs" />
     <Compile Include="Emulation\Configuration\SC3000.cs" />
+    <Compile Include="Emulation\CPU\ICPU.cs" />
     <Compile Include="Emulation\Machines\SC3000.cs" />
     <Compile Include="Emulation\PSG\IPSG.cs" />
     <Compile Include="Emulation\VDP\IVDP.cs" />

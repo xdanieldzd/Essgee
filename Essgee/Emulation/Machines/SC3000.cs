@@ -72,7 +72,7 @@ namespace Essgee.Emulation.Machines
 
 		ICartridge cartridge;
 		byte[] wram;
-		Z80A cpu;
+		ICPU cpu;
 		IVDP vdp;
 		IPSG psg;
 		Intel8255 ppi;
@@ -204,6 +204,7 @@ namespace Essgee.Emulation.Machines
 
 		public void Shutdown()
 		{
+			cpu?.Shutdown();
 			vdp?.Shutdown();
 			psg?.Shutdown();
 		}
@@ -262,10 +263,10 @@ namespace Essgee.Emulation.Machines
 			if (resetButtonPressed)
 			{
 				resetButtonPressed = false;
-				cpu.SetNonMaskableInterruptLine(InterruptState.Assert);
+				cpu.SetInterruptLine(InterruptType.NonMaskable, InterruptState.Assert);
 			}
 
-			cpu.SetInterruptLine(vdp.InterruptLine);
+			cpu.SetInterruptLine(InterruptType.Maskable, vdp.InterruptLine);
 
 			psg.Step((int)Math.Round(currentCpuClockCycles));
 

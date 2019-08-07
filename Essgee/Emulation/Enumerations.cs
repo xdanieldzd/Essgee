@@ -36,6 +36,12 @@ namespace Essgee.Emulation
 		Lightgun
 	}
 
+	public enum InterruptType
+	{
+		Maskable,
+		NonMaskable
+	}
+
 	public enum InterruptState
 	{
 		Clear,
