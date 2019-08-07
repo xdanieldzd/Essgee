@@ -6,11 +6,13 @@ namespace Essgee.Emulation.PSG
 {
 	public class SegaGGPSG : SegaSMSPSG
 	{
+		public const int PortStereoControl = 0x06;
+
 		enum OutputChannel : int { Left = 0, Right = 1 }
 
 		readonly bool[] channel0Enable, channel1Enable, channel2Enable, channel3Enable;
 
-		public SegaGGPSG(int sampleRate, int numOutputChannels, EventHandler<EnqueueSamplesEventArgs> enqueueSamplesEvent) : base(sampleRate, numOutputChannels, enqueueSamplesEvent)
+		public SegaGGPSG(int sampleRate, int numOutputChannels) : base(sampleRate, numOutputChannels)
 		{
 			channel0Enable = new bool[2];
 			channel1Enable = new bool[2];
@@ -22,7 +24,7 @@ namespace Essgee.Emulation.PSG
 		{
 			base.Reset();
 
-			WriteStereoControl(0xFF);
+			WritePort(PortStereoControl, 0xFF);
 		}
 
 		protected override void GenerateSample()
@@ -41,19 +43,25 @@ namespace Essgee.Emulation.PSG
 			return mixed;
 		}
 
-		public void WriteStereoControl(byte data)
+		public override void WritePort(byte port, byte data)
 		{
-			channel0Enable[(int)OutputChannel.Left] = ((data & 0x10) != 0);
-			channel0Enable[(int)OutputChannel.Right] = ((data & 0x01) != 0);
+			if (port == 0x06)
+			{
+				/* Stereo control */
+				channel0Enable[(int)OutputChannel.Left] = ((data & 0x10) != 0);
+				channel0Enable[(int)OutputChannel.Right] = ((data & 0x01) != 0);
 
-			channel1Enable[(int)OutputChannel.Left] = ((data & 0x20) != 0);
-			channel1Enable[(int)OutputChannel.Right] = ((data & 0x02) != 0);
+				channel1Enable[(int)OutputChannel.Left] = ((data & 0x20) != 0);
+				channel1Enable[(int)OutputChannel.Right] = ((data & 0x02) != 0);
 
-			channel2Enable[(int)OutputChannel.Left] = ((data & 0x40) != 0);
-			channel2Enable[(int)OutputChannel.Right] = ((data & 0x04) != 0);
+				channel2Enable[(int)OutputChannel.Left] = ((data & 0x40) != 0);
+				channel2Enable[(int)OutputChannel.Right] = ((data & 0x04) != 0);
 
-			channel3Enable[(int)OutputChannel.Left] = ((data & 0x80) != 0);
-			channel3Enable[(int)OutputChannel.Right] = ((data & 0x08) != 0);
+				channel3Enable[(int)OutputChannel.Left] = ((data & 0x80) != 0);
+				channel3Enable[(int)OutputChannel.Right] = ((data & 0x08) != 0);
+			}
+			else
+				base.WritePort(port, data);
 		}
 	}
 }

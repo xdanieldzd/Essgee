@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Essgee.EventArguments;
+
 namespace Essgee.Emulation.VDP
 {
 	/* Sega 315-5124 (Mark III, SMS) and 315-5246 (SMS 2); we're actually implementing a mixture of the two right now... */
@@ -15,6 +17,9 @@ namespace Essgee.Emulation.VDP
 
 		protected const int NumSpritesMode4 = 64;
 		protected const int NumSpritesPerLineMode4 = 8;
+
+		public const int PortVCounter = 0x40;       // 0x7E canonically, but mirrored across bus
+		public const int PortHCounter = 0x41;       // 0x7F canonically, but mirrored across bus
 
 		protected byte[] cram;
 
@@ -355,20 +360,18 @@ namespace Essgee.Emulation.VDP
 		protected override void ReconfigureTimings()
 		{
 			/* Calculate cycles/line */
-			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / NumTotalScanlines);
+			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / numTotalScanlines);
 
 			/* Create arrays */
-			screenUsage = new byte[NumTotalPixelsPerScanline * NumTotalScanlines];
-			outputFramebuffer = new byte[(NumTotalPixelsPerScanline * NumTotalScanlines) * 3];
+			screenUsage = new byte[numTotalPixelsPerScanline * numTotalScanlines];
+			outputFramebuffer = new byte[(numTotalPixelsPerScanline * numTotalScanlines) * 3];
 
 			/* Update resolution/display timing */
 			UpdateResolution();
 		}
 
-		public override bool Step(int clockCyclesInStep)
+		public override void Step(int clockCyclesInStep)
 		{
-			bool drawScreen = false;
-
 			InterruptLine = (((isFrameInterruptEnabled && isFrameInterruptPending) || (isLineInterruptEnabled && isLineInterruptPending)) ? InterruptState.Assert : InterruptState.Clear);
 
 			cycleCount += clockCyclesInStep;
@@ -404,12 +407,12 @@ namespace Essgee.Emulation.VDP
 				vCounter = vCounterTables[vCounterTableIndex][currentScanline];
 
 				currentScanline++;
-				if (currentScanline == NumTotalScanlines)
+				if (currentScanline == numTotalScanlines)
 				{
 					currentScanline = 0;
 					ClearScreenUsage();
 
-					drawScreen = true;
+					OnRenderScreen(new RenderScreenEventArgs(numTotalPixelsPerScanline, numTotalScanlines, outputFramebuffer.Clone() as byte[]));
 				}
 
 				ParseSpriteTable(currentScanline);
@@ -417,8 +420,6 @@ namespace Essgee.Emulation.VDP
 				cycleCount -= clockCyclesPerLine;
 				if (cycleCount <= -clockCyclesPerLine) cycleCount = 0;
 			}
-
-			return drawScreen;
 		}
 
 		protected override byte ReadVram(ushort address)
@@ -433,7 +434,7 @@ namespace Essgee.Emulation.VDP
 
 		protected override void RenderLine(int y)
 		{
-			if (y >= scanlineTopBlanking && y < scanlineTopBorder) SetLine(y, 0x10, 0x10, 0x10);
+			if (EnableOffScreen && y >= scanlineTopBlanking && y < scanlineTopBorder) SetLine(y, 0x10, 0x10, 0x10);
 			else if (y >= scanlineTopBorder && y < scanlineActiveDisplay) SetLine(y, 1, backgroundColor);
 			else if (y >= scanlineActiveDisplay && y < scanlineBottomBorder)
 			{
@@ -464,30 +465,36 @@ namespace Essgee.Emulation.VDP
 				}
 			}
 			else if (y >= scanlineBottomBorder && y < scanlineBottomBlanking) SetLine(y, 1, backgroundColor);
-			else if (y >= scanlineBottomBlanking && y < scanlineVerticalSync) SetLine(y, 0x10, 0x10, 0x10);
-			else if (y >= scanlineVerticalSync && y < NumTotalScanlines) SetLine(y, 0x00, 0x00, 0x00);
+			else if (EnableOffScreen && y >= scanlineBottomBlanking && y < scanlineVerticalSync) SetLine(y, 0x10, 0x10, 0x10);
+			else if (EnableOffScreen && y >= scanlineVerticalSync && y < numTotalScanlines) SetLine(y, 0x00, 0x00, 0x00);
 		}
 
 		protected override void RenderBorders(int y)
 		{
-			for (int x = pixelLeftBlanking1; x < pixelColorBurst; x++) SetPixel(y, x, 1, backgroundColor);
-			for (int x = pixelColorBurst; x < pixelLeftBlanking2; x++) SetPixel(y, x, 0x00, 0x20, 0x40);
-			for (int x = pixelLeftBlanking2; x < pixelLeftBorder; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
+			if (EnableOffScreen)
+			{
+				for (int x = pixelLeftBlanking1; x < pixelColorBurst; x++) SetPixel(y, x, 1, backgroundColor);
+				for (int x = pixelColorBurst; x < pixelLeftBlanking2; x++) SetPixel(y, x, 0x00, 0x20, 0x40);
+				for (int x = pixelLeftBlanking2; x < pixelLeftBorder; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
+			}
 			for (int x = pixelLeftBorder; x < pixelActiveDisplay; x++) SetPixel(y, x, 1, backgroundColor);
 			for (int x = pixelRightBorder; x < pixelRightBlanking; x++) SetPixel(y, x, 1, backgroundColor);
-			for (int x = pixelRightBlanking; x < pixelHorizontalSync; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
-			for (int x = pixelHorizontalSync; x < NumTotalPixelsPerScanline; x++) SetPixel(y, x, 0x00, 0x00, 0x00);
+			if (EnableOffScreen)
+			{
+				for (int x = pixelRightBlanking; x < pixelHorizontalSync; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
+				for (int x = pixelHorizontalSync; x < numTotalPixelsPerScanline; x++) SetPixel(y, x, 0x00, 0x00, 0x00);
+			}
 		}
 
 		protected void SetLine(int y, int palette, int color)
 		{
-			for (int x = 0; x < NumTotalPixelsPerScanline; x++)
+			for (int x = 0; x < numTotalPixelsPerScanline; x++)
 				SetPixel(y, x, palette, color);
 		}
 
 		protected void SetPixel(int y, int x, int palette, int color)
 		{
-			WriteColorToFramebuffer(palette, color, ((y * NumTotalPixelsPerScanline) + (x % NumTotalPixelsPerScanline)) * 3);
+			WriteColorToFramebuffer(palette, color, ((y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)) * 3);
 		}
 
 		private void RenderLineMode4Background(int y)
@@ -504,7 +511,7 @@ namespace Essgee.Emulation.VDP
 			bool currentIsVScrollPartiallyDisabled = isVScrollPartiallyDisabled;
 			bool currentIsColumn0MaskEnabled = isColumn0MaskEnabled;
 
-			for (int x = 0; x < NumTotalPixelsPerScanline; x++)
+			for (int x = 0; x < numTotalPixelsPerScanline; x++)
 			{
 				int activeDisplayX = (x - pixelActiveDisplay);
 				if (activeDisplayX < 0 || activeDisplayX >= NumActivePixelsPerScanline) continue;
@@ -715,16 +722,6 @@ namespace Essgee.Emulation.VDP
 			}
 		}
 
-		public byte ReadVCounter()
-		{
-			return (byte)vCounter;
-		}
-
-		public byte ReadHCounter()
-		{
-			return (byte)hCounter;
-		}
-
 		protected void UpdateResolution()
 		{
 			/* Check screenmode */
@@ -898,6 +895,17 @@ namespace Essgee.Emulation.VDP
 			InterruptLine = InterruptState.Clear;
 
 			return statusCurrent;
+		}
+
+		public override byte ReadPort(byte port)
+		{
+			if ((port & 0x40) == 0x40)
+				if ((port & 0x01) == 0)
+					return (byte)vCounter;      /* V counter */
+				else
+					return (byte)hCounter;      /* H counter */
+			else
+				return base.ReadPort(port);
 		}
 
 		protected override void WriteRegister(byte register, byte value)

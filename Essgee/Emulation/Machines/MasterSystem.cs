@@ -34,11 +34,17 @@ namespace Essgee.Emulation.Machines
 		public event EventHandler<EventArgs> EmulationReset;
 		protected virtual void OnEmulationReset(EventArgs e) { EmulationReset?.Invoke(this, e); }
 
-		public event EventHandler<RenderScreenEventArgs> RenderScreen;
-		protected virtual void OnRenderScreen(RenderScreenEventArgs e) { RenderScreen?.Invoke(this, e); }
+		public event EventHandler<RenderScreenEventArgs> RenderScreen
+		{
+			add { vdp.RenderScreen += value; }
+			remove { vdp.RenderScreen -= value; }
+		}
 
-		public event EventHandler<SizeScreenEventArgs> SizeScreen;
-		protected virtual void OnSizeScreen(SizeScreenEventArgs e) { SizeScreen?.Invoke(this, e); }
+		public event EventHandler<SizeScreenEventArgs> SizeScreen
+		{
+			add { vdp.SizeScreen += value; }
+			remove { vdp.SizeScreen -= value; }
+		}
 
 		public event EventHandler<ChangeViewportEventArgs> ChangeViewport;
 		protected virtual void OnChangeViewport(ChangeViewportEventArgs e) { ChangeViewport?.Invoke(this, e); }
@@ -46,8 +52,11 @@ namespace Essgee.Emulation.Machines
 		public event EventHandler<PollInputEventArgs> PollInput;
 		protected virtual void OnPollInput(PollInputEventArgs e) { PollInput?.Invoke(this, e); }
 
-		public event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples;
-		protected virtual void OnEnqueueSamples(EnqueueSamplesEventArgs e) { EnqueueSamples?.Invoke(this, e); }
+		public event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples
+		{
+			add { psg.EnqueueSamples += value; }
+			remove { psg.EnqueueSamples -= value; }
+		}
 
 		public string ManufacturerName => "Sega";
 		public string ModelName => "Master System";
@@ -59,8 +68,8 @@ namespace Essgee.Emulation.Machines
 		ICartridge bootstrap, cartridge;
 		byte[] wram;
 		Z80A cpu;
-		SegaSMSVDP vdp;
-		SegaSMSPSG psg;
+		IVDP vdp;
+		IPSG psg;
 
 		InputDevice[] inputDevices;
 
@@ -123,7 +132,7 @@ namespace Essgee.Emulation.Machines
 			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			wram = new byte[ramSize];
 			vdp = new SegaSMSVDP();
-			psg = new SegaSMSPSG(44100, 2, (s, e) => { OnEnqueueSamples(e); });
+			psg = new SegaSMSPSG(44100, 2);
 
 			inputDevices = new InputDevice[2];
 			inputDevices[0] = InputDevice.None;
@@ -162,7 +171,6 @@ namespace Essgee.Emulation.Machines
 			currentMasterClockCyclesInFrame = 0;
 			totalMasterClockCyclesInFrame = (int)Math.Round(masterClock / RefreshRate);
 
-			OnSizeScreen(new SizeScreenEventArgs(vdp.NumTotalPixelsPerScanline, vdp.NumTotalScanlines));
 			OnChangeViewport(new ChangeViewportEventArgs(vdp.Viewport));
 
 			inputDevices[0] = configuration.Joypad1DeviceType;
@@ -206,6 +214,7 @@ namespace Essgee.Emulation.Machines
 
 		public void Shutdown()
 		{
+			vdp?.Shutdown();
 			psg?.Shutdown();
 		}
 
@@ -266,8 +275,7 @@ namespace Essgee.Emulation.Machines
 
 			double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
-			if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-				OnRenderScreen(new RenderScreenEventArgs(vdp.NumTotalPixelsPerScanline, vdp.NumTotalScanlines, vdp.OutputFramebuffer));
+			vdp.Step((int)Math.Round(currentMasterClockCycles));
 
 			if (pauseButtonPressed)
 			{
@@ -317,8 +325,8 @@ namespace Essgee.Emulation.Machines
 				case InputDevice.Lightgun:
 					if (GetIOControlDirection((port == 0 ? IOControlPort.A : IOControlPort.B), IOControlPin.TH, portIoControl) == IOControlDirection.Input)
 					{
-						var diffX = Math.Abs(lastMousePosition.x - (vdp.ReadHCounter() << 1));
-						var diffY = Math.Abs(lastMousePosition.y - vdp.ReadVCounter());
+						var diffX = Math.Abs(lastMousePosition.x - (vdp.ReadPort(SegaSMSVDP.PortHCounter) << 1));
+						var diffY = Math.Abs(lastMousePosition.y - vdp.ReadPort(SegaSMSVDP.PortVCounter));
 
 						if ((diffY <= 5) && (diffX <= 60))
 						{
@@ -462,7 +470,7 @@ namespace Essgee.Emulation.Machines
 				case 0x40:
 					/* Counters */
 					if ((port & 0x01) == 0)
-						return vdp.ReadVCounter();      /* V counter */
+						return vdp.ReadPort(port);      /* V counter */
 					else
 						return hCounterLatched;         /* H counter */
 
@@ -499,7 +507,7 @@ namespace Essgee.Emulation.Machines
 							GetIOControlOutputLevel(IOControlPort.B, IOControlPin.TH, portIoControl) == IOControlOutputLevel.Low))
 						{
 							/* TH is input and transition is Low->High, latch HCounter */
-							hCounterLatched = vdp.ReadHCounter();
+							hCounterLatched = vdp.ReadPort(SegaSMSVDP.PortHCounter);
 						}
 
 						portIoControl = value;

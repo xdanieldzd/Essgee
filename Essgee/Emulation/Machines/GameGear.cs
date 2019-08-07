@@ -30,11 +30,17 @@ namespace Essgee.Emulation.Machines
 		public event EventHandler<EventArgs> EmulationReset;
 		protected virtual void OnEmulationReset(EventArgs e) { EmulationReset?.Invoke(this, e); }
 
-		public event EventHandler<RenderScreenEventArgs> RenderScreen;
-		protected virtual void OnRenderScreen(RenderScreenEventArgs e) { RenderScreen?.Invoke(this, e); }
+		public event EventHandler<RenderScreenEventArgs> RenderScreen
+		{
+			add { vdp.RenderScreen += value; }
+			remove { vdp.RenderScreen -= value; }
+		}
 
-		public event EventHandler<SizeScreenEventArgs> SizeScreen;
-		protected virtual void OnSizeScreen(SizeScreenEventArgs e) { SizeScreen?.Invoke(this, e); }
+		public event EventHandler<SizeScreenEventArgs> SizeScreen
+		{
+			add { vdp.SizeScreen += value; }
+			remove { vdp.SizeScreen -= value; }
+		}
 
 		public event EventHandler<ChangeViewportEventArgs> ChangeViewport;
 		protected virtual void OnChangeViewport(ChangeViewportEventArgs e) { ChangeViewport?.Invoke(this, e); }
@@ -42,8 +48,11 @@ namespace Essgee.Emulation.Machines
 		public event EventHandler<PollInputEventArgs> PollInput;
 		protected virtual void OnPollInput(PollInputEventArgs e) { PollInput?.Invoke(this, e); }
 
-		public event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples;
-		protected virtual void OnEnqueueSamples(EnqueueSamplesEventArgs e) { EnqueueSamples?.Invoke(this, e); }
+		public event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples
+		{
+			add { psg.EnqueueSamples += value; }
+			remove { psg.EnqueueSamples -= value; }
+		}
 
 		public string ManufacturerName => "Sega";
 		public string ModelName => "Game Gear";
@@ -55,8 +64,8 @@ namespace Essgee.Emulation.Machines
 		ICartridge bootstrap, cartridge;
 		byte[] wram;
 		Z80A cpu;
-		SegaGGVDP vdp;
-		SegaGGPSG psg;
+		IVDP vdp;
+		IPSG psg;
 
 		[Flags]
 		enum IOPortABInputs : byte
@@ -114,7 +123,7 @@ namespace Essgee.Emulation.Machines
 			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			wram = new byte[ramSize];
 			vdp = new SegaGGVDP();
-			psg = new SegaGGPSG(44100, 2, (s, e) => { OnEnqueueSamples(e); });
+			psg = new SegaGGPSG(44100, 2);
 		}
 
 		public void SetConfiguration(IConfiguration config)
@@ -138,7 +147,6 @@ namespace Essgee.Emulation.Machines
 			currentMasterClockCyclesInFrame = 0;
 			totalMasterClockCyclesInFrame = (int)Math.Round(masterClock / refreshRate);
 
-			OnSizeScreen(new SizeScreenEventArgs(vdp.NumTotalPixelsPerScanline, vdp.NumTotalScanlines));
 			OnChangeViewport(new ChangeViewportEventArgs(vdp.Viewport));
 		}
 
@@ -183,13 +191,14 @@ namespace Essgee.Emulation.Machines
 			portTxBuffer = 0x00;
 			portRxBuffer = 0xFF;
 			portSerialControl = 0x00;
-			psg.WriteStereoControl(0xFF);
+			psg.WritePort(SegaGGPSG.PortStereoControl, 0xFF);
 
 			OnEmulationReset(EventArgs.Empty);
 		}
 
 		public void Shutdown()
 		{
+			vdp?.Shutdown();
 			psg?.Shutdown();
 		}
 
@@ -245,8 +254,7 @@ namespace Essgee.Emulation.Machines
 
 			double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
-			if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-				OnRenderScreen(new RenderScreenEventArgs(vdp.NumTotalPixelsPerScanline, vdp.NumTotalScanlines, vdp.OutputFramebuffer));
+			vdp.Step((int)Math.Round(currentMasterClockCycles));
 
 			cpu.SetInterruptLine(vdp.InterruptLine);
 
@@ -329,15 +337,9 @@ namespace Essgee.Emulation.Machines
 					}
 					return 0xFF;
 
-				case 0x40:
-					/* Counters */
-					if ((maskedPort & 0x01) == 0)
-						return vdp.ReadVCounter();          /* V counter */
-					else
-						return hCounterLatched;             /* H counter */
-
-				case 0x80:
-					return vdp.ReadPort(maskedPort);        /* VDP ports */
+				case 0x40:                                  /* Counters */
+				case 0x80:                                  /* VDP ports */
+					return vdp.ReadPort(maskedPort);
 
 				case 0xC0:
 					if (port == 0xC0 || port == 0xDC)
@@ -368,7 +370,7 @@ namespace Essgee.Emulation.Machines
 						case 0x03: portTxBuffer = value; break;
 						case 0x04: /* Read-only? */; break;
 						case 0x05: portSerialControl = (byte)(value & 0xF8); break;
-						case 0x06: psg.WriteStereoControl(value); break;
+						case 0x06: psg.WritePort(port, value); break;
 						default:
 							/* System stuff */
 							if ((maskedPort & 0x01) == 0)
@@ -377,7 +379,7 @@ namespace Essgee.Emulation.Machines
 							{
 								/* I/O control */
 								if ((portIoControl & 0x0A) == 0x00 && ((value & 0x02) == 0x02 || (value & 0x08) == 0x08))
-									hCounterLatched = vdp.ReadHCounter();
+									hCounterLatched = vdp.ReadPort(SegaSMSVDP.PortHCounter);
 								portIoControl = value;
 							}
 							break;

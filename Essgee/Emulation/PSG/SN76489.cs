@@ -8,7 +8,7 @@ using Essgee.EventArguments;
 
 namespace Essgee.Emulation.PSG
 {
-	public class SN76489
+	public class SN76489 : IPSG
 	{
 		/* http://www.smspower.org/Development/SN76489 */
 		/* Differences in various system's PSGs: http://forums.nesdev.com/viewtopic.php?p=190216#p190216 */
@@ -21,8 +21,9 @@ namespace Essgee.Emulation.PSG
 		protected virtual int noiseBitShift => 14;
 
 		/* Sample generation & event handling */
-		public event EventHandler<EnqueueSamplesEventArgs> OnEnqueueSamples;
 		protected List<short> sampleBuffer;
+		public virtual event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples;
+		public virtual void OnEnqueueSamples(EnqueueSamplesEventArgs e) { EnqueueSamples?.Invoke(this, e); }
 
 		/* Audio output variables */
 		protected int sampleRate, numOutputChannels;
@@ -49,12 +50,10 @@ namespace Essgee.Emulation.PSG
 		int samplesPerFrame, cyclesPerFrame, cyclesPerSample;
 		int sampleCycleCount, frameCycleCount, dividerCount;
 
-		public SN76489(int sampleRate, int numOutputChannels, EventHandler<EnqueueSamplesEventArgs> enqueueSamplesEvent)
+		public SN76489(int sampleRate, int numOutputChannels)
 		{
 			this.sampleRate = sampleRate;
 			this.numOutputChannels = numOutputChannels;
-
-			OnEnqueueSamples += enqueueSamplesEvent;
 
 			sampleBuffer = new List<short>();
 
@@ -151,7 +150,7 @@ namespace Essgee.Emulation.PSG
 
 			if (frameCycleCount >= cyclesPerFrame)
 			{
-				OnEnqueueSamples?.Invoke(this, new EnqueueSamplesEventArgs(sampleBuffer.ToArray()));
+				OnEnqueueSamples(new EnqueueSamplesEventArgs(sampleBuffer.ToArray()));
 				sampleBuffer.Clear();
 
 				frameCycleCount -= cyclesPerFrame;
@@ -238,7 +237,12 @@ namespace Essgee.Emulation.PSG
 			return (ushort)(val & 0x1);
 		}
 
-		public void WritePort(byte port, byte data)
+		public virtual byte ReadPort(byte port)
+		{
+			throw new Exception("SN76489: Cannot read ports");
+		}
+
+		public virtual void WritePort(byte port, byte data)
 		{
 			if (BitUtilities.IsBitSet(data, 7))
 			{

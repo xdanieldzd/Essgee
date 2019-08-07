@@ -34,11 +34,17 @@ namespace Essgee.Emulation.Machines
 		public event EventHandler<EventArgs> EmulationReset;
 		protected virtual void OnEmulationReset(EventArgs e) { EmulationReset?.Invoke(this, e); }
 
-		public event EventHandler<RenderScreenEventArgs> RenderScreen;
-		protected virtual void OnRenderScreen(RenderScreenEventArgs e) { RenderScreen?.Invoke(this, e); }
+		public event EventHandler<RenderScreenEventArgs> RenderScreen
+		{
+			add { vdp.RenderScreen += value; }
+			remove { vdp.RenderScreen -= value; }
+		}
 
-		public event EventHandler<SizeScreenEventArgs> SizeScreen;
-		protected virtual void OnSizeScreen(SizeScreenEventArgs e) { SizeScreen?.Invoke(this, e); }
+		public event EventHandler<SizeScreenEventArgs> SizeScreen
+		{
+			add { vdp.SizeScreen += value; }
+			remove { vdp.SizeScreen -= value; }
+		}
 
 		public event EventHandler<ChangeViewportEventArgs> ChangeViewport;
 		protected virtual void OnChangeViewport(ChangeViewportEventArgs e) { ChangeViewport?.Invoke(this, e); }
@@ -46,8 +52,11 @@ namespace Essgee.Emulation.Machines
 		public event EventHandler<PollInputEventArgs> PollInput;
 		protected virtual void OnPollInput(PollInputEventArgs e) { PollInput?.Invoke(this, e); }
 
-		public event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples;
-		protected virtual void OnEnqueueSamples(EnqueueSamplesEventArgs e) { EnqueueSamples?.Invoke(this, e); }
+		public event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples
+		{
+			add { psg.EnqueueSamples += value; }
+			remove { psg.EnqueueSamples -= value; }
+		}
 
 		public string ManufacturerName => "Sega";
 		public string ModelName => "SG-1000";
@@ -59,8 +68,8 @@ namespace Essgee.Emulation.Machines
 		ICartridge cartridge;
 		byte[] wram;
 		Z80A cpu;
-		TMS99xxA vdp;
-		SN76489 psg;
+		IVDP vdp;
+		IPSG psg;
 		Intel8255 ppi;
 
 		[Flags]
@@ -102,7 +111,7 @@ namespace Essgee.Emulation.Machines
 			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			wram = new byte[ramSize];
 			vdp = new TMS99xxA();
-			psg = new SN76489(44100, 2, (s, e) => { OnEnqueueSamples(e); });
+			psg = new SN76489(44100, 2);
 			ppi = new Intel8255();
 		}
 
@@ -138,7 +147,6 @@ namespace Essgee.Emulation.Machines
 			currentMasterClockCyclesInFrame = 0;
 			totalMasterClockCyclesInFrame = (int)Math.Round(masterClock / RefreshRate);
 
-			OnSizeScreen(new SizeScreenEventArgs(vdp.NumTotalPixelsPerScanline, vdp.NumTotalScanlines));
 			OnChangeViewport(new ChangeViewportEventArgs(vdp.Viewport));
 		}
 
@@ -166,6 +174,7 @@ namespace Essgee.Emulation.Machines
 
 		public void Shutdown()
 		{
+			vdp?.Shutdown();
 			psg?.Shutdown();
 		}
 
@@ -218,8 +227,7 @@ namespace Essgee.Emulation.Machines
 
 			double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
-			if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-				OnRenderScreen(new RenderScreenEventArgs(vdp.NumTotalPixelsPerScanline, vdp.NumTotalScanlines, vdp.OutputFramebuffer));
+			vdp.Step((int)Math.Round(currentMasterClockCycles));
 
 			if (pauseButtonPressed)
 			{

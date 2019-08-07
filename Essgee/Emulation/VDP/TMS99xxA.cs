@@ -5,10 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
+using Essgee.EventArguments;
+
 namespace Essgee.Emulation.VDP
 {
 	/* Texas Instruments TMS99xxA family */
-	public class TMS99xxA
+	public class TMS99xxA : IVDP
 	{
 		public const int NumTotalScanlinesPal = 313;
 		public const int NumTotalScanlinesNtsc = 262;
@@ -16,8 +18,8 @@ namespace Essgee.Emulation.VDP
 		public const int NumActiveScanlines = 192;
 		public const int NumActivePixelsPerScanline = 256;
 
-		public readonly int NumTotalPixelsPerScanline = 342;
-		public virtual int NumTotalScanlines => (isPalChip ? NumTotalScanlinesPal : NumTotalScanlinesNtsc);
+		protected readonly int numTotalPixelsPerScanline = 342;
+		protected virtual int numTotalScanlines => (isPalChip ? NumTotalScanlinesPal : NumTotalScanlinesNtsc);
 
 		protected int numVisibleScanlines;
 		protected int topBlankingSize, topBorderSize, verticalActiveDisplaySize, bottomBorderSize, bottomBlankingSize, verticalSyncSize;
@@ -29,6 +31,12 @@ namespace Essgee.Emulation.VDP
 		protected int numVisiblePixels;
 
 		public virtual (int X, int Y, int Width, int Height) Viewport => (pixelLeftBorder, scanlineTopBorder, numVisiblePixels, numVisibleScanlines);
+
+		public virtual event EventHandler<SizeScreenEventArgs> SizeScreen;
+		public virtual void OnSizeScreen(SizeScreenEventArgs e) { SizeScreen?.Invoke(this, e); }
+
+		public virtual event EventHandler<RenderScreenEventArgs> RenderScreen;
+		public virtual void OnRenderScreen(RenderScreenEventArgs e) { RenderScreen?.Invoke(this, e); }
 
 		protected const int NumSprites = 32;
 		protected const int NumSpritesPerLine = 4;
@@ -140,8 +148,7 @@ namespace Essgee.Emulation.VDP
 
 		public bool EnableBackgrounds { get; set; }
 		public bool EnableSprites { get; set; }
-
-		public byte[] OutputFramebuffer => outputFramebuffer.Clone() as byte[];
+		public bool EnableOffScreen { get; set; }
 
 		public TMS99xxA()
 		{
@@ -153,6 +160,7 @@ namespace Essgee.Emulation.VDP
 
 			EnableBackgrounds = true;
 			EnableSprites = true;
+			EnableOffScreen = false;
 		}
 
 		public virtual void Startup()
@@ -161,6 +169,11 @@ namespace Essgee.Emulation.VDP
 
 			Debug.Assert(clockRate != 0.0, "Clock rate is zero", "{0} clock rate is not configured", GetType().FullName);
 			Debug.Assert(refreshRate != 0.0, "Refresh rate is zero", "{0} refresh rate is not configured", GetType().FullName);
+		}
+
+		public virtual void Shutdown()
+		{
+			//
 		}
 
 		public virtual void Reset()
@@ -204,11 +217,11 @@ namespace Essgee.Emulation.VDP
 		protected virtual void ReconfigureTimings()
 		{
 			/* Calculate cycles/line */
-			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / NumTotalScanlines);
+			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / numTotalScanlines);
 
 			/* Create arrays */
-			screenUsage = new byte[NumTotalPixelsPerScanline * NumTotalScanlines];
-			outputFramebuffer = new byte[(NumTotalPixelsPerScanline * NumTotalScanlines) * 3];
+			screenUsage = new byte[numTotalPixelsPerScanline * numTotalScanlines];
+			outputFramebuffer = new byte[(numTotalPixelsPerScanline * numTotalScanlines) * 3];
 
 			/* Scanline parameters */
 			if (!isPalChip)
@@ -259,12 +272,12 @@ namespace Essgee.Emulation.VDP
 			pixelHorizontalSync = (pixelRightBlanking + rightBlankingSize);
 
 			numVisiblePixels = (leftBorderSize + horizontalActiveDisplaySize + rightBorderSize);
+
+			OnSizeScreen(new SizeScreenEventArgs(numTotalPixelsPerScanline, numTotalScanlines));
 		}
 
-		public virtual bool Step(int clockCyclesInStep)
+		public virtual void Step(int clockCyclesInStep)
 		{
-			bool drawScreen = false;
-
 			InterruptLine = ((isFrameInterruptEnabled && isFrameInterruptPending) ? InterruptState.Assert : InterruptState.Clear);
 
 			cycleCount += clockCyclesInStep;
@@ -279,12 +292,12 @@ namespace Essgee.Emulation.VDP
 					isFrameInterruptPending = true;
 
 				currentScanline++;
-				if (currentScanline == NumTotalScanlines)
+				if (currentScanline == numTotalScanlines)
 				{
 					currentScanline = 0;
 					ClearScreenUsage();
 
-					drawScreen = true;
+					OnRenderScreen(new RenderScreenEventArgs(numTotalPixelsPerScanline, numTotalScanlines, outputFramebuffer.Clone() as byte[]));
 				}
 
 				ParseSpriteTable(currentScanline);
@@ -292,8 +305,6 @@ namespace Essgee.Emulation.VDP
 				cycleCount -= clockCyclesPerLine;
 				if (cycleCount <= -clockCyclesPerLine) cycleCount = 0;
 			}
-
-			return drawScreen;
 		}
 
 		protected virtual void ClearScreenUsage()
@@ -306,7 +317,7 @@ namespace Essgee.Emulation.VDP
 		{
 			RenderBorders(y);
 
-			if (y >= scanlineTopBlanking && y < scanlineTopBorder) SetLine(y, 0x10, 0x10, 0x10);
+			if (EnableOffScreen && y >= scanlineTopBlanking && y < scanlineTopBorder) SetLine(y, 0x10, 0x10, 0x10);
 			else if (y >= scanlineTopBorder && y < scanlineActiveDisplay) SetLine(y, backgroundColor);
 			else if (y >= scanlineActiveDisplay && y < scanlineBottomBorder)
 			{
@@ -331,46 +342,52 @@ namespace Essgee.Emulation.VDP
 				}
 			}
 			else if (y >= scanlineBottomBorder && y < scanlineBottomBlanking) SetLine(y, backgroundColor);
-			else if (y >= scanlineBottomBlanking && y < scanlineVerticalSync) SetLine(y, 0x10, 0x10, 0x10);
-			else if (y >= scanlineVerticalSync && y < NumTotalScanlines) SetLine(y, 0x00, 0x00, 0x00);
+			else if (EnableOffScreen && y >= scanlineBottomBlanking && y < scanlineVerticalSync) SetLine(y, 0x10, 0x10, 0x10);
+			else if (EnableOffScreen && y >= scanlineVerticalSync && y < numTotalScanlines) SetLine(y, 0x00, 0x00, 0x00);
 		}
 
 		protected virtual void RenderBorders(int y)
 		{
-			for (int x = pixelLeftBlanking1; x < pixelColorBurst; x++) SetPixel(y, x, backgroundColor);
-			for (int x = pixelColorBurst; x < pixelLeftBlanking2; x++) SetPixel(y, x, 0x00, 0x20, 0x40);
-			for (int x = pixelLeftBlanking2; x < pixelLeftBorder; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
+			if (EnableOffScreen)
+			{
+				for (int x = pixelLeftBlanking1; x < pixelColorBurst; x++) SetPixel(y, x, backgroundColor);
+				for (int x = pixelColorBurst; x < pixelLeftBlanking2; x++) SetPixel(y, x, 0x00, 0x20, 0x40);
+				for (int x = pixelLeftBlanking2; x < pixelLeftBorder; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
+			}
 			for (int x = pixelLeftBorder; x < pixelActiveDisplay; x++) SetPixel(y, x, backgroundColor);
 			for (int x = pixelRightBorder; x < pixelRightBlanking; x++) SetPixel(y, x, backgroundColor);
-			for (int x = pixelRightBlanking; x < pixelHorizontalSync; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
-			for (int x = pixelHorizontalSync; x < NumTotalPixelsPerScanline; x++) SetPixel(y, x, 0x00, 0x00, 0x00);
+			if (EnableOffScreen)
+			{
+				for (int x = pixelRightBlanking; x < pixelHorizontalSync; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
+				for (int x = pixelHorizontalSync; x < numTotalPixelsPerScanline; x++) SetPixel(y, x, 0x00, 0x00, 0x00);
+			}
 		}
 
 		protected void SetLine(int y, ushort colorValue)
 		{
-			for (int x = 0; x < NumTotalPixelsPerScanline; x++)
+			for (int x = 0; x < numTotalPixelsPerScanline; x++)
 				SetPixel(y, x, colorValue);
 		}
 
 		protected void SetLine(int y, byte b, byte g, byte r)
 		{
-			for (int x = 0; x < NumTotalPixelsPerScanline; x++)
+			for (int x = 0; x < numTotalPixelsPerScanline; x++)
 				SetPixel(y, x, b, g, r);
 		}
 
 		protected void SetPixel(int y, int x, ushort colorValue)
 		{
-			WriteColorToFramebuffer(colorValue, ((y * NumTotalPixelsPerScanline) + (x % NumTotalPixelsPerScanline)) * 3);
+			WriteColorToFramebuffer(colorValue, ((y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)) * 3);
 		}
 
 		protected void SetPixel(int y, int x, byte b, byte g, byte r)
 		{
-			WriteColorToFramebuffer(b, g, r, ((y * NumTotalPixelsPerScanline) + (x % NumTotalPixelsPerScanline)) * 3);
+			WriteColorToFramebuffer(b, g, r, ((y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)) * 3);
 		}
 
 		protected byte GetScreenUsageFlag(int y, int x)
 		{
-			return screenUsage[(y * NumTotalPixelsPerScanline) + (x % NumTotalPixelsPerScanline)];
+			return screenUsage[(y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)];
 		}
 
 		protected bool IsScreenUsageFlagSet(int y, int x, byte flag)
@@ -380,12 +397,12 @@ namespace Essgee.Emulation.VDP
 
 		protected void SetScreenUsageFlag(int y, int x, byte flag)
 		{
-			screenUsage[(y * NumTotalPixelsPerScanline) + (x % NumTotalPixelsPerScanline)] |= flag;
+			screenUsage[(y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)] |= flag;
 		}
 
 		protected void ClearScreenUsageFlag(int y, int x, byte flag)
 		{
-			screenUsage[(y * NumTotalPixelsPerScanline) + (x % NumTotalPixelsPerScanline)] &= (byte)~flag;
+			screenUsage[(y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)] &= (byte)~flag;
 		}
 
 		protected void RenderLineGraphics1Background(int y)

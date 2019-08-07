@@ -9,7 +9,7 @@ namespace Essgee.Emulation.VDP
 	/* Sega 315-5378, Game Gear */
 	public class SegaGGVDP : SegaSMSVDP
 	{
-		public override int NumTotalScanlines => NumTotalScanlinesNtsc;
+		protected override int numTotalScanlines => NumTotalScanlinesNtsc;
 
 		public override (int X, int Y, int Width, int Height) Viewport => (85, 64, 160, 144);
 		// y -- ((ScreenHeight / 2) - (144 / 2)) ????
