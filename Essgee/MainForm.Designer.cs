@@ -60,6 +60,8 @@
 			this.tsslEmulationStatus = new System.Windows.Forms.ToolStripStatusLabel();
 			this.ofdOpenROM = new System.Windows.Forms.OpenFileDialog();
 			this.renderControl = new Essgee.Graphics.RenderControl();
+			this.showLayersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
 			this.menuStrip.SuspendLayout();
 			this.statusStrip.SuspendLayout();
 			this.SuspendLayout();
@@ -187,6 +189,8 @@
 			this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.limitFPSToolStripMenuItem,
             this.muteToolStripMenuItem,
+            this.toolStripMenuItem7,
+            this.showLayersToolStripMenuItem,
             this.toolStripMenuItem3,
             this.screenSizeToolStripMenuItem,
             this.sizeModeToolStripMenuItem,
@@ -201,48 +205,48 @@
 			// 
 			this.limitFPSToolStripMenuItem.CheckOnClick = true;
 			this.limitFPSToolStripMenuItem.Name = "limitFPSToolStripMenuItem";
-			this.limitFPSToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
+			this.limitFPSToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.limitFPSToolStripMenuItem.Text = "Limit &FPS";
 			// 
 			// muteToolStripMenuItem
 			// 
 			this.muteToolStripMenuItem.CheckOnClick = true;
 			this.muteToolStripMenuItem.Name = "muteToolStripMenuItem";
-			this.muteToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
+			this.muteToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.muteToolStripMenuItem.Text = "&Mute";
 			// 
 			// toolStripMenuItem3
 			// 
 			this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-			this.toolStripMenuItem3.Size = new System.Drawing.Size(138, 6);
+			this.toolStripMenuItem3.Size = new System.Drawing.Size(177, 6);
 			// 
 			// screenSizeToolStripMenuItem
 			// 
 			this.screenSizeToolStripMenuItem.Name = "screenSizeToolStripMenuItem";
-			this.screenSizeToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
+			this.screenSizeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.screenSizeToolStripMenuItem.Text = "S&creen Size...";
 			// 
 			// sizeModeToolStripMenuItem
 			// 
 			this.sizeModeToolStripMenuItem.Name = "sizeModeToolStripMenuItem";
-			this.sizeModeToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
+			this.sizeModeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.sizeModeToolStripMenuItem.Text = "Si&ze Mode...";
 			// 
 			// shadersToolStripMenuItem
 			// 
 			this.shadersToolStripMenuItem.Name = "shadersToolStripMenuItem";
-			this.shadersToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
+			this.shadersToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.shadersToolStripMenuItem.Text = "S&haders...";
 			// 
 			// toolStripMenuItem5
 			// 
 			this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-			this.toolStripMenuItem5.Size = new System.Drawing.Size(138, 6);
+			this.toolStripMenuItem5.Size = new System.Drawing.Size(177, 6);
 			// 
 			// settingsToolStripMenuItem
 			// 
 			this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-			this.settingsToolStripMenuItem.Size = new System.Drawing.Size(141, 22);
+			this.settingsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.settingsToolStripMenuItem.Text = "&Settings...";
 			this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
 			// 
@@ -304,6 +308,17 @@
 			this.renderControl.MouseUp += new System.Windows.Forms.MouseEventHandler(this.renderControl_MouseUp);
 			this.renderControl.Resize += new System.EventHandler(this.renderControl_Resize);
 			// 
+			// showLayersToolStripMenuItem
+			// 
+			this.showLayersToolStripMenuItem.Name = "showLayersToolStripMenuItem";
+			this.showLayersToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.showLayersToolStripMenuItem.Text = "Show &Layers...";
+			// 
+			// toolStripMenuItem7
+			// 
+			this.toolStripMenuItem7.Name = "toolStripMenuItem7";
+			this.toolStripMenuItem7.Size = new System.Drawing.Size(177, 6);
+			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -359,5 +374,7 @@
 		private System.Windows.Forms.ToolStripMenuItem takeScreenshotToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem6;
 		private System.Windows.Forms.ToolStripMenuItem stopToolStripMenuItem;
+		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem7;
+		private System.Windows.Forms.ToolStripMenuItem showLayersToolStripMenuItem;
 	}
 }

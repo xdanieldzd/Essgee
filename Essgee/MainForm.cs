@@ -40,6 +40,8 @@ namespace Essgee
 
 		EmulatorHandler emulatorHandler;
 
+		GraphicsEnableState graphicsEnableStates;
+
 		bool lastUserPauseState, lastTemporaryPauseState;
 		(int x, int y, int width, int height) currentViewport;
 		byte[] lastFramebufferData;
@@ -58,11 +60,14 @@ namespace Essgee
 
 			SetFileFilters();
 
+			graphicsEnableStates = (GraphicsEnableState.Backgrounds | GraphicsEnableState.Sprites | GraphicsEnableState.Borders);
+
 			CreateRecentFilesMenu();
 			CreatePowerOnMenu();
 			CreateShaderMenu();
 			CreateScreenSizeMenu();
 			CreateSizeModeMenu();
+			CreateShowLayersMenu();
 
 			limitFPSToolStripMenuItem.DataBindings.Add(nameof(limitFPSToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.LimitFps), false, DataSourceUpdateMode.OnPropertyChanged);
 			limitFPSToolStripMenuItem.CheckedChanged += (s, e) => { emulatorHandler?.SetFpsLimiting(Program.Configuration.LimitFps); };
@@ -146,6 +151,7 @@ namespace Essgee
 			emulatorHandler.EnqueueSamples += soundHandler.EnqueueSamples;
 
 			emulatorHandler.SetFpsLimiting(Program.Configuration.LimitFps);
+			emulatorHandler.SetGraphicsEnableStates(graphicsEnableStates);
 
 			emulatorHandler.SetConfiguration(Program.Configuration.Machines[machineType.Name]);
 
@@ -476,6 +482,47 @@ namespace Essgee
 					}
 				};
 				sizeModeToolStripMenuItem.DropDownItems.Add(menuItem);
+			}
+		}
+
+		private void CreateShowLayersMenu()
+		{
+			showLayersToolStripMenuItem.DropDownItems.Clear();
+
+			foreach (var layer in Enum.GetValues(typeof(GraphicsEnableState)))
+			{
+				var ignore = layer.GetType().GetField(layer.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored;
+				if (ignore ?? false) continue;
+
+				var desc = layer.GetType().GetField(layer.ToString())?.GetAttribute<DescriptionAttribute>()?.Description ?? layer.ToString();
+
+				var menuItem = new ToolStripMenuItem($"{desc}")
+				{
+					Checked = ((graphicsEnableStates & (GraphicsEnableState)layer) == (GraphicsEnableState)layer),
+					Tag = layer
+				};
+				menuItem.Click += (s, e) =>
+				{
+					if ((s as ToolStripMenuItem).Tag is object gfxLayer && Enum.IsDefined(typeof(GraphicsEnableState), gfxLayer))
+					{
+						var enableState = (GraphicsEnableState)gfxLayer;
+
+						if ((graphicsEnableStates & enableState) == enableState)
+							graphicsEnableStates &= ~enableState;
+						else
+							graphicsEnableStates |= enableState;
+
+						emulatorHandler.SetGraphicsEnableStates(graphicsEnableStates);
+
+						foreach (ToolStripMenuItem showLayersMenuItem in showLayersToolStripMenuItem.DropDownItems)
+						{
+							if (showLayersMenuItem.Tag is GraphicsEnableState gfxLayerCheck)
+								showLayersMenuItem.Checked = (graphicsEnableStates & gfxLayerCheck) == gfxLayerCheck;
+						}
+
+					}
+				};
+				showLayersToolStripMenuItem.DropDownItems.Add(menuItem);
 			}
 		}
 

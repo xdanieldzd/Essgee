@@ -26,6 +26,8 @@ namespace Essgee.Emulation.Machines
 		bool HasBootstrap { get; }
 		double RefreshRate { get; }
 
+		GraphicsEnableState GraphicsEnableStates { get; set; }
+
 		Dictionary<string, dynamic> GetDebugInformation();
 
 		void SetConfiguration(IConfiguration config);

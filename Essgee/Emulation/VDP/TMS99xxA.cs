@@ -146,9 +146,12 @@ namespace Essgee.Emulation.VDP
 
 		protected int clockCyclesPerLine;
 
-		public bool EnableBackgrounds { get; set; }
-		public bool EnableSprites { get; set; }
-		public bool EnableOffScreen { get; set; }
+		public GraphicsEnableState GraphicsEnableStates { get; set; }
+
+		protected bool EnableBackgrounds { get { return (GraphicsEnableStates & GraphicsEnableState.Backgrounds) == GraphicsEnableState.Backgrounds; } }
+		protected bool EnableSprites { get { return (GraphicsEnableStates & GraphicsEnableState.Sprites) == GraphicsEnableState.Sprites; } }
+		protected bool EnableBorders { get { return (GraphicsEnableStates & GraphicsEnableState.Borders) == GraphicsEnableState.Borders; } }
+		protected bool EnableOffScreen { get { return (GraphicsEnableStates & GraphicsEnableState.OffScreen) == GraphicsEnableState.OffScreen; } }
 
 		public TMS99xxA()
 		{
@@ -158,9 +161,7 @@ namespace Essgee.Emulation.VDP
 			spriteBuffer = new (int Number, int Y, int X, int Pattern, int Attribute)[NumActiveScanlines][];
 			for (int i = 0; i < spriteBuffer.Length; i++) spriteBuffer[i] = new (int Number, int Y, int X, int Pattern, int Attribute)[NumSpritesPerLine];
 
-			EnableBackgrounds = true;
-			EnableSprites = true;
-			EnableOffScreen = false;
+			GraphicsEnableStates = GraphicsEnableState.All;
 		}
 
 		public virtual void Startup()
@@ -318,7 +319,11 @@ namespace Essgee.Emulation.VDP
 			RenderBorders(y);
 
 			if (EnableOffScreen && y >= scanlineTopBlanking && y < scanlineTopBorder) SetLine(y, 0x10, 0x10, 0x10);
-			else if (y >= scanlineTopBorder && y < scanlineActiveDisplay) SetLine(y, backgroundColor);
+			else if (y >= scanlineTopBorder && y < scanlineActiveDisplay)
+			{
+				if (EnableBorders) SetLine(y, backgroundColor);
+				else SetLine(y, 0x00, 0x00, 0x00);
+			}
 			else if (y >= scanlineActiveDisplay && y < scanlineBottomBorder)
 			{
 				if (EnableBackgrounds)
@@ -341,7 +346,11 @@ namespace Essgee.Emulation.VDP
 						RenderLineSprites(y);
 				}
 			}
-			else if (y >= scanlineBottomBorder && y < scanlineBottomBlanking) SetLine(y, backgroundColor);
+			else if (y >= scanlineBottomBorder && y < scanlineBottomBlanking)
+			{
+				if (EnableBorders) SetLine(y, backgroundColor);
+				else SetLine(y, 0x00, 0x00, 0x00);
+			}
 			else if (EnableOffScreen && y >= scanlineBottomBlanking && y < scanlineVerticalSync) SetLine(y, 0x10, 0x10, 0x10);
 			else if (EnableOffScreen && y >= scanlineVerticalSync && y < numTotalScanlines) SetLine(y, 0x00, 0x00, 0x00);
 		}
@@ -354,8 +363,18 @@ namespace Essgee.Emulation.VDP
 				for (int x = pixelColorBurst; x < pixelLeftBlanking2; x++) SetPixel(y, x, 0x00, 0x20, 0x40);
 				for (int x = pixelLeftBlanking2; x < pixelLeftBorder; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
 			}
-			for (int x = pixelLeftBorder; x < pixelActiveDisplay; x++) SetPixel(y, x, backgroundColor);
-			for (int x = pixelRightBorder; x < pixelRightBlanking; x++) SetPixel(y, x, backgroundColor);
+
+			for (int x = pixelLeftBorder; x < pixelActiveDisplay; x++)
+			{
+				if (EnableBorders) SetPixel(y, x, backgroundColor);
+				else SetPixel(y, x, 0x00, 0x00, 0x00);
+			}
+			for (int x = pixelRightBorder; x < pixelRightBlanking; x++)
+			{
+				if (EnableBorders) SetPixel(y, x, backgroundColor);
+				else SetPixel(y, x, 0x00, 0x00, 0x00);
+			}
+
 			if (EnableOffScreen)
 			{
 				for (int x = pixelRightBlanking; x < pixelHorizontalSync; x++) SetPixel(y, x, 0x10, 0x10, 0x10);

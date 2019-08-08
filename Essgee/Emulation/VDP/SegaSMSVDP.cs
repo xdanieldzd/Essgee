@@ -435,7 +435,11 @@ namespace Essgee.Emulation.VDP
 		protected override void RenderLine(int y)
 		{
 			if (EnableOffScreen && y >= scanlineTopBlanking && y < scanlineTopBorder) SetLine(y, 0x10, 0x10, 0x10);
-			else if (y >= scanlineTopBorder && y < scanlineActiveDisplay) SetLine(y, 1, backgroundColor);
+			else if (y >= scanlineTopBorder && y < scanlineActiveDisplay)
+			{
+				if (EnableBorders) SetLine(y, 1, backgroundColor);
+				else SetLine(y, 0x00, 0x00, 0x00);
+			}
 			else if (y >= scanlineActiveDisplay && y < scanlineBottomBorder)
 			{
 				RenderBorders(y);
@@ -464,7 +468,11 @@ namespace Essgee.Emulation.VDP
 						RenderLineSprites(y);
 				}
 			}
-			else if (y >= scanlineBottomBorder && y < scanlineBottomBlanking) SetLine(y, 1, backgroundColor);
+			else if (y >= scanlineBottomBorder && y < scanlineBottomBlanking)
+			{
+				if (EnableBorders) SetLine(y, 1, backgroundColor);
+				else SetLine(y, 0x00, 0x00, 0x00);
+			}
 			else if (EnableOffScreen && y >= scanlineBottomBlanking && y < scanlineVerticalSync) SetLine(y, 0x10, 0x10, 0x10);
 			else if (EnableOffScreen && y >= scanlineVerticalSync && y < numTotalScanlines) SetLine(y, 0x00, 0x00, 0x00);
 		}
@@ -477,8 +485,18 @@ namespace Essgee.Emulation.VDP
 				for (int x = pixelColorBurst; x < pixelLeftBlanking2; x++) SetPixel(y, x, 0x00, 0x20, 0x40);
 				for (int x = pixelLeftBlanking2; x < pixelLeftBorder; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
 			}
-			for (int x = pixelLeftBorder; x < pixelActiveDisplay; x++) SetPixel(y, x, 1, backgroundColor);
-			for (int x = pixelRightBorder; x < pixelRightBlanking; x++) SetPixel(y, x, 1, backgroundColor);
+
+			for (int x = pixelLeftBorder; x < pixelActiveDisplay; x++)
+			{
+				if (EnableBorders) SetPixel(y, x, 1, backgroundColor);
+				else SetPixel(y, x, 0x00, 0x00, 0x00);
+			}
+			for (int x = pixelRightBorder; x < pixelRightBlanking; x++)
+			{
+				if (EnableBorders) SetPixel(y, x, 1, backgroundColor);
+				else SetPixel(y, x, 0x00, 0x00, 0x00);
+			}
+
 			if (EnableOffScreen)
 			{
 				for (int x = pixelRightBlanking; x < pixelHorizontalSync; x++) SetPixel(y, x, 0x10, 0x10, 0x10);

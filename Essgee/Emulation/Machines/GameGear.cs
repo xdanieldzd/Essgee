@@ -61,6 +61,12 @@ namespace Essgee.Emulation.Machines
 		public bool HasBootstrap => true;
 		public double RefreshRate => refreshRate;
 
+		public GraphicsEnableState GraphicsEnableStates
+		{
+			get { return vdp.GraphicsEnableStates; }
+			set { vdp.GraphicsEnableStates = value; }
+		}
+
 		ICartridge bootstrap, cartridge;
 		byte[] wram;
 		ICPU cpu;

@@ -20,9 +20,7 @@ namespace Essgee.Emulation.VDP
 
 		InterruptState InterruptLine { get; }
 
-		bool EnableBackgrounds { get; set; }
-		bool EnableSprites { get; set; }
-		bool EnableOffScreen { get; set; }
+		GraphicsEnableState GraphicsEnableStates { get; set; }
 
 		void Startup();
 		void Shutdown();

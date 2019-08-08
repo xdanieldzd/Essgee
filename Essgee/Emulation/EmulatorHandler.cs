@@ -173,6 +173,11 @@ namespace Essgee.Emulation
 			limitFps = value;
 		}
 
+		public void SetGraphicsEnableStates(GraphicsEnableState state)
+		{
+			emulator.GraphicsEnableStates = state;
+		}
+
 		public int FramesPerSecond { get; private set; }
 
 		private void ThreadMainLoop()
