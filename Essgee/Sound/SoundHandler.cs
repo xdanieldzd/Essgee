@@ -106,7 +106,7 @@ namespace Essgee.Sound
 				GenerateBuffer(buffers[i]);
 			AL.SourcePlay(source);
 
-			audioThread = new Thread(ThreadMainLoop) { Name = "EssgeeAudio" };
+			audioThread = new Thread(ThreadMainLoop) { Name = "EssgeeAudio", Priority = ThreadPriority.AboveNormal };
 			audioThread.Start();
 		}
 

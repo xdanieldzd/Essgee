@@ -194,9 +194,9 @@ namespace Essgee
 			{
 				Dock = DockStyle.Fill,
 				DropDownStyle = ComboBoxStyle.DropDownList,
-				DataSource = dropDownAttrib.Values.ToList(),
 				DisplayMember = "Key",
-				ValueMember = "Value"
+				ValueMember = "Value",
+				DataSource = dropDownAttrib.Values.ToList()
 			};
 			comboBoxControl.DataBindings.Add(nameof(comboBoxControl.SelectedValue), configuration, property.Name, false, DataSourceUpdateMode.OnPropertyChanged);
 
