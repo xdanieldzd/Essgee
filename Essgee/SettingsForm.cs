@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Reflection;
+using System.IO;
 
 using Essgee.Emulation.Configuration;
 using Essgee.Emulation.Machines;
@@ -237,7 +238,13 @@ namespace Essgee
 			{
 				var (textBox, config, prop) = (ValueTuple<TextBox, IConfiguration, PropertyInfo>)(s as Control).Tag;
 
-				var openFileDialog = new OpenFileDialog() { Filter = fileBrowserAttrib.Filter };
+				var lastFile = (prop.GetValue(config) as string);
+				var openFileDialog = new OpenFileDialog()
+				{
+					Filter = fileBrowserAttrib.Filter,
+					FileName = Path.GetFileName(lastFile),
+					InitialDirectory = Path.GetDirectoryName(lastFile)
+				};
 				if (openFileDialog.ShowDialog() == DialogResult.OK)
 				{
 					prop.SetValue(config, openFileDialog.FileName);
@@ -245,15 +252,15 @@ namespace Essgee
 				}
 			};
 			browseButtonControl.MouseUp += (s, e) =>
-			{
-				if (e.Button == MouseButtons.Middle || e.Button == MouseButtons.Right)
 				{
-					var (textBox, config, prop) = (ValueTuple<TextBox, IConfiguration, PropertyInfo>)(s as Control).Tag;
+					if (e.Button == MouseButtons.Middle || e.Button == MouseButtons.Right)
+					{
+						var (textBox, config, prop) = (ValueTuple<TextBox, IConfiguration, PropertyInfo>)(s as Control).Tag;
 
-					prop.SetValue(config, string.Empty);
-					textBox.DataBindings[nameof(textBox.Text)].ReadValue();
-				}
-			};
+						prop.SetValue(config, string.Empty);
+						textBox.DataBindings[nameof(textBox.Text)].ReadValue();
+					}
+				};
 
 			return (new Control[] { labelControl, textBoxControl, browseButtonControl }, new int[] { 1, 1, 1 });
 		}
