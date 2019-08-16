@@ -316,8 +316,6 @@ namespace Essgee.Emulation.VDP
 
 		protected virtual void RenderLine(int y)
 		{
-			RenderBorders(y);
-
 			if (EnableOffScreen && y >= scanlineTopBlanking && y < scanlineTopBorder) SetLine(y, 0x10, 0x10, 0x10);
 			else if (y >= scanlineTopBorder && y < scanlineActiveDisplay)
 			{
@@ -345,6 +343,8 @@ namespace Essgee.Emulation.VDP
 					if (!isModeText)
 						RenderLineSprites(y);
 				}
+
+				RenderBorders(y);
 			}
 			else if (y >= scanlineBottomBorder && y < scanlineBottomBlanking)
 			{

@@ -236,7 +236,7 @@ namespace Essgee
 			if (lastGameMetadata == null)
 			{
 				var property = overrideConfig.GetType().GetProperty("UseBootstrap");
-				if (property != null)
+				if (property != null && (bool)property.GetValue(overrideConfig) != true)
 				{
 					property.SetValue(overrideConfig, true);
 					forcePowerOnWithoutCart = true;

@@ -11,6 +11,10 @@ namespace Essgee.Emulation.VDP
 	/* Sega 315-5124 (Mark III, SMS) and 315-5246 (SMS 2); we're actually implementing a mixture of the two right now... */
 	public class SegaSMSVDP : TMS99xxA
 	{
+		/* VDPDIFF: switch for Mk3/SMS1 vs SMS2/GG behavior; split into separate classes? */
+		protected enum VDPTypes { Mk3SMS1, SMS2GG }
+		protected const VDPTypes VDPType = VDPTypes.Mk3SMS1;
+
 		public const int NumActiveScanlinesLow = 192;
 		public const int NumActiveScanlinesMed = 224;
 		public const int NumActiveScanlinesHigh = 240;
@@ -442,8 +446,6 @@ namespace Essgee.Emulation.VDP
 			}
 			else if (y >= scanlineActiveDisplay && y < scanlineBottomBorder)
 			{
-				RenderBorders(y);
-
 				if (EnableBackgrounds)
 				{
 					if (isBitM4Set)
@@ -467,6 +469,8 @@ namespace Essgee.Emulation.VDP
 					else if (!isModeText && !isBitM4Set)
 						RenderLineSprites(y);
 				}
+
+				RenderBorders(y);
 			}
 			else if (y >= scanlineBottomBorder && y < scanlineBottomBlanking)
 			{
@@ -544,10 +548,10 @@ namespace Essgee.Emulation.VDP
 				int currentColumn = (((activeDisplayX - horizontalScrollFine) / 8) - horizontalScrollCoarse) & (numColumns - 1);
 				int currentRow = (((activeDisplayY + verticalScrollFine) / 8) + verticalScrollCoarse) % (nametableHeight / 8);
 
-				/* Mk3/SMS1 VDP only, adjust current row according to mask bit; http://www.smspower.org/Development/TilemapMirroring
+				/* VDPDIFF: Mk3/SMS1 VDP only, adjust current row according to mask bit; http://www.smspower.org/Development/TilemapMirroring
 				 * NOTE: Emulating this breaks 224/240-line mode games (ex. Fantastic Dizzy, Cosmic Spacehead, Micro Machines)?
-				 * TODO: Split class into VDP1 and VDP2 */
-				if (!isSMS224LineMode && !isSMS240LineMode)
+				 */
+				if (VDPType == VDPTypes.Mk3SMS1)
 					currentRow &= (((registers[0x02] & 0x01) << 4) | 0x0F);
 
 				/* Fetch data from nametable & extract properties */
@@ -681,11 +685,17 @@ namespace Essgee.Emulation.VDP
 			/* Determine sprite size & get zoomed sprites adjustment */
 			int zoomShift = (isZoomedSprites ? 1 : 0);
 			int spriteHeight = ((isLargeSprites ? 16 : 8) << zoomShift);
-			int spriteWidth = (8 << zoomShift);
 
-			foreach (var sprite in spriteBuffer[activeDisplayY])
+			for (int s = 0; s < spriteBuffer[activeDisplayY].Length; s++)
 			{
+				var sprite = spriteBuffer[activeDisplayY][s];
+
 				if (sprite.Number == -1) continue;
+
+				/* VDPDIFF: Mk3/SMS1 VDP zoomed sprites bug, only first four sprites (same as max sprites/line on TMS99xxA) can be zoomed horizontally
+				 * Zoom works normally on SMS2/GG */
+				int spriteWidth = (8 << zoomShift);
+				if (VDPType == VDPTypes.Mk3SMS1 && s >= NumSpritesPerLine) spriteWidth = 8;
 
 				if (!isDisplayBlanked)
 				{
