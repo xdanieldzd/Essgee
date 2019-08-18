@@ -111,7 +111,7 @@ namespace Essgee.Emulation
 			emulator.Startup();
 			emulator.Reset();
 
-			emulationThread = new Thread(ThreadMainLoop) { Name = "EssgeeEmulation", Priority = ThreadPriority.AboveNormal };
+			emulationThread = new Thread(ThreadMainLoop) { Name = "EssgeeEmulation", Priority = ThreadPriority.AboveNormal, IsBackground = true };
 			emulationThread.Start();
 		}
 

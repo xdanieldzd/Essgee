@@ -25,25 +25,25 @@ namespace Essgee.Emulation.Configuration
 		[FileBrowserControl("General", "Bootstrap Path", "Game Gear Bootstrap ROM (*.gg;*.zip)|*.gg;*.zip")]
 		public string BootstrapRom { get; set; }
 
-		[DropDownControl("Controls", "D-Pad Up", typeof(Keys))]
+		[DropDownControl("Controls", "D-Pad Up", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys ControlsUp { get; set; }
-		[DropDownControl("Controls", "D-Pad Down", typeof(Keys))]
+		[DropDownControl("Controls", "D-Pad Down", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys ControlsDown { get; set; }
-		[DropDownControl("Controls", "D-Pad Left", typeof(Keys))]
+		[DropDownControl("Controls", "D-Pad Left", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys ControlsLeft { get; set; }
-		[DropDownControl("Controls", "D-Pad Right", typeof(Keys))]
+		[DropDownControl("Controls", "D-Pad Right", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys ControlsRight { get; set; }
-		[DropDownControl("Controls", "Button 1", typeof(Keys))]
+		[DropDownControl("Controls", "Button 1", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys ControlsButton1 { get; set; }
-		[DropDownControl("Controls", "Button 2", typeof(Keys))]
+		[DropDownControl("Controls", "Button 2", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys ControlsButton2 { get; set; }
-		[DropDownControl("Controls", "Start", typeof(Keys))]
+		[DropDownControl("Controls", "Start", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys ControlsStart { get; set; }
 

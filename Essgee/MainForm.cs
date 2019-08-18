@@ -47,6 +47,9 @@ namespace Essgee
 		byte[] lastFramebufferData;
 		(int width, int height) lastFramebufferSize;
 
+		IMessageFilter altMessageFilter;
+		bool fullScreen;
+
 		List<Keys> keysDown;
 		MouseButtons mouseButtonsDown;
 		(int x, int y) mousePosition;
@@ -85,6 +88,9 @@ namespace Essgee
 			ResizeBegin += (s, e) => { SetTemporaryPause(true); };
 			ResizeEnd += (s, e) => { SetTemporaryPause(false); };
 			Move += (s, e) => { SetTemporaryPause(true); };
+
+			altMessageFilter = new AltKeyFilter();
+			fullScreen = false;
 
 			keysDown = new List<Keys>();
 		}
@@ -562,27 +568,53 @@ namespace Essgee
 
 		private void SizeAndPositionWindow()
 		{
+			SuspendLayout();
+
 			if (Program.Configuration.ScreenSize < 0 || Program.Configuration.ScreenSize > maxScreenSizeFactor)
 				Program.Configuration.ScreenSize = 1;
 
-			if (WindowState == FormWindowState.Maximized)
-				WindowState = FormWindowState.Normal;
-
-			ClientSize = new Size(
-				(int)((baseScreenSize * aspectRatio) * Program.Configuration.ScreenSize),
-				(int)(baseScreenSize * Program.Configuration.ScreenSize) + (menuStrip.Height + statusStrip.Height)
-				);
-
-			// https://stackoverflow.com/a/6837499
-			var screen = Screen.FromControl(this);
-			var workingArea = screen.WorkingArea;
-			Location = new Point()
+			if (!fullScreen)
 			{
-				X = Math.Max(workingArea.X, workingArea.X + (workingArea.Width - Width) / 2),
-				Y = Math.Max(workingArea.Y, workingArea.Y + (workingArea.Height - Height) / 2)
-			};
+				if (WindowState == FormWindowState.Maximized)
+					WindowState = FormWindowState.Normal;
 
-			SetTemporaryPause(false);
+				FormBorderStyle = FormBorderStyle.Sizable;
+				TopMost = false;
+
+				menuStrip.Visible = statusStrip.Visible = true;
+				menuStrip.Enabled = statusStrip.Enabled = true;
+
+				ClientSize = new Size(
+					(int)((baseScreenSize * aspectRatio) * Program.Configuration.ScreenSize),
+					(int)(baseScreenSize * Program.Configuration.ScreenSize) + (menuStrip.Height + statusStrip.Height)
+					);
+
+				// https://stackoverflow.com/a/6837499
+				var screen = Screen.FromControl(this);
+				var workingArea = screen.WorkingArea;
+				Location = new Point()
+				{
+					X = Math.Max(workingArea.X, workingArea.X + (workingArea.Width - Width) / 2),
+					Y = Math.Max(workingArea.Y, workingArea.Y + (workingArea.Height - Height) / 2)
+				};
+
+				SetTemporaryPause(false);
+				Application.RemoveMessageFilter(altMessageFilter);
+			}
+			else
+			{
+				FormBorderStyle = FormBorderStyle.None;
+				Bounds = Screen.FromControl(this).Bounds;
+				TopMost = true;
+
+				menuStrip.Visible = statusStrip.Visible = false;
+				menuStrip.Enabled = statusStrip.Enabled = false;
+
+				SetTemporaryPause(false);
+				Application.AddMessageFilter(altMessageFilter);
+			}
+
+			ResumeLayout();
 		}
 
 		private void MainForm_Shown(object sender, EventArgs e)
@@ -603,6 +635,15 @@ namespace Essgee
 		{
 			if (!keysDown.Contains(e.KeyCode))
 				keysDown.Add(e.KeyCode);
+
+			if (e.KeyData == Keys.F11 && emulatorHandler != null)
+			{
+				fullScreen = !fullScreen;
+				SizeAndPositionWindow();
+
+				var stateString = (fullScreen ? "enabled" : "disabled");
+				onScreenDisplayHandler.EnqueueMessage($"Fullscreen {stateString}.");
+			}
 		}
 
 		private void renderControl_KeyUp(object sender, KeyEventArgs e)

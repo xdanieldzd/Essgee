@@ -332,7 +332,7 @@ namespace Essgee
 				cache[dictHash] = Values = dictionary.ToList();
 		}
 
-		public DropDownControlAttribute(string category, string label, Type valueType) : base(category, label)
+		public DropDownControlAttribute(string category, string label, Type valueType, params object[] ignoredValues) : base(category, label)
 		{
 			if (cache.ContainsKey(valueType.FullName))
 				Values = cache[valueType.FullName];
@@ -341,8 +341,8 @@ namespace Essgee
 				var dict = new Dictionary<string, object>();
 				foreach (var value in Enum.GetValues(valueType))
 				{
-					var ignore = value.GetType().GetField(value.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored;
-					if (ignore ?? false) continue;
+					if (value.GetType().GetField(value.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored ?? false) continue;
+					if (ignoredValues?.Contains(value) ?? false) continue;
 
 					var key = value.GetType().GetField(value.ToString())?.GetAttribute<DescriptionAttribute>()?.Description ?? value.ToString();
 					if (!dict.ContainsKey(key)) dict.Add(key, value);

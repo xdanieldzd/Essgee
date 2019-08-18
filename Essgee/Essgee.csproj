@@ -71,6 +71,7 @@
     <Compile Include="Emulation\PSG\IPSG.cs" />
     <Compile Include="Emulation\VDP\IVDP.cs" />
     <Compile Include="EventArguments\SendLogMessageEventArgs.cs" />
+    <Compile Include="Utilities\AltKeyFilter.cs" />
     <Compile Include="Utilities\BindableToolStripMenuItem.cs">
       <SubType>Component</SubType>
     </Compile>

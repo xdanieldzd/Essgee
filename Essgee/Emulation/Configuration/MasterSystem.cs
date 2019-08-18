@@ -28,54 +28,54 @@ namespace Essgee.Emulation.Configuration
 		[FileBrowserControl("General", "Bootstrap Path", "SMS Bootstrap ROM (*.sms;*.zip)|*.sms;*.zip")]
 		public string BootstrapRom { get; set; }
 
-		[DropDownControl("General", "Pause Button", typeof(Keys))]
+		[DropDownControl("General", "Pause Button", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys InputPause { get; set; }
-		[DropDownControl("General", "Reset Button", typeof(Keys))]
+		[DropDownControl("General", "Reset Button", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys InputReset { get; set; }
 
 		[DropDownControl("Controller Port 1", "Device Type", typeof(InputDevice))]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public InputDevice Joypad1DeviceType { get; set; }
-		[DropDownControl("Controller Port 1", "D-Pad Up", typeof(Keys))]
+		[DropDownControl("Controller Port 1", "D-Pad Up", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad1Up { get; set; }
-		[DropDownControl("Controller Port 1", "D-Pad Down", typeof(Keys))]
+		[DropDownControl("Controller Port 1", "D-Pad Down", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad1Down { get; set; }
-		[DropDownControl("Controller Port 1", "D-Pad Left", typeof(Keys))]
+		[DropDownControl("Controller Port 1", "D-Pad Left", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad1Left { get; set; }
-		[DropDownControl("Controller Port 1", "D-Pad Right", typeof(Keys))]
+		[DropDownControl("Controller Port 1", "D-Pad Right", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad1Right { get; set; }
-		[DropDownControl("Controller Port 1", "Button 1", typeof(Keys))]
+		[DropDownControl("Controller Port 1", "Button 1", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad1Button1 { get; set; }
-		[DropDownControl("Controller Port 1", "Button 2", typeof(Keys))]
+		[DropDownControl("Controller Port 1", "Button 2", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad1Button2 { get; set; }
 
 		[DropDownControl("Controller Port 2", "Device Type", typeof(InputDevice))]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public InputDevice Joypad2DeviceType { get; set; }
-		[DropDownControl("Controller Port 2", "D-Pad Up", typeof(Keys))]
+		[DropDownControl("Controller Port 2", "D-Pad Up", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad2Up { get; set; }
-		[DropDownControl("Controller Port 2", "D-Pad Down", typeof(Keys))]
+		[DropDownControl("Controller Port 2", "D-Pad Down", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad2Down { get; set; }
-		[DropDownControl("Controller Port 2", "D-Pad Left", typeof(Keys))]
+		[DropDownControl("Controller Port 2", "D-Pad Left", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad2Left { get; set; }
-		[DropDownControl("Controller Port 2", "D-Pad Right", typeof(Keys))]
+		[DropDownControl("Controller Port 2", "D-Pad Right", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad2Right { get; set; }
-		[DropDownControl("Controller Port 2", "Button 1", typeof(Keys))]
+		[DropDownControl("Controller Port 2", "Button 1", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad2Button1 { get; set; }
-		[DropDownControl("Controller Port 2", "Button 2", typeof(Keys))]
+		[DropDownControl("Controller Port 2", "Button 2", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad2Button2 { get; set; }
 
