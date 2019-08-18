@@ -30,6 +30,22 @@ namespace Essgee
 		readonly static double aspectRatio = (4.0 / 3.0);
 		readonly static int maxScreenSizeFactor = 3;
 
+		// https://stackoverflow.com/a/21319086
+		private bool cursorShown = true;
+		public bool CursorShown
+		{
+			get { return cursorShown; }
+			set
+			{
+				if (value == cursorShown) return;
+
+				if (value) Cursor.Show();
+				else Cursor.Hide();
+
+				cursorShown = value;
+			}
+		}
+
 		OnScreenDisplayHandler onScreenDisplayHandler;
 
 		GraphicsHandler graphicsHandler;
@@ -584,6 +600,8 @@ namespace Essgee
 				menuStrip.Visible = statusStrip.Visible = true;
 				menuStrip.Enabled = statusStrip.Enabled = true;
 
+				CursorShown = true;
+
 				ClientSize = new Size(
 					(int)((baseScreenSize * aspectRatio) * Program.Configuration.ScreenSize),
 					(int)(baseScreenSize * Program.Configuration.ScreenSize) + (menuStrip.Height + statusStrip.Height)
@@ -609,6 +627,8 @@ namespace Essgee
 
 				menuStrip.Visible = statusStrip.Visible = false;
 				menuStrip.Enabled = statusStrip.Enabled = false;
+
+				CursorShown = false;
 
 				SetTemporaryPause(false);
 				Application.AddMessageFilter(altMessageFilter);
