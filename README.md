@@ -17,6 +17,8 @@ Emulator settings can be changed via the __Options__ menu, each option should be
 
 The emulation can be controlled via the __Emulation__ menu. Once a game is running, it can be paused, reset or stopped from there. This menu also contains the __Power On__ submenu, which allows powering up a system with no cartridge inserted, if a bootstrap ROM image is selected. Systems that do not contain a bootstrap ROM cannot be booted like this.
 
+Fullscreen mode can be toggled via the __F11__ key. This is currently hardcoded and thus cannot be configured.
+
 Certain ROMs have configuration overrides, stored in the file `Assets\MetadataDatabase.json`, which are automatically applied when loading such a file. These include, for example, specific mappers (ex. for Codemasters games), region and TV standard overrides, and RAM size settings. These games might otherwise not work or misbehave, hence the need for this file. They're not game-specific hacks, but rather workaround for when the game won't work with ex. the default TV standard specified in the settings, because it was made for 50 Hz PAL systems and does not run correctly at 60 Hz.
 
 The shader __Basic__ is integrated into the emulator, while the others are stored in the `Assets\Shaders` directory. Essgee's shader system is comparatively limited in features and not compatible with shaders from other emulators.
