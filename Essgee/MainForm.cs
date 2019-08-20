@@ -91,6 +91,8 @@ namespace Essgee
 			limitFPSToolStripMenuItem.DataBindings.Add(nameof(limitFPSToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.LimitFps), false, DataSourceUpdateMode.OnPropertyChanged);
 			limitFPSToolStripMenuItem.CheckedChanged += (s, e) => { emulatorHandler?.SetFpsLimiting(Program.Configuration.LimitFps); };
 
+			showFPSToolStripMenuItem.DataBindings.Add(nameof(showFPSToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.ShowFps), false, DataSourceUpdateMode.OnPropertyChanged);
+
 			muteToolStripMenuItem.DataBindings.Add(nameof(muteToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.Mute), false, DataSourceUpdateMode.OnPropertyChanged);
 			muteToolStripMenuItem.CheckedChanged += (s, e) => { soundHandler?.SetMute(Program.Configuration.Mute); };
 
@@ -694,7 +696,8 @@ namespace Essgee
 
 			if (emulatorHandler != null)
 			{
-				onScreenDisplayHandler.SendString($"{emulatorHandler.FramesPerSecond} FPS", -8, -8);
+				if (Program.Configuration.ShowFps)
+					onScreenDisplayHandler.SendString($"{emulatorHandler.FramesPerSecond} FPS", -8, -8);
 
 				var debugInfos = emulatorHandler.GetDebugInformation();
 				DrawInputDisplay(debugInfos);

@@ -46,7 +46,10 @@
 			this.powerOnToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.limitFPSToolStripMenuItem = new Essgee.Utilities.BindableToolStripMenuItem();
+			this.showFPSToolStripMenuItem = new Essgee.Utilities.BindableToolStripMenuItem();
 			this.muteToolStripMenuItem = new Essgee.Utilities.BindableToolStripMenuItem();
+			this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
+			this.showLayersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
 			this.screenSizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.sizeModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -60,8 +63,6 @@
 			this.tsslEmulationStatus = new System.Windows.Forms.ToolStripStatusLabel();
 			this.ofdOpenROM = new System.Windows.Forms.OpenFileDialog();
 			this.renderControl = new Essgee.Graphics.RenderControl();
-			this.showLayersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
 			this.menuStrip.SuspendLayout();
 			this.statusStrip.SuspendLayout();
 			this.SuspendLayout();
@@ -153,14 +154,14 @@
 			this.pauseToolStripMenuItem.CheckOnClick = true;
 			this.pauseToolStripMenuItem.Enabled = false;
 			this.pauseToolStripMenuItem.Name = "pauseToolStripMenuItem";
-			this.pauseToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.pauseToolStripMenuItem.Size = new System.Drawing.Size(135, 22);
 			this.pauseToolStripMenuItem.Text = "&Pause";
 			// 
 			// resetToolStripMenuItem
 			// 
 			this.resetToolStripMenuItem.Enabled = false;
 			this.resetToolStripMenuItem.Name = "resetToolStripMenuItem";
-			this.resetToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.resetToolStripMenuItem.Size = new System.Drawing.Size(135, 22);
 			this.resetToolStripMenuItem.Text = "&Reset";
 			this.resetToolStripMenuItem.Click += new System.EventHandler(this.resetToolStripMenuItem_Click);
 			// 
@@ -168,19 +169,19 @@
 			// 
 			this.stopToolStripMenuItem.Enabled = false;
 			this.stopToolStripMenuItem.Name = "stopToolStripMenuItem";
-			this.stopToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.stopToolStripMenuItem.Size = new System.Drawing.Size(135, 22);
 			this.stopToolStripMenuItem.Text = "&Stop";
 			this.stopToolStripMenuItem.Click += new System.EventHandler(this.stopToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem4
 			// 
 			this.toolStripMenuItem4.Name = "toolStripMenuItem4";
-			this.toolStripMenuItem4.Size = new System.Drawing.Size(177, 6);
+			this.toolStripMenuItem4.Size = new System.Drawing.Size(132, 6);
 			// 
 			// powerOnToolStripMenuItem
 			// 
 			this.powerOnToolStripMenuItem.Name = "powerOnToolStripMenuItem";
-			this.powerOnToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.powerOnToolStripMenuItem.Size = new System.Drawing.Size(135, 22);
 			this.powerOnToolStripMenuItem.Text = "&Power On...";
 			// 
 			// optionsToolStripMenuItem
@@ -188,6 +189,7 @@
 			this.optionsToolStripMenuItem.CheckOnClick = true;
 			this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.limitFPSToolStripMenuItem,
+            this.showFPSToolStripMenuItem,
             this.muteToolStripMenuItem,
             this.toolStripMenuItem7,
             this.showLayersToolStripMenuItem,
@@ -208,12 +210,30 @@
 			this.limitFPSToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.limitFPSToolStripMenuItem.Text = "Limit &FPS";
 			// 
+			// showFPSToolStripMenuItem
+			// 
+			this.showFPSToolStripMenuItem.CheckOnClick = true;
+			this.showFPSToolStripMenuItem.Name = "showFPSToolStripMenuItem";
+			this.showFPSToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.showFPSToolStripMenuItem.Text = "Show F&PS";
+			// 
 			// muteToolStripMenuItem
 			// 
 			this.muteToolStripMenuItem.CheckOnClick = true;
 			this.muteToolStripMenuItem.Name = "muteToolStripMenuItem";
 			this.muteToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.muteToolStripMenuItem.Text = "&Mute";
+			// 
+			// toolStripMenuItem7
+			// 
+			this.toolStripMenuItem7.Name = "toolStripMenuItem7";
+			this.toolStripMenuItem7.Size = new System.Drawing.Size(177, 6);
+			// 
+			// showLayersToolStripMenuItem
+			// 
+			this.showLayersToolStripMenuItem.Name = "showLayersToolStripMenuItem";
+			this.showLayersToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.showLayersToolStripMenuItem.Text = "Show &Layers...";
 			// 
 			// toolStripMenuItem3
 			// 
@@ -308,17 +328,6 @@
 			this.renderControl.MouseUp += new System.Windows.Forms.MouseEventHandler(this.renderControl_MouseUp);
 			this.renderControl.Resize += new System.EventHandler(this.renderControl_Resize);
 			// 
-			// showLayersToolStripMenuItem
-			// 
-			this.showLayersToolStripMenuItem.Name = "showLayersToolStripMenuItem";
-			this.showLayersToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-			this.showLayersToolStripMenuItem.Text = "Show &Layers...";
-			// 
-			// toolStripMenuItem7
-			// 
-			this.toolStripMenuItem7.Name = "toolStripMenuItem7";
-			this.toolStripMenuItem7.Size = new System.Drawing.Size(177, 6);
-			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -376,5 +385,6 @@
 		private System.Windows.Forms.ToolStripMenuItem stopToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem7;
 		private System.Windows.Forms.ToolStripMenuItem showLayersToolStripMenuItem;
+		private Essgee.Utilities.BindableToolStripMenuItem showFPSToolStripMenuItem;
 	}
 }

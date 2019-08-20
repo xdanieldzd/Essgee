@@ -20,6 +20,7 @@ namespace Essgee
 		public const string DefaultShaderName = "Basic";
 
 		public bool LimitFps { get; set; }
+		public bool ShowFps { get; set; }
 		public bool Mute { get; set; }
 		public float Volume { get; set; }
 		public int ScreenSize { get; set; }
@@ -35,6 +36,7 @@ namespace Essgee
 		public Configuration()
 		{
 			LimitFps = true;
+			ShowFps = false;
 			Mute = false;
 			Volume = 1.0f;
 			ScreenSize = 2;
