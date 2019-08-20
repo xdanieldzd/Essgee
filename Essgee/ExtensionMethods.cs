@@ -16,14 +16,6 @@ namespace Essgee
 {
 	public static class ExtensionMethods
 	{
-		readonly static Dictionary<string, Type> fileExtensionSystemDictionary = new Dictionary<string, Type>()
-		{
-			{ ".sg", typeof(SG1000) },
-			{ ".sc", typeof(SC3000) },
-			{ ".sms", typeof(MasterSystem) },
-			{ ".gg", typeof(GameGear) }
-		};
-
 		public static T GetAttribute<T>(this ICustomAttributeProvider assembly, bool inherit = false) where T : Attribute
 		{
 			return assembly.GetCustomAttributes(typeof(T), inherit).OfType<T>().FirstOrDefault();
@@ -53,48 +45,6 @@ namespace Essgee
 		public static T DeserializeObject<T>(this string jsonString)
 		{
 			return (T)JsonConvert.DeserializeObject(jsonString, typeof(T), new JsonSerializerSettings() { Formatting = Formatting.Indented });
-		}
-
-		public static (Type, byte[]) TryLoadCartridge(this string fileName)
-		{
-			Type machineType = null;
-
-			byte[] romData = null;
-
-			var fileExtension = Path.GetExtension(fileName);
-			if (fileExtension == ".zip")
-			{
-				using (var zip = ZipFile.Open(fileName, ZipArchiveMode.Read))
-				{
-					foreach (var entry in zip.Entries)
-					{
-						var entryExtension = Path.GetExtension(entry.Name);
-						if (fileExtensionSystemDictionary.ContainsKey(entryExtension))
-						{
-							machineType = fileExtensionSystemDictionary[entryExtension];
-							using (var stream = entry.Open())
-							{
-								romData = new byte[entry.Length];
-								stream.Read(romData, 0, romData.Length);
-							}
-							break;
-						}
-					}
-				}
-			}
-			else if (fileExtensionSystemDictionary.ContainsKey(fileExtension))
-			{
-				machineType = fileExtensionSystemDictionary[fileExtension];
-				romData = File.ReadAllBytes(fileName);
-			}
-
-			if (machineType == null)
-				throw new Exception("File not recognized");
-
-			if (romData == null)
-				throw new Exception("File failed to load");
-
-			return (machineType, romData);
 		}
 
 		public static bool IsEmbeddedResourceAvailable(this Assembly assembly, string resourceName)

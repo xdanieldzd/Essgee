@@ -61,6 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Emulation\CartridgeLoader.cs" />
     <Compile Include="Emulation\Cartridges\KoreanMapperCartridge.cs" />
     <Compile Include="Emulation\Cartridges\KoreanMSX8kMapperCartridge.cs" />
     <Compile Include="Emulation\Cartridges\KoreanSpriteMapperCartridge.cs" />

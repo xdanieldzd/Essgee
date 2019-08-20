@@ -224,7 +224,7 @@ namespace Essgee
 
 		private void LoadAndRunCartridge(string fileName)
 		{
-			var (machineType, romData) = fileName.TryLoadCartridge();
+			var (machineType, romData) = CartridgeLoader.Load(fileName);
 
 			InitializeEmulation(machineType);
 
