@@ -4,6 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using System.Reflection;
+
+using Essgee.Emulation.Configuration;
 
 namespace Essgee
 {
@@ -50,6 +53,12 @@ namespace Essgee
 			{
 				Configuration = new Configuration();
 				Configuration.SerializeToFile(programConfigPath);
+			}
+
+			foreach (var machineConfigType in Assembly.GetExecutingAssembly().GetTypes().Where(x => typeof(IConfiguration).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract))
+			{
+				if (!Configuration.Machines.ContainsKey(machineConfigType.Name))
+					Configuration.Machines.Add(machineConfigType.Name, (IConfiguration)Activator.CreateInstance(machineConfigType));
 			}
 		}
 

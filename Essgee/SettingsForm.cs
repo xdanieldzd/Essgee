@@ -242,8 +242,8 @@ namespace Essgee
 				var openFileDialog = new OpenFileDialog()
 				{
 					Filter = fileBrowserAttrib.Filter,
-					FileName = Path.GetFileName(lastFile),
-					InitialDirectory = Path.GetDirectoryName(lastFile)
+					FileName = (lastFile != string.Empty ? Path.GetFileName(lastFile) : string.Empty),
+					InitialDirectory = (lastFile != string.Empty ? Path.GetDirectoryName(lastFile) : string.Empty)
 				};
 				if (openFileDialog.ShowDialog() == DialogResult.OK)
 				{

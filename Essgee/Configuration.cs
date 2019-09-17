@@ -8,7 +8,6 @@ using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-using Essgee.Emulation;
 using Essgee.Emulation.Configuration;
 using Essgee.Utilities;
 
@@ -46,8 +45,6 @@ namespace Essgee
 			RecentFiles = new List<string>(RecentFilesCapacity);
 
 			Machines = new Dictionary<string, IConfiguration>();
-			foreach (var machineConfigType in Assembly.GetExecutingAssembly().GetTypes().Where(x => typeof(IConfiguration).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract))
-				Machines.Add(machineConfigType.Name, (IConfiguration)Activator.CreateInstance(machineConfigType));
 		}
 	}
 }
