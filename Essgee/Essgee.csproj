@@ -12,6 +12,8 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -61,6 +63,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BuildInformation.cs" />
+    <None Include="BuildInformationTemplate.cs" />
     <Compile Include="Emulation\CartridgeLoader.cs" />
     <Compile Include="Emulation\Cartridges\ColecoCartridge.cs" />
     <Compile Include="Emulation\Cartridges\KoreanMapperCartridge.cs" />
@@ -208,7 +212,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="OpenTK.dll.config" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -224,4 +230,47 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions />
+  <Import Project="..\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets" Condition="Exists('..\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>Dieses Projekt verweist auf mindestens ein NuGet-Paket, das auf diesem Computer fehlt. Verwenden Sie die Wiederherstellung von NuGet-Paketen, um die fehlenden Dateien herunterzuladen. Weitere Informationen finden Sie unter "http://go.microsoft.com/fwlink/?LinkID=322105". Die fehlende Datei ist "{0}".</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets'))" />
+  </Target>
+  <Target Name="BeforeBuild">
+    <Copy SourceFiles="$(ProjectDir)\BuildInformationTemplate.cs" DestinationFiles="$(ProjectDir)\GeneratedBuildInformation.cs" />
+    <PropertyGroup>
+      <CurrentDate>$([System.DateTime]::UtcNow.Ticks)</CurrentDate>
+      <BuildMachineProcessorArchitecture>$(registry:HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment@PROCESSOR_ARCHITECTURE)</BuildMachineProcessorArchitecture>
+    </PropertyGroup>
+    <Computer>
+      <Output TaskParameter="Name" PropertyName="BuildMachineName" />
+      <Output TaskParameter="OSPlatform" PropertyName="BuildMachineOSPlatform" />
+      <Output TaskParameter="OSVersion" PropertyName="BuildMachineOSVersion" />
+    </Computer>
+    <GitVersion LocalPath="$(ProjectDir)">
+      <Output TaskParameter="CommitHash" PropertyName="LatestCommitHash" />
+    </GitVersion>
+    <GitBranch LocalPath="$(ProjectDir)">
+      <Output TaskParameter="Branch" PropertyName="GitBranch" />
+    </GitBranch>
+    <GitPendingChanges LocalPath="$(ProjectDir)">
+      <Output TaskParameter="HasPendingChanges" PropertyName="GitPendingChanges" />
+    </GitPendingChanges>
+    <FileUpdate Files="$(ProjectDir)\GeneratedBuildInformation.cs" Regex="(BuildDate[&quot;, ]*)([^;]*)([)])" ReplacementText="$1new DateTime($(CurrentDate))$3" />
+    <FileUpdate Files="$(ProjectDir)\GeneratedBuildInformation.cs" Regex="(BuildTimeZone[&quot;, ]*)([^;]*)([)])" ReplacementText="$1TimeZoneInfo.Local$3" />
+    <FileUpdate Files="$(ProjectDir)\GeneratedBuildInformation.cs" Regex="(GitPendingChanges[&quot;, ]*)([^;]*)([)])" ReplacementText="$1bool.Parse(&quot;$(GitPendingChanges)&quot;)$3" />
+    <FileUpdate Files="$(ProjectDir)\GeneratedBuildInformation.cs" Regex="(GitBranch[&quot;, ]*)([^;]*)([)])" ReplacementText="$1&quot;$(GitBranch)&quot;$3" />
+    <FileUpdate Files="$(ProjectDir)\GeneratedBuildInformation.cs" Regex="(LatestCommitHash[&quot;, ]*)([^;]*)([)])" ReplacementText="$1&quot;$(LatestCommitHash)&quot;$3" />
+    <FileUpdate Files="$(ProjectDir)\GeneratedBuildInformation.cs" Regex="(BuildMachineName[&quot;, ]*)([^;]*)([)])" ReplacementText="$1&quot;$(BuildMachineName)&quot;$3" />
+    <FileUpdate Files="$(ProjectDir)\GeneratedBuildInformation.cs" Regex="(BuildMachineOSPlatform[&quot;, ]*)([^;]*)([)])" ReplacementText="$1&quot;$(BuildMachineOSPlatform)&quot;$3" />
+    <FileUpdate Files="$(ProjectDir)\GeneratedBuildInformation.cs" Regex="(BuildMachineOSVersion[&quot;, ]*)([^;]*)([)])" ReplacementText="$1&quot;$(BuildMachineOSVersion)&quot;$3" />
+    <FileUpdate Files="$(ProjectDir)\GeneratedBuildInformation.cs" Regex="(BuildMachineProcessorArchitecture[&quot;, ]*)([^;]*)([)])" ReplacementText="$1&quot;$(BuildMachineProcessorArchitecture)&quot;$3" />
+    <ItemGroup>
+      <Compile Include="$(ProjectDir)\GeneratedBuildInformation.cs" />
+    </ItemGroup>
+  </Target>
+  <Target Name="AfterBuild">
+    <Delete Files="$(ProjectDir)\GeneratedBuildInformation.cs" />
+  </Target>
 </Project>

@@ -11,6 +11,7 @@ using System.IO;
 using System.Reflection;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Globalization;
 
 using OpenTK.Graphics.OpenGL;
 
@@ -29,6 +30,9 @@ namespace Essgee
 		readonly static double baseScreenSize = 240.0;
 		readonly static double aspectRatio = (4.0 / 3.0);
 		readonly static int maxScreenSizeFactor = 3;
+
+		readonly static string buildName = $"{BuildInformation.Properties["GitBranch"]}-{BuildInformation.Properties["LatestCommitHash"]}{(BuildInformation.Properties["GitPendingChanges"] ? "-dirty" : string.Empty)}";
+		readonly static string buildMachineInfo = $"{BuildInformation.Properties["BuildMachineName"]} ({BuildInformation.Properties["BuildMachineProcessorArchitecture"]}, {BuildInformation.Properties["BuildMachineOSPlatform"]} v{BuildInformation.Properties["BuildMachineOSVersion"]})";
 
 		// https://stackoverflow.com/a/21319086
 		private bool cursorShown = true;
@@ -557,6 +561,7 @@ namespace Essgee
 			var version = new Version(Application.ProductVersion);
 			var versionMinor = (version.Minor != 0 ? $".{version.Minor}" : string.Empty);
 			titleStringBuilder.Append($"{Application.ProductName} v{version.Major:D3}{versionMinor}");
+			titleStringBuilder.Append($" ({buildName})");
 
 			if (emulatorHandler != null)
 			{
@@ -887,7 +892,19 @@ namespace Essgee
 			var version = new Version(Application.ProductVersion);
 			var versionMinor = (version.Minor != 0 ? $".{version.Minor}" : string.Empty);
 
-			MessageBox.Show($"{Application.ProductName} v{version.Major:D3}{versionMinor} - {description}\n\n{copyright.Replace(" - ", Environment.NewLine)}", $"About {Application.ProductName}", MessageBoxButtons.OK, MessageBoxIcon.Information);
+			var buildTimeZone = (TimeZoneInfo)BuildInformation.Properties["BuildTimeZone"];
+			var buildDateTime = TimeZoneInfo.ConvertTimeFromUtc((DateTime)BuildInformation.Properties["BuildDate"], buildTimeZone);
+			var buildTimeOffset = buildTimeZone.GetUtcOffset(buildDateTime);
+			var buildDateTimeString = $"{buildDateTime} (UTC{(buildTimeOffset >= TimeSpan.Zero ? "+" : "-")}{Math.Abs(buildTimeOffset.Hours):D2}:{Math.Abs(buildTimeOffset.Minutes):D2})";
+
+			var aboutBuilder = new StringBuilder();
+			aboutBuilder.AppendLine($"{Application.ProductName} v{version.Major:D3}{versionMinor} ({buildName}) - {CultureInfo.CurrentCulture.TextInfo.ToTitleCase(description)}");
+			aboutBuilder.AppendLine();
+			aboutBuilder.AppendLine($"{copyright}");
+			aboutBuilder.AppendLine();
+			aboutBuilder.AppendLine($"{buildDateTimeString} on {buildMachineInfo}");
+
+			MessageBox.Show(aboutBuilder.ToString(), $"About {Application.ProductName}", MessageBoxButtons.OK, MessageBoxIcon.Information);
 		}
 	}
 }
