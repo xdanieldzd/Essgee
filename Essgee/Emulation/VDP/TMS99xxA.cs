@@ -331,7 +331,7 @@ namespace Essgee.Emulation.VDP
 					else if (isModeGraphics2)
 						RenderLineGraphics2Background(y);
 					else if (isModeMulticolor)
-						throw new Exception("TMS99xxA: Multicolor screenmode not implemented");
+						RenderLineMulticolorBackground(y);
 					else if (isModeText)
 						RenderLineTextBackground(y);
 				}
@@ -509,6 +509,49 @@ namespace Essgee.Emulation.VDP
 					{
 						SetPixel(y, x, c);
 						SetScreenUsageFlag(y, x, screenUsageBackground);
+					}
+				}
+			}
+		}
+
+		protected void RenderLineMulticolorBackground(int y)
+		{
+			// TODO: check accuracy w/ games besides Smurfs Paint & Play Workshop (if there are any)
+
+			/* Determine coordinates in active display */
+			int activeDisplayY = (y - scanlineActiveDisplay);
+
+			int numColumns = 32;
+			int row = (activeDisplayY / 8);
+			ushort patternGeneratorBaseAddress = (ushort)((registers[0x04] & 0x07) << 11);
+
+			for (int column = 0; column < numColumns; column++)
+			{
+				/* Calculate nametable address, fetch character number */
+				ushort nametableAddress = (ushort)(nametableBaseAddress + (row * numColumns) + column);
+				byte characterNumber = ReadVram(nametableAddress);
+
+				/* Calculate pattern generator address, fetch pattern data */
+				ushort patternGeneratorAddress = (ushort)(patternGeneratorBaseAddress + (characterNumber * 8) + ((row & 0x03) * 2) + ((activeDisplayY / 4) % 2));
+				byte patternData = ReadVram(patternGeneratorAddress);
+
+				for (int block = 0; block < 8; block += 4)
+				{
+					/* Fetch color index for current 4x4 block */
+					byte c = (byte)((patternData >> (4 - block)) & 0x0F);
+
+					/* Color index 0 is transparent, use background color */
+					if (c == 0 || isDisplayBlanked) c = backgroundColor;
+
+					for (int pixel = 0; pixel < 4; pixel++)
+					{
+						/* Record screen usage, write to framebuffer */
+						int x = pixelActiveDisplay + (column * 8) + (block + pixel);
+						if (GetScreenUsageFlag(y, x) == screenUsageEmpty)
+						{
+							SetPixel(y, x, c);
+							SetScreenUsageFlag(y, x, screenUsageBackground);
+						}
 					}
 				}
 			}
