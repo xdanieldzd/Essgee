@@ -561,7 +561,9 @@ namespace Essgee
 			var version = new Version(Application.ProductVersion);
 			var versionMinor = (version.Minor != 0 ? $".{version.Minor}" : string.Empty);
 			titleStringBuilder.Append($"{Application.ProductName} v{version.Major:D3}{versionMinor}");
+#if DEBUG
 			titleStringBuilder.Append($" ({buildName})");
+#endif
 
 			if (emulatorHandler != null)
 			{
@@ -869,7 +871,11 @@ namespace Essgee
 
 				var bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, bitmap.PixelFormat);
 				var dataSize = Math.Min(bitmapData.Stride * bitmapData.Height, lastFramebufferData.Length);
-				Marshal.Copy(lastFramebufferData, 0, bitmapData.Scan0, dataSize);
+				for (int i = 0, j = 0; i < dataSize; i += 3, j += 4)
+				{
+					Marshal.Copy(lastFramebufferData, i, bitmapData.Scan0 + j, 3);
+					Marshal.WriteByte(bitmapData.Scan0 + j + 3, 0xFF);
+				}
 				bitmap.UnlockBits(bitmapData);
 
 				using (var croppedBitmap = new Bitmap(currentViewport.width, currentViewport.height))
