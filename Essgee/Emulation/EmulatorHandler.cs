@@ -16,6 +16,8 @@ namespace Essgee.Emulation
 {
 	public class EmulatorHandler
 	{
+		readonly Action<Exception> exceptionHandler;
+
 		IMachine emulator;
 
 		Thread emulationThread;
@@ -82,8 +84,10 @@ namespace Essgee.Emulation
 
 		public (string Manufacturer, string Model, string DatFileName) Information => (emulator.ManufacturerName, emulator.ModelName, emulator.DatFilename);
 
-		public EmulatorHandler(Type type)
+		public EmulatorHandler(Type type, Action<Exception> exceptionHandler = null)
 		{
+			this.exceptionHandler = exceptionHandler;
+
 			emulator = (IMachine)Activator.CreateInstance(type);
 		}
 
@@ -192,59 +196,67 @@ namespace Essgee.Emulation
 			var frameCounter = 0;
 			var sampleTimespan = TimeSpan.FromSeconds(0.5);
 
-			while (true)
+			try
 			{
-				if (!emulationThreadRunning)
-					break;
-
-				var refreshRate = emulator.RefreshRate;
-				var targetElapsedTime = TimeSpan.FromTicks((long)Math.Round(TimeSpan.TicksPerSecond / refreshRate));
-
-				var startTime = stopWatch.Elapsed;
-
-				if (!emulationThreadPaused)
+				while (true)
 				{
-					if (limitFps)
+					if (!emulationThreadRunning)
+						break;
+
+					var refreshRate = emulator.RefreshRate;
+					var targetElapsedTime = TimeSpan.FromTicks((long)Math.Round(TimeSpan.TicksPerSecond / refreshRate));
+
+					var startTime = stopWatch.Elapsed;
+
+					if (!emulationThreadPaused)
 					{
-						var elapsedTime = (startTime - lastStartTime);
-						lastStartTime = startTime;
-
-						if (elapsedTime < targetElapsedTime)
+						if (limitFps)
 						{
-							accumulatedTime += elapsedTime;
+							var elapsedTime = (startTime - lastStartTime);
+							lastStartTime = startTime;
 
-							while (accumulatedTime >= targetElapsedTime)
+							if (elapsedTime < targetElapsedTime)
 							{
-								emulator.RunFrame();
-								frameCounter++;
+								accumulatedTime += elapsedTime;
 
-								accumulatedTime -= targetElapsedTime;
+								while (accumulatedTime >= targetElapsedTime)
+								{
+									emulator.RunFrame();
+									frameCounter++;
+
+									accumulatedTime -= targetElapsedTime;
+								}
 							}
+						}
+						else
+						{
+							emulator.RunFrame();
+							frameCounter++;
+						}
+
+						if ((stopWatch.Elapsed - lastEndTime) >= sampleTimespan)
+						{
+							FramesPerSecond = (int)((frameCounter * 1000.0) / sampleTimespan.TotalMilliseconds);
+							frameCounter = 0;
+							lastEndTime = stopWatch.Elapsed;
 						}
 					}
 					else
 					{
-						emulator.RunFrame();
-						frameCounter++;
-					}
-
-					if ((stopWatch.Elapsed - lastEndTime) >= sampleTimespan)
-					{
-						FramesPerSecond = (int)((frameCounter * 1000.0) / sampleTimespan.TotalMilliseconds);
-						frameCounter = 0;
 						lastEndTime = stopWatch.Elapsed;
 					}
-				}
-				else
-				{
-					lastEndTime = stopWatch.Elapsed;
-				}
 
-				if (configChangeRequested)
-				{
-					emulator.SetConfiguration(newConfiguration);
-					configChangeRequested = false;
+					if (configChangeRequested)
+					{
+						emulator.SetConfiguration(newConfiguration);
+						configChangeRequested = false;
+					}
 				}
+			}
+			catch (Exception ex) when (!Program.AppEnvironment.DebugMode)
+			{
+				ex.Data.Add("Thread", Thread.CurrentThread.Name);
+				exceptionHandler(ex);
 			}
 		}
 	}

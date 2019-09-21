@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
+using Essgee.Exceptions;
+
 namespace Essgee.Emulation.Cartridges
 {
 	/* http://www.smspower.org/forums/post69724#69724 */
@@ -76,7 +78,7 @@ namespace Essgee.Emulation.Cartridges
 					return romData[((((romBank0 & 0x30) + romBank2) << 14) | (address & 0x3FFF))];
 
 				default:
-					throw new Exception(string.Format("4 Pak mapper: Cannot read from cartridge address 0x{0:X4}", address));
+					throw new EmulationException(string.Format("4 Pak mapper: Cannot read from cartridge address 0x{0:X4}", address));
 			}
 		}
 

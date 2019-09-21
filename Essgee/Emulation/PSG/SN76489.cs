@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Essgee.Exceptions;
 using Essgee.EventArguments;
 
 namespace Essgee.Emulation.PSG
@@ -97,9 +98,9 @@ namespace Essgee.Emulation.PSG
 		{
 			Reset();
 
-			if (samplesPerFrame == -1) throw new Exception("SN76489: Timings not configured, invalid samples per frame");
-			if (cyclesPerFrame == -1) throw new Exception("SN76489: Timings not configured, invalid cycles per frame");
-			if (cyclesPerSample == -1) throw new Exception("SN76489: Timings not configured, invalid cycles per sample");
+			if (samplesPerFrame == -1) throw new EmulationException("SN76489: Timings not configured, invalid samples per frame");
+			if (cyclesPerFrame == -1) throw new EmulationException("SN76489: Timings not configured, invalid cycles per frame");
+			if (cyclesPerSample == -1) throw new EmulationException("SN76489: Timings not configured, invalid cycles per sample");
 		}
 
 		public virtual void Shutdown()
@@ -239,7 +240,7 @@ namespace Essgee.Emulation.PSG
 
 		public virtual byte ReadPort(byte port)
 		{
-			throw new Exception("SN76489: Cannot read ports");
+			throw new EmulationException("SN76489: Cannot read ports");
 		}
 
 		public virtual void WritePort(byte port, byte data)

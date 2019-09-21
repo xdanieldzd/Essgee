@@ -17,6 +17,8 @@ namespace Essgee.Sound
 	{
 		const int numBuffers = 4;
 
+		readonly Action<Exception> exceptionHandler;
+
 		OnScreenDisplayHandler onScreenDisplayHandler;
 
 		public int SampleFrequency { get; private set; }
@@ -37,8 +39,10 @@ namespace Essgee.Sound
 
 		bool disposed = false;
 
-		public SoundHandler(OnScreenDisplayHandler osdHandler, int sampleFrequency, int numChannels)
+		public SoundHandler(OnScreenDisplayHandler osdHandler, int sampleFrequency, int numChannels, Action<Exception> exceptionHandler = null)
 		{
+			this.exceptionHandler = exceptionHandler;
+
 			onScreenDisplayHandler = osdHandler;
 
 			SampleFrequency = sampleFrequency;
@@ -124,22 +128,30 @@ namespace Essgee.Sound
 
 		private void ThreadMainLoop()
 		{
-			while (true)
+			try
 			{
-				if (!audioThreadRunning)
-					break;
-
-				AL.GetSource(source, ALGetSourcei.BuffersProcessed, out int buffersProcessed);
-				while (buffersProcessed-- > 0)
+				while (true)
 				{
-					int buffer = AL.SourceUnqueueBuffer(source);
-					if (buffer != 0)
-						GenerateBuffer(buffer);
-				}
+					if (!audioThreadRunning)
+						break;
 
-				AL.GetSource(source, ALGetSourcei.SourceState, out int state);
-				if ((ALSourceState)state != ALSourceState.Playing)
-					AL.SourcePlay(source);
+					AL.GetSource(source, ALGetSourcei.BuffersProcessed, out int buffersProcessed);
+					while (buffersProcessed-- > 0)
+					{
+						int buffer = AL.SourceUnqueueBuffer(source);
+						if (buffer != 0)
+							GenerateBuffer(buffer);
+					}
+
+					AL.GetSource(source, ALGetSourcei.SourceState, out int state);
+					if ((ALSourceState)state != ALSourceState.Playing)
+						AL.SourcePlay(source);
+				}
+			}
+			catch (Exception ex) when (!Program.AppEnvironment.DebugMode)
+			{
+				ex.Data.Add("Thread", Thread.CurrentThread.Name);
+				exceptionHandler(ex);
 			}
 		}
 

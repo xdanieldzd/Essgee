@@ -4,11 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
-using System.Reflection.Emit;
 
-using OpenTK;
-using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+
+using Essgee.Exceptions;
 
 namespace Essgee.Graphics.Shaders
 {
@@ -102,7 +101,7 @@ namespace Essgee.Graphics.Shaders
 			GL.GetShaderInfoLog(handle, out string infoLog);
 			GL.GetShader(handle, ShaderParameter.CompileStatus, out int statusCode);
 			if (statusCode != 1)
-				throw new Exception($"Shader compile for {shaderType} failed: {infoLog}");
+				throw new GraphicsException($"Shader compile for {shaderType} failed: {infoLog}");
 
 			return handle;
 		}
@@ -130,12 +129,12 @@ namespace Essgee.Graphics.Shaders
 			GL.GetProgramInfoLog(programObject, out string infoLog);
 			GL.GetProgram(programObject, GetProgramParameterName.LinkStatus, out int statusCode);
 			if (statusCode != 1)
-				throw new Exception($"Shader program link failed: {infoLog}");
+				throw new GraphicsException($"Shader program link failed: {infoLog}");
 		}
 
 		public void Activate()
 		{
-			if (programObject == -1) throw new InvalidOperationException("Invalid shader program handle");
+			if (programObject == -1) throw new GraphicsException("Invalid shader program handle");
 			GL.UseProgram(programObject);
 		}
 
@@ -169,7 +168,7 @@ namespace Essgee.Graphics.Shaders
 					}
 				}
 
-				throw new Exception("No Uniform method found");
+				throw new GraphicsException("No Uniform method found");
 			}
 		}
 
@@ -202,7 +201,7 @@ namespace Essgee.Graphics.Shaders
 					}
 				}
 
-				throw new Exception("No UniformMatrix method found");
+				throw new GraphicsException("No UniformMatrix method found");
 			}
 		}
 

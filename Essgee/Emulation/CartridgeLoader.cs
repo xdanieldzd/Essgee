@@ -8,6 +8,7 @@ using System.IO;
 using System.IO.Compression;
 
 using Essgee.Emulation.Machines;
+using Essgee.Exceptions;
 using Essgee.Utilities;
 
 namespace Essgee.Emulation
@@ -31,41 +32,44 @@ namespace Essgee.Emulation
 		public static (Type, byte[]) Load(string fileName)
 		{
 			Type machineType = null;
-
 			byte[] romData = null;
 
-			var fileExtension = Path.GetExtension(fileName);
-			if (fileExtension == ".zip")
+			try
 			{
-				using (var zip = ZipFile.Open(fileName, ZipArchiveMode.Read))
+				var fileExtension = Path.GetExtension(fileName);
+				if (fileExtension == ".zip")
 				{
-					foreach (var entry in zip.Entries)
+					using (var zip = ZipFile.Open(fileName, ZipArchiveMode.Read))
 					{
-						var entryExtension = Path.GetExtension(entry.Name);
-						if (fileExtensionSystemDictionary.ContainsKey(entryExtension))
+						foreach (var entry in zip.Entries)
 						{
-							machineType = fileExtensionSystemDictionary[entryExtension];
-							using (var stream = entry.Open())
+							var entryExtension = Path.GetExtension(entry.Name);
+							if (fileExtensionSystemDictionary.ContainsKey(entryExtension))
 							{
-								romData = new byte[entry.Length];
-								stream.Read(romData, 0, romData.Length);
+								machineType = fileExtensionSystemDictionary[entryExtension];
+								using (var stream = entry.Open())
+								{
+									romData = new byte[entry.Length];
+									stream.Read(romData, 0, romData.Length);
+								}
+								break;
 							}
-							break;
 						}
 					}
 				}
+				else if (fileExtensionSystemDictionary.ContainsKey(fileExtension))
+				{
+					machineType = fileExtensionSystemDictionary[fileExtension];
+					romData = File.ReadAllBytes(fileName);
+				}
 			}
-			else if (fileExtensionSystemDictionary.ContainsKey(fileExtension))
+			catch (Exception ex) when (!Program.AppEnvironment.DebugMode)
 			{
-				machineType = fileExtensionSystemDictionary[fileExtension];
-				romData = File.ReadAllBytes(fileName);
+				throw new CartridgeLoaderException("File load error", ex);
 			}
 
 			if (machineType == null)
-				throw new Exception("File not recognized");
-
-			if (romData == null)
-				throw new Exception("File failed to load");
+				throw new CartridgeLoaderException("File could not be recognized.");
 
 			return (machineType, romData);
 		}

@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 using Essgee.Emulation;
+using Essgee.Exceptions;
 using Essgee.Graphics;
 using Essgee.Utilities;
 
@@ -57,7 +58,7 @@ namespace Essgee.Metadata
 		public GameMetadata GetGameMetadata(string datFilename, string romFilename, uint romCrc32, int romSize)
 		{
 			/* Sanity checks */
-			if (!datFiles.ContainsKey(datFilename)) throw new Exception("Requested .dat file not found");
+			if (!datFiles.ContainsKey(datFilename)) throw new HandlerException("Requested .dat file not found");
 
 			/* Get information from No-Intro .dat */
 			var datFile = datFiles[datFilename];

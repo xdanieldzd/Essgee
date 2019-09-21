@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Essgee.Exceptions;
+
 namespace Essgee.Emulation.Peripherals
 {
 	public class Intel8255
@@ -61,7 +63,7 @@ namespace Essgee.Emulation.Peripherals
 					}
 					break;
 
-				default: throw new Exception(string.Format("i8255: Unsupported write to port 0x{0:X2}, value 0x{1:X2}", port, value));
+				default: throw new EmulationException(string.Format("i8255: Unsupported write to port 0x{0:X2}, value 0x{1:X2}", port, value));
 			}
 		}
 
@@ -74,7 +76,7 @@ namespace Essgee.Emulation.Peripherals
 				case 0x02: return (byte)(((isPortCUInput ? PortCInput : PortCOutput) & 0xF0) | (isPortCLInput ? PortCInput : PortCOutput) & 0x0F);
 				case 0x03: return 0xFF; /* Cannot read control port */
 
-				default: throw new Exception(string.Format("i8255: Unsupported read from port 0x{0:X2}", port));
+				default: throw new EmulationException(string.Format("i8255: Unsupported read from port 0x{0:X2}", port));
 			}
 		}
 	}

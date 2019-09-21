@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Essgee.Exceptions;
+
 namespace Essgee.Emulation.Cartridges
 {
 	public class CodemastersCartridge : ICartridge
@@ -81,7 +83,7 @@ namespace Essgee.Emulation.Cartridges
 						return romData[((pagingRegisters[2] << 14) | (address & 0x3FFF))];
 
 				default:
-					throw new Exception(string.Format("Codemasters mapper: Cannot read from cartridge address 0x{0:X4}", address));
+					throw new EmulationException(string.Format("Codemasters mapper: Cannot read from cartridge address 0x{0:X4}", address));
 			}
 		}
 

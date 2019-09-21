@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Essgee.Exceptions;
+
 namespace Essgee.Emulation.CPU
 {
 	public partial class Z80A : ICPU
@@ -66,10 +68,10 @@ namespace Essgee.Emulation.CPU
 		{
 			Reset();
 
-			if (memoryReadDelegate == null) throw new Exception("Z80A: Memory read method is null");
-			if (memoryWriteDelegate == null) throw new Exception("Z80A: Memory write method is null");
-			if (portReadDelegate == null) throw new Exception("Z80A: Port read method is null");
-			if (portWriteDelegate == null) throw new Exception("Z80A: Port write method is null");
+			if (memoryReadDelegate == null) throw new EmulationException("Z80A: Memory read method is null");
+			if (memoryWriteDelegate == null) throw new EmulationException("Z80A: Memory write method is null");
+			if (portReadDelegate == null) throw new EmulationException("Z80A: Port read method is null");
+			if (portWriteDelegate == null) throw new EmulationException("Z80A: Port write method is null");
 		}
 
 		public virtual void Shutdown()
@@ -120,10 +122,11 @@ namespace Essgee.Emulation.CPU
 				}
 			}
 
-#if SUPERSLOWCPULOGGER
-			string disasm = string.Format("{0} | {1} | {2} | {3}\n", DisassembleOpcode(this, pc).PadRight(48), PrintRegisters(this), PrintFlags(this), PrintInterrupt(this));
-			System.IO.File.AppendAllText(@"D:\Temp\Essgee\log.txt", disasm);
-#endif
+			if (Program.AppEnvironment.EnableSuperSlowCPULogger)
+			{
+				string disasm = string.Format("{0} | {1} | {2} | {3}\n", DisassembleOpcode(this, pc).PadRight(48), PrintRegisters(this), PrintFlags(this), PrintInterrupt(this));
+				System.IO.File.AppendAllText(@"D:\Temp\Essgee\log.txt", disasm);
+			}
 
 			/* Fetch and execute opcode */
 			op = ReadMemory8(pc++);
@@ -277,7 +280,7 @@ namespace Essgee.Emulation.CPU
 					nmiState = state;
 					break;
 
-				default: throw new Exception("Z80A: Unknown interrupt type");
+				default: throw new EmulationException("Z80A: Unknown interrupt type");
 			}
 		}
 

@@ -455,7 +455,7 @@ namespace Essgee.Emulation.VDP
 					else if (isModeGraphics2)
 						RenderLineGraphics2Background(y);
 					else if (isModeMulticolor)
-						throw new Exception("SMS VDP: TMS multicolor screenmode not implemented");
+						RenderLineMulticolorBackground(y);
 					else if (isModeText)
 						RenderLineTextBackground(y);
 				}

@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
+using Essgee.Exceptions;
+
 namespace Essgee.Emulation.Cartridges
 {
 	public class SegaMapperCartridge : ICartridge
@@ -103,7 +105,7 @@ namespace Essgee.Emulation.Cartridges
 						return romData[((romBank2 << 14) | (address & 0x3FFF))];
 
 				default:
-					throw new Exception(string.Format("Sega mapper: Cannot read from cartridge address 0x{0:X4}", address));
+					throw new EmulationException(string.Format("Sega mapper: Cannot read from cartridge address 0x{0:X4}", address));
 			}
 		}
 

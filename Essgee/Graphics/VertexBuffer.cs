@@ -10,6 +10,8 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 
+using Essgee.Exceptions;
+
 namespace Essgee.Graphics
 {
 	public class VertexBuffer : IDisposable
@@ -115,7 +117,7 @@ namespace Essgee.Graphics
 
 		public static (List<VertexElement>, int) DeconstructVertexLayout(Type vertexType)
 		{
-			if (!typeof(IVertexStruct).IsAssignableFrom(vertexType)) throw new Exception("Cannot deconstruct layout of non-vertex type");
+			if (!typeof(IVertexStruct).IsAssignableFrom(vertexType)) throw new Exceptions.GraphicsException("Cannot deconstruct layout of non-vertex type");
 
 			var elements = new List<VertexElement>();
 			var structSize = Marshal.SizeOf(vertexType);
@@ -132,7 +134,7 @@ namespace Essgee.Graphics
 				if (field.FieldType.IsValueType && !field.FieldType.IsEnum)
 				{
 					var structFields = field.FieldType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-					if (structFields == null || structFields.Length < 1 || structFields.Length > 4) throw new Exception("Invalid number of fields in struct");
+					if (structFields == null || structFields.Length < 1 || structFields.Length > 4) throw new Exceptions.GraphicsException("Invalid number of fields in struct");
 					numComponents = structFields.Length;
 				}
 

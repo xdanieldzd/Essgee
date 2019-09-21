@@ -79,6 +79,10 @@
     <Compile Include="Emulation\PSG\IPSG.cs" />
     <Compile Include="Emulation\VDP\IVDP.cs" />
     <Compile Include="EventArguments\SendLogMessageEventArgs.cs" />
+    <Compile Include="Exceptions\CartridgeLoaderException.cs" />
+    <Compile Include="Exceptions\GraphicsException.cs" />
+    <Compile Include="Exceptions\EmulationException.cs" />
+    <Compile Include="Exceptions\HandlerException.cs" />
     <Compile Include="Utilities\AltKeyFilter.cs" />
     <Compile Include="Utilities\BindableToolStripMenuItem.cs">
       <SubType>Component</SubType>

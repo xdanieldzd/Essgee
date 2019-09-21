@@ -12,6 +12,18 @@ namespace Essgee
 {
 	static class Program
 	{
+		public static class AppEnvironment
+		{
+#if DEBUG
+			public static readonly bool DebugMode = true;
+#else
+			public static readonly bool DebugMode = false;
+#endif
+			public static readonly bool EnableCustomUnhandledExceptionHandler = true;
+
+			public static readonly bool EnableSuperSlowCPULogger = false;
+		}
+
 		const string jsonConfigFileName = "Config.json";
 		const string saveDataDirectoryName = "Saves";
 		const string screenshotDirectoryName = "Screenshots";
@@ -30,7 +42,7 @@ namespace Essgee
 		{
 			System.Threading.Thread.CurrentThread.CurrentCulture = System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
 
-			Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+			Application.SetUnhandledExceptionMode(AppEnvironment.EnableCustomUnhandledExceptionHandler ? UnhandledExceptionMode.ThrowException : UnhandledExceptionMode.CatchException);
 
 			LoadConfiguration();
 

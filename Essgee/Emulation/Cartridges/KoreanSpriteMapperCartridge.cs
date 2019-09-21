@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Essgee.Exceptions;
+
 namespace Essgee.Emulation.Cartridges
 {
 	/* Mostly standard Sega mapper, but with bit-reversing functionality to flip sprites
@@ -125,7 +127,7 @@ namespace Essgee.Emulation.Cartridges
 					}
 
 				default:
-					throw new Exception(string.Format("Korean sprite-flip mapper: Cannot read from cartridge address 0x{0:X4}", address));
+					throw new EmulationException(string.Format("Korean sprite-flip mapper: Cannot read from cartridge address 0x{0:X4}", address));
 			}
 		}
 

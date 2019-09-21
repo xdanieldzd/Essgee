@@ -20,6 +20,7 @@ using Essgee.Sound;
 using Essgee.Emulation;
 using Essgee.Emulation.Machines;
 using Essgee.EventArguments;
+using Essgee.Exceptions;
 using Essgee.Metadata;
 using Essgee.Utilities;
 
@@ -78,6 +79,17 @@ namespace Essgee
 		{
 			InitializeComponent();
 
+			if (!Program.AppEnvironment.DebugMode)
+			{
+				AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+				{
+					var ex = (e.ExceptionObject as Exception);
+					ex.Data.Add("Thread", System.Threading.Thread.CurrentThread.Name);
+					ex.Data.Add("IsUnhandled", true);
+					ExceptionHandler(ex);
+				};
+			}
+
 			SizeAndPositionWindow();
 			SetWindowTitleAndStatus();
 
@@ -117,6 +129,46 @@ namespace Essgee
 			keysDown = new List<Keys>();
 		}
 
+		private void ExceptionHandler(Exception ex)
+		{
+			CheckInvokeMethod(() =>
+			{
+				var exceptionInfoBuilder = new StringBuilder();
+				exceptionInfoBuilder.AppendLine($"Thread: {ex.Data["Thread"] ?? "<unnamed>"}");
+				exceptionInfoBuilder.AppendLine($"Function: {ex.TargetSite.ReflectedType.FullName}.{ex.TargetSite.Name}");
+				exceptionInfoBuilder.AppendLine($"Exception: {ex.GetType().Name}");
+				exceptionInfoBuilder.Append($"Message: {ex.Message}");
+
+				var isUnhandled = Convert.ToBoolean(ex.Data["IsUnhandled"]);
+
+				if (!isUnhandled && ex is CartridgeLoaderException)
+				{
+					MessageBox.Show($"{ ex.InnerException?.Message ?? ex.Message}\n\nFailed to load cartridge.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				}
+				else if (!isUnhandled && ex is EmulationException)
+				{
+					MessageBox.Show($"An emulation exception has occured!\n\n{exceptionInfoBuilder.ToString()}\n\nEmulation cannot continue and will be terminated.", "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					SignalStopEmulation();
+				}
+				else
+				{
+					var errorBuilder = new StringBuilder();
+					errorBuilder.AppendLine("An unhandled exception has occured!");
+					errorBuilder.AppendLine();
+					errorBuilder.AppendLine(exceptionInfoBuilder.ToString());
+					errorBuilder.AppendLine();
+					errorBuilder.AppendLine("Exception occured:");
+					errorBuilder.AppendLine($"{ex.StackTrace}");
+					errorBuilder.AppendLine();
+					errorBuilder.AppendLine("Execution cannot continue and the application will be terminated.");
+
+					MessageBox.Show(errorBuilder.ToString(), "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+					Environment.Exit(-1);
+				}
+			});
+		}
+
 		protected override void WndProc(ref Message m)
 		{
 			base.WndProc(ref m);
@@ -149,12 +201,12 @@ namespace Essgee
 			var osdFontText = Assembly.GetExecutingAssembly().ReadEmbeddedImageFile($"{Application.ProductName}.Assets.OsdFont.png");
 			onScreenDisplayHandler = new OnScreenDisplayHandler(osdFontText);
 
-			if (onScreenDisplayHandler == null) throw new Exception("Failed to initialize OSD handler");
+			if (onScreenDisplayHandler == null) throw new HandlerException("Failed to initialize OSD handler");
 
 			graphicsHandler = new GraphicsHandler(onScreenDisplayHandler);
 			graphicsHandler?.LoadShaderBundle(Program.Configuration.LastShader);
 
-			soundHandler = new SoundHandler(onScreenDisplayHandler, 44100, 2);
+			soundHandler = new SoundHandler(onScreenDisplayHandler, 44100, 2, ExceptionHandler);
 			soundHandler.SetVolume(Program.Configuration.Volume);
 			soundHandler.SetMute(Program.Configuration.Mute);
 			soundHandler.Startup();
@@ -167,7 +219,7 @@ namespace Essgee
 			if (emulatorHandler != null)
 				ShutdownEmulation();
 
-			emulatorHandler = new EmulatorHandler(machineType);
+			emulatorHandler = new EmulatorHandler(machineType, ExceptionHandler);
 			emulatorHandler.Initialize();
 
 			emulatorHandler.SendLogMessage += EmulatorHandler_SendLogMessage;
@@ -230,27 +282,34 @@ namespace Essgee
 
 		private void LoadAndRunCartridge(string fileName)
 		{
-			var (machineType, romData) = CartridgeLoader.Load(fileName);
+			try
+			{
+				var (machineType, romData) = CartridgeLoader.Load(fileName);
 
-			InitializeEmulation(machineType);
+				InitializeEmulation(machineType);
 
-			lastGameMetadata = gameMetadataHandler.GetGameMetadata(emulatorHandler.Information.DatFileName, fileName, Crc32.Calculate(romData), romData.Length);
+				lastGameMetadata = gameMetadataHandler.GetGameMetadata(emulatorHandler.Information.DatFileName, fileName, Crc32.Calculate(romData), romData.Length);
 
-			ApplyConfigOverrides(machineType);
+				ApplyConfigOverrides(machineType);
 
-			emulatorHandler.Load(romData, lastGameMetadata);
+				emulatorHandler.Load(romData, lastGameMetadata);
 
-			AddToRecentFiles(fileName);
-			CreateRecentFilesMenu();
+				AddToRecentFiles(fileName);
+				CreateRecentFilesMenu();
 
-			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = true;
+				takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = true;
 
-			emulatorHandler.Startup();
+				emulatorHandler.Startup();
 
-			SizeAndPositionWindow();
-			SetWindowTitleAndStatus();
+				SizeAndPositionWindow();
+				SetWindowTitleAndStatus();
 
-			onScreenDisplayHandler.EnqueueMessage($"Loaded '{lastGameMetadata?.KnownName ?? "unrecognized game"}'.");
+				onScreenDisplayHandler.EnqueueMessage($"Loaded '{lastGameMetadata?.KnownName ?? "unrecognized game"}'.");
+			}
+			catch (Exception ex) when (!Program.AppEnvironment.DebugMode)
+			{
+				ExceptionHandler(ex);
+			}
 		}
 
 		private void ApplyConfigOverrides(Type machineType)
@@ -302,6 +361,17 @@ namespace Essgee
 
 			if (forcePowerOnWithoutCart || hasTVStandardOverride || hasRegionOverride)
 				emulatorHandler.SetConfiguration(overrideConfig);
+		}
+
+		private void SignalStopEmulation()
+		{
+			ShutdownEmulation();
+
+			lastGameMetadata = null;
+
+			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = false;
+
+			SetWindowTitleAndStatus();
 		}
 
 		private void ShutdownEmulation()
@@ -653,7 +723,7 @@ namespace Essgee
 
 		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
 		{
-			ShutdownEmulation();
+			SignalStopEmulation();
 
 			soundHandler?.Shutdown();
 
@@ -825,13 +895,7 @@ namespace Essgee
 
 		private void stopToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			ShutdownEmulation();
-
-			lastGameMetadata = null;
-
-			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = false;
-
-			SetWindowTitleAndStatus();
+			SignalStopEmulation();
 		}
 
 		private void settingsToolStripMenuItem_Click(object sender, EventArgs e)

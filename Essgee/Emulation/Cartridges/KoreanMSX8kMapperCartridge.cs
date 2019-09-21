@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
+using Essgee.Exceptions;
+
 namespace Essgee.Emulation.Cartridges
 {
 	public class KoreanMSX8kMapperCartridge : ICartridge
@@ -71,7 +73,7 @@ namespace Essgee.Emulation.Cartridges
 				case 0x6000: return romData[(pagingRegisters[3] << 13) | (address & 0x1FFF)];
 				case 0x8000: return romData[(pagingRegisters[0] << 13) | (address & 0x1FFF)];
 				case 0xA000: return romData[(pagingRegisters[1] << 13) | (address & 0x1FFF)];
-				default: throw new Exception(string.Format("Korean MSX 8k mapper: Cannot read from cartridge address 0x{0:X4}", address));
+				default: throw new EmulationException(string.Format("Korean MSX 8k mapper: Cannot read from cartridge address 0x{0:X4}", address));
 			}
 		}
 

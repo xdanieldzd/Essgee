@@ -19,7 +19,7 @@ namespace Essgee.Utilities
 
 		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
 		{
-			if (!objectType.IsGenericType || objectType.GetGenericTypeDefinition() != typeof(Dictionary<,>)) throw new Exception("Can only deserialize dictionaries");
+			if (!objectType.IsGenericType || objectType.GetGenericTypeDefinition() != typeof(Dictionary<,>)) throw new InvalidOperationException("Can only deserialize dictionaries");
 
 			var dictionary = (System.Collections.IDictionary)Activator.CreateInstance(objectType);
 
