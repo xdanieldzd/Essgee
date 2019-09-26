@@ -190,7 +190,7 @@ namespace Essgee.Emulation.Machines
 		{
 			configuration.TVStandard = state[nameof(configuration.TVStandard)];
 
-			// cart
+			cartridge.SetState(state[nameof(cartridge)]);
 			wram = state[nameof(wram)];
 			cpu.SetState(state[nameof(cpu)]);
 			vdp.SetState(state[nameof(vdp)]);
@@ -206,7 +206,7 @@ namespace Essgee.Emulation.Machines
 			{
 				[nameof(configuration.TVStandard)] = configuration.TVStandard,
 
-				// cart
+				[nameof(cartridge)] = cartridge.GetState(),
 				[nameof(wram)] = wram,
 				[nameof(cpu)] = cpu.GetState(),
 				[nameof(vdp)] = vdp.GetState(),

@@ -16,7 +16,7 @@ namespace Essgee.Emulation
 	{
 		public static string ExpectedVersion = $"ESGST{new Version(Application.ProductVersion).Major:D3}";
 
-		public static Dictionary<string, dynamic> Load(Stream stream)
+		public static Dictionary<string, dynamic> Load(Stream stream, string machineName)
 		{
 			stream.Position = 0;
 
@@ -30,8 +30,14 @@ namespace Essgee.Emulation
 				var filesize = reader.ReadUInt32();
 				if (filesize != reader.BaseStream.Length) throw new EmulationException("Savestate filesize mismatch");
 
-				// Read and check CRC32
+				// Read CRC32
 				var crc32 = reader.ReadUInt32();
+
+				// Read and check machine ID
+				var machineId = Encoding.ASCII.GetString(reader.ReadBytes(16));
+				if (machineId != GenerateMachineIdString(machineName)) throw new EmulationException("Savestate machine mismatch");
+
+				// Check CRC32
 				using (var stateStream = new MemoryStream())
 				{
 					reader.BaseStream.CopyTo(stateStream);
@@ -46,13 +52,12 @@ namespace Essgee.Emulation
 			}
 		}
 
-		public static void Save(Stream stream, Dictionary<string, dynamic> state)
+		public static void Save(Stream stream, string machineName, Dictionary<string, dynamic> state)
 		{
 			using (var writer = new BinaryWriter(new MemoryStream()))
 			{
 				// Write version string
-				var versionBytes = Encoding.ASCII.GetBytes(ExpectedVersion);
-				writer.Write(versionBytes);
+				writer.Write(Encoding.ASCII.GetBytes(ExpectedVersion));
 
 				// Write filesize placeholder
 				var filesizePosition = writer.BaseStream.Position;
@@ -62,10 +67,12 @@ namespace Essgee.Emulation
 				var crc32Position = writer.BaseStream.Position;
 				writer.Write(uint.MaxValue);
 
+				// Write machine ID
+				writer.Write(Encoding.ASCII.GetBytes(GenerateMachineIdString(machineName)));
+
 				// Write state data
 				var binaryFormatter = new BinaryFormatter();
 				binaryFormatter.Serialize(writer.BaseStream, state);
-				//WriteStateData(writer, state);
 
 				// Write filesize
 				var lastOffset = writer.BaseStream.Position;
@@ -77,7 +84,7 @@ namespace Essgee.Emulation
 				lastOffset = writer.BaseStream.Position;
 
 				writer.BaseStream.Position = 0;
-				var crc32 = Crc32.Calculate(writer.BaseStream, 0x10, (int)writer.BaseStream.Length - 0x10);
+				var crc32 = Crc32.Calculate(writer.BaseStream, 0x20, (int)writer.BaseStream.Length - 0x20);
 
 				writer.BaseStream.Position = crc32Position;
 				writer.Write(crc32);
@@ -87,6 +94,11 @@ namespace Essgee.Emulation
 				writer.BaseStream.Position = 0;
 				writer.BaseStream.CopyTo(stream);
 			}
+		}
+
+		private static string GenerateMachineIdString(string machineId)
+		{
+			return machineId.Substring(0, Math.Min(machineId.Length, 16)).PadRight(16);
 		}
 	}
 }

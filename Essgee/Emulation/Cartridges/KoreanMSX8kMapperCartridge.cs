@@ -38,6 +38,16 @@ namespace Essgee.Emulation.Cartridges
 			//
 		}
 
+		public void SetState(Dictionary<string, dynamic> state)
+		{
+			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
+		}
+
+		public Dictionary<string, dynamic> GetState()
+		{
+			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
+		}
+
 		public byte[] GetRomData()
 		{
 			return romData;

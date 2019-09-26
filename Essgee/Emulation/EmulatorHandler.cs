@@ -26,8 +26,11 @@ namespace Essgee.Emulation
 		volatile bool limitFps;
 		volatile bool emulationThreadPaused;
 
-		volatile bool configChangeRequested;
-		IConfiguration newConfiguration;
+		volatile bool configChangeRequested = false;
+		IConfiguration newConfiguration = null;
+
+		volatile bool stateLoadRequested = false, stateSaveRequested = false;
+		int stateNumber = -1;
 
 		public event EventHandler<SendLogMessageEventArgs> SendLogMessage
 		{
@@ -140,23 +143,14 @@ namespace Essgee.Emulation
 
 		public void LoadState(int number)
 		{
-			var statePath = GetSaveStateFilename(number);
-			if (File.Exists(statePath))
-			{
-				using (var stream = new FileStream(statePath, FileMode.Open))
-				{
-					emulator.SetState(SaveStateHandler.Load(stream));
-				}
-			}
+			stateLoadRequested = true;
+			stateNumber = number;
 		}
 
 		public void SaveState(int number)
 		{
-			var statePath = GetSaveStateFilename(number);
-			using (var stream = new FileStream(statePath, FileMode.OpenOrCreate))
-			{
-				SaveStateHandler.Save(stream, emulator.GetState());
-			}
+			stateSaveRequested = true;
+			stateNumber = number;
 		}
 
 		public void LoadCartridge(byte[] romData, GameMetadata gameMetadata)
@@ -229,6 +223,21 @@ namespace Essgee.Emulation
 					if (!emulationThreadRunning)
 						break;
 
+					if (stateLoadRequested && stateNumber != -1)
+					{
+						var statePath = GetSaveStateFilename(stateNumber);
+						if (File.Exists(statePath))
+						{
+							using (var stream = new FileStream(statePath, FileMode.Open))
+							{
+								emulator.SetState(SaveStateHandler.Load(stream, emulator.GetType().Name));
+							}
+						}
+
+						stateLoadRequested = false;
+						stateNumber = -1;
+					}
+
 					var refreshRate = emulator.RefreshRate;
 					var targetElapsedTime = TimeSpan.FromTicks((long)Math.Round(TimeSpan.TicksPerSecond / refreshRate));
 
@@ -276,6 +285,18 @@ namespace Essgee.Emulation
 					{
 						emulator.SetConfiguration(newConfiguration);
 						configChangeRequested = false;
+					}
+
+					if (stateSaveRequested && stateNumber != -1)
+					{
+						var statePath = GetSaveStateFilename(stateNumber);
+						using (var stream = new FileStream(statePath, FileMode.OpenOrCreate))
+						{
+							SaveStateHandler.Save(stream, emulator.GetType().Name, emulator.GetState());
+						}
+
+						stateSaveRequested = false;
+						stateNumber = -1;
 					}
 				}
 			}

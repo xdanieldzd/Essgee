@@ -6,10 +6,13 @@ using System.Threading.Tasks;
 
 namespace Essgee.Emulation.Cartridges
 {
-	public interface ICartridge
+	interface ICartridge
 	{
 		void LoadRom(byte[] data);
 		void LoadRam(byte[] data);
+
+		void SetState(Dictionary<string, dynamic> state);
+		Dictionary<string, dynamic> GetState();
 
 		byte[] GetRomData();
 		byte[] GetRamData();

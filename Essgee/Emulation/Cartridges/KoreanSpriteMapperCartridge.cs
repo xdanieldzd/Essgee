@@ -67,6 +67,16 @@ namespace Essgee.Emulation.Cartridges
 			Buffer.BlockCopy(data, 0, ramData, 0, Math.Min(data.Length, ramData.Length));
 		}
 
+		public void SetState(Dictionary<string, dynamic> state)
+		{
+			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
+		}
+
+		public Dictionary<string, dynamic> GetState()
+		{
+			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
+		}
+
 		public byte[] GetRomData()
 		{
 			return romData;

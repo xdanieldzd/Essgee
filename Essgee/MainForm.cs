@@ -541,7 +541,7 @@ namespace Essgee
 								emulatorHandler.LoadState(stateNumber);
 								SetTemporaryPause(false);
 
-								CreateLoadSaveStateMenus();
+								onScreenDisplayHandler.EnqueueMessage($"State {stateNumber} loaded.");
 							}
 						};
 
@@ -558,6 +558,8 @@ namespace Essgee
 							SetTemporaryPause(false);
 
 							CreateLoadSaveStateMenus();
+
+							onScreenDisplayHandler.EnqueueMessage($"State {stateNumber} saved.");
 						}
 					};
 

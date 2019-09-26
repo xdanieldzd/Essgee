@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Essgee.Exceptions;
+
 namespace Essgee.Emulation.Cartridges
 {
 	public class ColecoCartridge : ICartridge
@@ -25,6 +27,16 @@ namespace Essgee.Emulation.Cartridges
 		public void LoadRam(byte[] data)
 		{
 			//
+		}
+
+		public void SetState(Dictionary<string, dynamic> state)
+		{
+			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
+		}
+
+		public Dictionary<string, dynamic> GetState()
+		{
+			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
 		}
 
 		public byte[] GetRomData()
