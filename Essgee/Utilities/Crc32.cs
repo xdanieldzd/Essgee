@@ -27,6 +27,13 @@ namespace Essgee.Utilities
 			}
 		}
 
+		private static void VerifyStartAndLength(int dataLength, int segmentStart, int segmentLength)
+		{
+			if (segmentStart >= dataLength) throw new Crc32Exception("Segment start offset is greater than total length");
+			if (segmentLength > dataLength) throw new Crc32Exception("Segment length is greater than total length");
+			if ((segmentStart + segmentLength) > dataLength) throw new Crc32Exception("Segment end offset is greater than total length");
+		}
+
 		public static uint Calculate(FileInfo fileInfo)
 		{
 			return Calculate(fileInfo, 0, (int)fileInfo.Length);
@@ -34,17 +41,33 @@ namespace Essgee.Utilities
 
 		public static uint Calculate(FileInfo fileInfo, int start, int length)
 		{
-			if (start >= fileInfo.Length) throw new Crc32Exception("Start offset is greater than file size");
-			if (length > fileInfo.Length) throw new Crc32Exception("Length is greater than file size");
-			if ((start + length) > fileInfo.Length) throw new Crc32Exception("End offset is greater than file size");
+			VerifyStartAndLength((int)fileInfo.Length, start, length);
 
-			uint crc = 0;
 			using (FileStream file = fileInfo.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
 			{
-				byte[] data = new byte[length];
-				file.Read(data, start, length);
-				crc = Calculate(data, 0, data.Length);
+				return Calculate(file, start, length);
 			}
+		}
+
+		public static uint Calculate(Stream stream)
+		{
+			return Calculate(stream, 0, (int)stream.Length);
+		}
+
+		public static uint Calculate(Stream stream, int start, int length)
+		{
+			VerifyStartAndLength((int)stream.Length, start, length);
+
+			uint crc = 0;
+
+			var lastStreamPosition = stream.Position;
+
+			byte[] data = new byte[length];
+			stream.Position = start;
+			stream.Read(data, 0, length);
+			crc = Calculate(data, 0, data.Length);
+			stream.Position = lastStreamPosition;
+
 			return crc;
 		}
 
@@ -55,9 +78,7 @@ namespace Essgee.Utilities
 
 		public static uint Calculate(byte[] data, int start, int length)
 		{
-			if (start >= data.Length) throw new Crc32Exception("Start offset is greater than array size");
-			if (length > data.Length) throw new Crc32Exception("Length is greater than array size");
-			if ((start + length) > data.Length) throw new Crc32Exception("End offset is greater than array size");
+			VerifyStartAndLength(data.Length, start, length);
 
 			uint crc = crcSeed;
 			for (int i = start; i < (start + length); i++)

@@ -11,6 +11,7 @@ using Essgee.Emulation.VDP;
 using Essgee.Emulation.PSG;
 using Essgee.Emulation.Cartridges;
 using Essgee.EventArguments;
+using Essgee.Exceptions;
 using Essgee.Utilities;
 
 namespace Essgee.Emulation.Machines
@@ -135,8 +136,8 @@ namespace Essgee.Emulation.Machines
 			bootstrap = null;
 			cartridge = null;
 
-			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			wram = new byte[ramSize];
+			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			vdp = new SegaSMSVDP();
 			psg = new SegaSMSPSG(44100, 2);
 
@@ -223,6 +224,16 @@ namespace Essgee.Emulation.Machines
 			cpu?.Shutdown();
 			vdp?.Shutdown();
 			psg?.Shutdown();
+		}
+
+		public void SetState(Dictionary<string, dynamic> state)
+		{
+			throw new EmulationException($"Savestates not implemented for {ModelName}");
+		}
+
+		public Dictionary<string, dynamic> GetState()
+		{
+			throw new EmulationException($"Savestates not implemented for {ModelName}");
 		}
 
 		public Dictionary<string, dynamic> GetDebugInformation()

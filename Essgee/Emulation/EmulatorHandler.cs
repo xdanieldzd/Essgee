@@ -133,7 +133,33 @@ namespace Essgee.Emulation
 			emulator.Shutdown();
 		}
 
-		public void Load(byte[] romData, GameMetadata gameMetadata)
+		public string GetSaveStateFilename(int number)
+		{
+			return Path.Combine(Program.SaveStatePath, $"{Path.GetFileNameWithoutExtension(currentGameMetadata.FileName)} (State {number:D2}).est");
+		}
+
+		public void LoadState(int number)
+		{
+			var statePath = GetSaveStateFilename(number);
+			if (File.Exists(statePath))
+			{
+				using (var stream = new FileStream(statePath, FileMode.Open))
+				{
+					emulator.SetState(SaveStateHandler.Load(stream));
+				}
+			}
+		}
+
+		public void SaveState(int number)
+		{
+			var statePath = GetSaveStateFilename(number);
+			using (var stream = new FileStream(statePath, FileMode.OpenOrCreate))
+			{
+				SaveStateHandler.Save(stream, emulator.GetState());
+			}
+		}
+
+		public void LoadCartridge(byte[] romData, GameMetadata gameMetadata)
 		{
 			currentGameMetadata = gameMetadata;
 
@@ -148,7 +174,7 @@ namespace Essgee.Emulation
 			IsCartridgeLoaded = true;
 		}
 
-		public void Save()
+		public void SaveCartridge()
 		{
 			if (currentGameMetadata == null) return;
 

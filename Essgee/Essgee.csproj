@@ -76,7 +76,9 @@
     <Compile Include="Emulation\CPU\ICPU.cs" />
     <Compile Include="Emulation\Machines\ColecoVision.cs" />
     <Compile Include="Emulation\Machines\SC3000.cs" />
+    <Compile Include="Emulation\Peripherals\IPeripheral.cs" />
     <Compile Include="Emulation\PSG\IPSG.cs" />
+    <Compile Include="Emulation\SaveStateHandler.cs" />
     <Compile Include="Emulation\VDP\IVDP.cs" />
     <Compile Include="EventArguments\SendLogMessageEventArgs.cs" />
     <Compile Include="Exceptions\CartridgeLoaderException.cs" />

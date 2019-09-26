@@ -11,6 +11,7 @@ using Essgee.Emulation.PSG;
 using Essgee.Emulation.Cartridges;
 using Essgee.Emulation.Peripherals;
 using Essgee.EventArguments;
+using Essgee.Exceptions;
 using Essgee.Utilities;
 
 namespace Essgee.Emulation.Machines
@@ -114,8 +115,8 @@ namespace Essgee.Emulation.Machines
 		public void Initialize()
 		{
 			cartridge = null;
-			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			wram = new byte[ramSize];
+			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			vdp = new TMS99xxA();
 			psg = new SN76489(44100, 2);
 			ppi = new Intel8255();
@@ -183,6 +184,35 @@ namespace Essgee.Emulation.Machines
 			cpu?.Shutdown();
 			vdp?.Shutdown();
 			psg?.Shutdown();
+		}
+
+		public void SetState(Dictionary<string, dynamic> state)
+		{
+			configuration.TVStandard = state[nameof(configuration.TVStandard)];
+
+			// cart
+			wram = state[nameof(wram)];
+			cpu.SetState(state[nameof(cpu)]);
+			vdp.SetState(state[nameof(vdp)]);
+			psg.SetState(state[nameof(psg)]);
+			ppi.SetState(state[nameof(ppi)]);
+
+			ReconfigureSystem();
+		}
+
+		public Dictionary<string, dynamic> GetState()
+		{
+			return new Dictionary<string, dynamic>
+			{
+				[nameof(configuration.TVStandard)] = configuration.TVStandard,
+
+				// cart
+				[nameof(wram)] = wram,
+				[nameof(cpu)] = cpu.GetState(),
+				[nameof(vdp)] = vdp.GetState(),
+				[nameof(psg)] = psg.GetState(),
+				[nameof(ppi)] = ppi.GetState()
+			};
 		}
 
 		public Dictionary<string, dynamic> GetDebugInformation()

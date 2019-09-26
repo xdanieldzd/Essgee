@@ -4,25 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Essgee.EventArguments;
-
-namespace Essgee.Emulation.PSG
+namespace Essgee.Emulation.Peripherals
 {
-	interface IPSG
+	interface IPeripheral
 	{
-		event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples;
-		void OnEnqueueSamples(EnqueueSamplesEventArgs e);
-
 		void Startup();
 		void Shutdown();
 		void Reset();
-		void Step(int clockCyclesInStep);
 
 		void SetState(Dictionary<string, dynamic> state);
 		Dictionary<string, dynamic> GetState();
-
-		void SetClockRate(double clock);
-		void SetRefreshRate(double refresh);
 
 		byte ReadPort(byte port);
 		void WritePort(byte port, byte value);

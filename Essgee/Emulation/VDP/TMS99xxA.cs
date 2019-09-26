@@ -200,6 +200,51 @@ namespace Essgee.Emulation.VDP
 			cycleCount = 0;
 		}
 
+		public void SetState(Dictionary<string, dynamic> state)
+		{
+			registers = state[nameof(registers)];
+			vram = state[nameof(vram)];
+
+			spriteBuffer = state[nameof(spriteBuffer)];
+
+			isSecondControlWrite = state[nameof(isSecondControlWrite)];
+			controlWord = state[nameof(controlWord)];
+			readBuffer = state[nameof(readBuffer)];
+
+			statusFlags = state[nameof(statusFlags)];
+
+			InterruptLine = state[nameof(InterruptLine)];
+
+			currentScanline = state[nameof(currentScanline)];
+
+			screenUsage = state[nameof(screenUsage)];
+			cycleCount = state[nameof(cycleCount)];
+		}
+
+		public Dictionary<string, dynamic> GetState()
+		{
+			return new Dictionary<string, dynamic>
+			{
+				[nameof(registers)] = registers,
+				[nameof(vram)] = vram,
+
+				[nameof(spriteBuffer)] = spriteBuffer,
+
+				[nameof(isSecondControlWrite)] = isSecondControlWrite,
+				[nameof(controlWord)] = controlWord,
+				[nameof(readBuffer)] = readBuffer,
+
+				[nameof(statusFlags)] = statusFlags,
+
+				[nameof(InterruptLine)] = InterruptLine,
+
+				[nameof(currentScanline)] = currentScanline,
+
+				[nameof(screenUsage)] = screenUsage,
+				[nameof(cycleCount)] = cycleCount
+			};
+		}
+
 		public void SetClockRate(double clock)
 		{
 			clockRate = clock;

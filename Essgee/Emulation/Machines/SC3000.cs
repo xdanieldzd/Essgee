@@ -11,6 +11,7 @@ using Essgee.Emulation.PSG;
 using Essgee.Emulation.Cartridges;
 using Essgee.Emulation.Peripherals;
 using Essgee.EventArguments;
+using Essgee.Exceptions;
 using Essgee.Utilities;
 
 namespace Essgee.Emulation.Machines
@@ -132,8 +133,8 @@ namespace Essgee.Emulation.Machines
 		public void Initialize()
 		{
 			cartridge = null;
-			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			wram = new byte[ramSize];
+			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			vdp = new TMS99xxA();
 			psg = new SN76489(44100, 2);
 			ppi = new Intel8255();
@@ -213,6 +214,16 @@ namespace Essgee.Emulation.Machines
 			cpu?.Shutdown();
 			vdp?.Shutdown();
 			psg?.Shutdown();
+		}
+
+		public void SetState(Dictionary<string, dynamic> state)
+		{
+			throw new EmulationException($"Savestates not implemented for {ModelName}");
+		}
+
+		public Dictionary<string, dynamic> GetState()
+		{
+			throw new EmulationException($"Savestates not implemented for {ModelName}");
 		}
 
 		public Dictionary<string, dynamic> GetDebugInformation()

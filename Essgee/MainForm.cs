@@ -30,7 +30,9 @@ namespace Essgee
 	{
 		readonly static double baseScreenSize = 240.0;
 		readonly static double aspectRatio = (4.0 / 3.0);
+
 		readonly static int maxScreenSizeFactor = 3;
+		readonly static int maxSaveStateCount = 8;
 
 		readonly static string buildName = $"{BuildInformation.Properties["GitBranch"]}-{BuildInformation.Properties["LatestCommitHash"]}{(BuildInformation.Properties["GitPendingChanges"] ? "-dirty" : string.Empty)}";
 		readonly static string buildMachineInfo = $"{BuildInformation.Properties["BuildMachineName"]} ({BuildInformation.Properties["BuildMachineProcessorArchitecture"]}, {BuildInformation.Properties["BuildMachineOSPlatform"]} v{BuildInformation.Properties["BuildMachineOSVersion"]})";
@@ -271,6 +273,7 @@ namespace Essgee
 			ApplyConfigOverrides(machineType);
 
 			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = true;
+			loadStateToolStripMenuItem.Enabled = saveStateToolStripMenuItem.Enabled = false;
 
 			emulatorHandler.Startup();
 
@@ -292,12 +295,14 @@ namespace Essgee
 
 				ApplyConfigOverrides(machineType);
 
-				emulatorHandler.Load(romData, lastGameMetadata);
+				emulatorHandler.LoadCartridge(romData, lastGameMetadata);
 
 				AddToRecentFiles(fileName);
 				CreateRecentFilesMenu();
+				CreateLoadSaveStateMenus();
 
 				takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = true;
+				loadStateToolStripMenuItem.Enabled = saveStateToolStripMenuItem.Enabled = true;
 
 				emulatorHandler.Startup();
 
@@ -370,6 +375,7 @@ namespace Essgee
 			lastGameMetadata = null;
 
 			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = false;
+			loadStateToolStripMenuItem.Enabled = saveStateToolStripMenuItem.Enabled = false;
 
 			SetWindowTitleAndStatus();
 		}
@@ -378,7 +384,7 @@ namespace Essgee
 		{
 			if (emulatorHandler == null) return;
 
-			emulatorHandler.Save();
+			emulatorHandler.SaveCartridge();
 
 			emulatorHandler.SendLogMessage -= EmulatorHandler_SendLogMessage;
 			emulatorHandler.EmulationReset -= EmulatorHandler_EmulationReset;
@@ -497,6 +503,66 @@ namespace Essgee
 						}
 					};
 					powerOnToolStripMenuItem.DropDownItems.Add(menuItem);
+				}
+			}
+		}
+
+		private void CreateLoadSaveStateMenus()
+		{
+			loadStateToolStripMenuItem.DropDownItems.Clear();
+			saveStateToolStripMenuItem.DropDownItems.Clear();
+
+			for (int i = 0; i < maxSaveStateCount; i++)
+			{
+				var stateFileInfo = new FileInfo(emulatorHandler.GetSaveStateFilename(i));
+
+				var loadMenuItem = new ToolStripMenuItem();
+				var saveMenuItem = new ToolStripMenuItem();
+
+				if (lastGameMetadata != null)
+				{
+					if (!stateFileInfo.Exists)
+					{
+						loadMenuItem.Text = $"{i}: -";
+						loadMenuItem.Enabled = false;
+
+						saveMenuItem.Text = $"{i}: -";
+						saveMenuItem.Enabled = true;
+					}
+					else
+					{
+						loadMenuItem.Text = $"{i}: {stateFileInfo.LastWriteTime}";
+						loadMenuItem.Tag = i;
+						loadMenuItem.Click += (s, e) =>
+						{
+							if ((s as ToolStripMenuItem).Tag is int stateNumber)
+							{
+								SetTemporaryPause(true);
+								emulatorHandler.LoadState(stateNumber);
+								SetTemporaryPause(false);
+
+								CreateLoadSaveStateMenus();
+							}
+						};
+
+						saveMenuItem.Text = $"{i}: {stateFileInfo.LastWriteTime}";
+					}
+
+					saveMenuItem.Tag = i;
+					saveMenuItem.Click += (s, e) =>
+					{
+						if ((s as ToolStripMenuItem).Tag is int stateNumber)
+						{
+							SetTemporaryPause(true);
+							emulatorHandler.SaveState(stateNumber);
+							SetTemporaryPause(false);
+
+							CreateLoadSaveStateMenus();
+						}
+					};
+
+					loadStateToolStripMenuItem.DropDownItems.Add(loadMenuItem);
+					saveStateToolStripMenuItem.DropDownItems.Add(saveMenuItem);
 				}
 			}
 		}

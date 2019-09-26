@@ -27,6 +27,7 @@ namespace Essgee
 		const string jsonConfigFileName = "Config.json";
 		const string saveDataDirectoryName = "Saves";
 		const string screenshotDirectoryName = "Screenshots";
+		const string saveStateDirectoryName = "Savestates";
 
 		readonly static string programDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), Application.ProductName);
 		readonly static string programConfigPath = Path.Combine(programDataDirectory, jsonConfigFileName);
@@ -36,6 +37,7 @@ namespace Essgee
 		public static string ShaderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Shaders");
 		public static string SaveDataPath = Path.Combine(programDataDirectory, saveDataDirectoryName);
 		public static string ScreenshotPath = Path.Combine(programDataDirectory, screenshotDirectoryName);
+		public static string SaveStatePath = Path.Combine(programDataDirectory, saveStateDirectoryName);
 
 		[STAThread]
 		static void Main()
@@ -51,6 +53,9 @@ namespace Essgee
 
 			if (!Directory.Exists(ScreenshotPath))
 				Directory.CreateDirectory(ScreenshotPath);
+
+			if (!Directory.Exists(SaveStatePath))
+				Directory.CreateDirectory(SaveStatePath);
 
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);

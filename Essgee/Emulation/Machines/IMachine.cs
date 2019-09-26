@@ -37,6 +37,9 @@ namespace Essgee.Emulation.Machines
 		void Reset();
 		void Shutdown();
 
+		void SetState(Dictionary<string, dynamic> state);
+		Dictionary<string, dynamic> GetState();
+
 		void Load(byte[] romData, byte[] ramData, Type mapperType);
 		byte[] GetCartridgeRam();
 		bool IsCartridgeRamSaveNeeded();

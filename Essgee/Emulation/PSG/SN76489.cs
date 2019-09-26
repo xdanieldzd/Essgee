@@ -34,11 +34,11 @@ namespace Essgee.Emulation.PSG
 		protected ushort[] toneRegisters;       /* Channels 0-2 (tone): 10 bits; channel 3 (noise): 3 bits */
 
 		/* Channel counters */
-		ushort[] channelCounters;               /* 10-bit counters */
+		protected ushort[] channelCounters;     /* 10-bit counters */
 		protected bool[] channelOutput;
 
 		/* Volume attenuation table */
-		protected short[] volumeTable;         /* 2dB change per volume register step */
+		protected short[] volumeTable;          /* 2dB change per volume register step */
 
 		/* Latched channel/type */
 		byte latchedChannel, latchedType;
@@ -122,6 +122,45 @@ namespace Essgee.Emulation.PSG
 			}
 
 			sampleCycleCount = frameCycleCount = dividerCount = 0;
+		}
+
+		public void SetState(Dictionary<string, dynamic> state)
+		{
+			volumeRegisters = state[nameof(volumeRegisters)];
+			toneRegisters = state[nameof(toneRegisters)];
+
+			channelCounters = state[nameof(channelCounters)];
+			channelOutput = state[nameof(channelOutput)];
+
+			latchedChannel = state[nameof(latchedChannel)];
+			latchedType = state[nameof(latchedType)];
+
+			noiseLfsr = state[nameof(noiseLfsr)];
+
+			sampleCycleCount = state[nameof(sampleCycleCount)];
+			frameCycleCount = state[nameof(frameCycleCount)];
+			dividerCount = state[nameof(dividerCount)];
+		}
+
+		public Dictionary<string, dynamic> GetState()
+		{
+			return new Dictionary<string, dynamic>
+			{
+				[nameof(volumeRegisters)] = volumeRegisters,
+				[nameof(toneRegisters)] = toneRegisters,
+
+				[nameof(channelCounters)] = channelCounters,
+				[nameof(channelOutput)] = channelOutput,
+
+				[nameof(latchedChannel)] = latchedChannel,
+				[nameof(latchedType)] = latchedType,
+
+				[nameof(noiseLfsr)] = noiseLfsr,
+
+				[nameof(sampleCycleCount)] = sampleCycleCount,
+				[nameof(frameCycleCount)] = frameCycleCount,
+				[nameof(dividerCount)] = dividerCount
+			};
 		}
 
 		public void Step(int clockCyclesInStep)

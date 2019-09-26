@@ -8,7 +8,7 @@ using Essgee.Exceptions;
 
 namespace Essgee.Emulation.Peripherals
 {
-	public class Intel8255
+	public class Intel8255 : IPeripheral
 	{
 		public byte PortAInput { get; set; }
 		public byte PortBInput { get; set; }
@@ -30,6 +30,16 @@ namespace Essgee.Emulation.Peripherals
 
 		public Intel8255() { }
 
+		public void Startup()
+		{
+			//
+		}
+
+		public void Shutdown()
+		{
+			//
+		}
+
 		public void Reset()
 		{
 			PortAInput = PortAOutput = 0x00;
@@ -37,6 +47,48 @@ namespace Essgee.Emulation.Peripherals
 			PortCInput = PortCOutput = 0x00;
 
 			WritePort(0x03, 0x9B);
+		}
+
+		public void SetState(Dictionary<string, dynamic> state)
+		{
+			PortAInput = state[nameof(PortAInput)];
+			PortBInput = state[nameof(PortBInput)];
+			PortCInput = state[nameof(PortCInput)];
+			PortAOutput = state[nameof(PortAOutput)];
+			PortBOutput = state[nameof(PortBOutput)];
+			PortCOutput = state[nameof(PortCOutput)];
+
+			configByte = state[nameof(configByte)];
+			setResetControlByte = state[nameof(setResetControlByte)];
+		}
+
+		public Dictionary<string, dynamic> GetState()
+		{
+			return new Dictionary<string, dynamic>
+			{
+				[nameof(PortAInput)] = PortAInput,
+				[nameof(PortBInput)] = PortBInput,
+				[nameof(PortCInput)] = PortCInput,
+				[nameof(PortAOutput)] = PortAOutput,
+				[nameof(PortBOutput)] = PortBOutput,
+				[nameof(PortCOutput)] = PortCOutput,
+
+				[nameof(configByte)] = configByte,
+				[nameof(setResetControlByte)] = setResetControlByte
+			};
+		}
+
+		public byte ReadPort(byte port)
+		{
+			switch (port & 0x03)
+			{
+				case 0x00: return (isPortAInput ? PortAInput : PortAOutput);
+				case 0x01: return (isPortBInput ? PortBInput : PortBOutput);
+				case 0x02: return (byte)(((isPortCUInput ? PortCInput : PortCOutput) & 0xF0) | (isPortCLInput ? PortCInput : PortCOutput) & 0x0F);
+				case 0x03: return 0xFF; /* Cannot read control port */
+
+				default: throw new EmulationException(string.Format("i8255: Unsupported read from port 0x{0:X2}", port));
+			}
 		}
 
 		public void WritePort(byte port, byte value)
@@ -64,19 +116,6 @@ namespace Essgee.Emulation.Peripherals
 					break;
 
 				default: throw new EmulationException(string.Format("i8255: Unsupported write to port 0x{0:X2}, value 0x{1:X2}", port, value));
-			}
-		}
-
-		public byte ReadPort(byte port)
-		{
-			switch (port & 0x03)
-			{
-				case 0x00: return (isPortAInput ? PortAInput : PortAOutput);
-				case 0x01: return (isPortBInput ? PortBInput : PortBOutput);
-				case 0x02: return (byte)(((isPortCUInput ? PortCInput : PortCOutput) & 0xF0) | (isPortCLInput ? PortCInput : PortCOutput) & 0x0F);
-				case 0x03: return 0xFF; /* Cannot read control port */
-
-				default: throw new EmulationException(string.Format("i8255: Unsupported read from port 0x{0:X2}", port));
 			}
 		}
 	}
