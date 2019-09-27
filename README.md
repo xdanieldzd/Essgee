@@ -15,7 +15,7 @@ Run `Essgee.exe` to start the emulator. Open a ROM to run via the __File__ menu,
 
 Emulator settings can be changed via the __Options__ menu, each option should be self-explanatory. System-specific settings can be found in the __Settings__ dialog. These include controller configurations, region and TV standard selection, bootstrap ROM paths and similar things.
 
-The emulation can be controlled via the __Emulation__ menu. Once a game is running, it can be paused, reset or stopped from there. This menu also contains the __Power On__ submenu, which allows powering up a system with no cartridge inserted, if a bootstrap ROM image is selected. Systems that do not contain a bootstrap ROM cannot be booted like this.
+The emulation can be controlled via the __Emulation__ menu. Once a game is running, it can be paused, reset or stopped from there. This menu also contains the __Power On__ submenu, which allows powering up a system with no cartridge inserted, if a bootstrap ROM image is selected. Systems that do not contain a bootstrap ROM cannot be booted like this. Save states can be loaded and saved from the __Load State__ and __Save State__ submenus; eight slots are available, each slot listing the date and time the respective save state was last written to.
 
 Fullscreen mode can be toggled via the __F11__ key. This is currently hardcoded and thus cannot be configured.
 
@@ -62,13 +62,15 @@ The SC-3000 keyboard is (currently) not configurable; the current layout can be 
 * The framerate limiter and FPS counter are somewhat inaccurate and might contribute to the aforementioned sound stuttering issues
 
 ## Screenshots
-* __Girl's Garden__ (SG-1000):<br><br>
+* __Girl's Garden__ (SG-1000, using Pseudo-Monitor shader):<br><br>
  ![Screenshot 1](https://raw.githubusercontent.com/xdanieldzd/Essgee/master/Screenshots/SG1000-Garden.png)<br><br>
-* __Sega SC-3000 BASIC Level 3__ (SC-3000):<br><br>
+* __Sega SC-3000 BASIC Level 3__ (SC-3000, using Pseudo-Monitor shader):<br><br>
  ![Screenshot 2](https://raw.githubusercontent.com/xdanieldzd/Essgee/master/Screenshots/SC3000-BasicLv3.png)<br><br>
-* __Sonic the Hedgehog__ (Master System):<br><br>
+* __Donkey Kong__ (ColecoVision, using Pseudo-Monitor shader):<br><br>
+ ![Screenshot 5](https://raw.githubusercontent.com/xdanieldzd/Essgee/master/Screenshots/CV-Donkey.png)<br><br>
+* __Sonic the Hedgehog__ (Master System, using Pseudo-Monitor shader):<br><br>
  ![Screenshot 3](https://raw.githubusercontent.com/xdanieldzd/Essgee/master/Screenshots/SMS-Sonic1.png)<br><br>
-* __GG Aleste II / Power Strike II__ (Game Gear):<br><br>
+* __GG Aleste II / Power Strike II__ (Game Gear, using LCD-Blur shader):<br><br>
  ![Screenshot 4](https://raw.githubusercontent.com/xdanieldzd/Essgee/master/Screenshots/GG-AlesteII.png)<br><br>
 
 ## Acknowledgements & Attribution
