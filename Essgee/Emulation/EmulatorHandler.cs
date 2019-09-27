@@ -85,6 +85,8 @@ namespace Essgee.Emulation
 			set { emulationThreadPaused = value; }
 		}
 
+		public bool IsHandlingSaveState => (stateLoadRequested || stateSaveRequested);
+
 		public (string Manufacturer, string Model, string DatFileName) Information => (emulator.ManufacturerName, emulator.ModelName, emulator.DatFilename);
 
 		public EmulatorHandler(Type type, Action<Exception> exceptionHandler = null)

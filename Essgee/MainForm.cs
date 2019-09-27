@@ -557,6 +557,7 @@ namespace Essgee
 							emulatorHandler.SaveState(stateNumber);
 							SetTemporaryPause(false);
 
+							while (emulatorHandler.IsHandlingSaveState) { }
 							CreateLoadSaveStateMenus();
 
 							onScreenDisplayHandler.EnqueueMessage($"State {stateNumber} saved.");
