@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Reflection;
 
 using Essgee.Exceptions;
 using Essgee.Utilities;
@@ -22,22 +23,22 @@ namespace Essgee.Emulation
 
 			using (var reader = new BinaryReader(stream))
 			{
-				// Read and check version string
+				/* Read and check version string */
 				var version = Encoding.ASCII.GetString(reader.ReadBytes(ExpectedVersion.Length));
 				if (version != ExpectedVersion) throw new EmulationException("Unsupported savestate version");
 
-				// Read and check filesize
+				/* Read and check filesize */
 				var filesize = reader.ReadUInt32();
 				if (filesize != reader.BaseStream.Length) throw new EmulationException("Savestate filesize mismatch");
 
-				// Read CRC32
+				/* Read CRC32 */
 				var crc32 = reader.ReadUInt32();
 
-				// Read and check machine ID
+				/* Read and check machine ID */
 				var machineId = Encoding.ASCII.GetString(reader.ReadBytes(16));
 				if (machineId != GenerateMachineIdString(machineName)) throw new EmulationException("Savestate machine mismatch");
 
-				// Check CRC32
+				/* Check CRC32 */
 				using (var stateStream = new MemoryStream())
 				{
 					reader.BaseStream.CopyTo(stateStream);
@@ -45,7 +46,7 @@ namespace Essgee.Emulation
 					var expectedCrc32 = Crc32.Calculate(stateStream);
 					if (crc32 != expectedCrc32) throw new EmulationException("Savestate checksum error");
 
-					// Read state data
+					/* Read state data */
 					var binaryFormatter = new BinaryFormatter();
 					return (binaryFormatter.Deserialize(stateStream) as Dictionary<string, dynamic>);
 				}
@@ -56,41 +57,44 @@ namespace Essgee.Emulation
 		{
 			using (var writer = new BinaryWriter(new MemoryStream()))
 			{
-				// Write version string
+				/* Write version string */
 				writer.Write(Encoding.ASCII.GetBytes(ExpectedVersion));
 
-				// Write filesize placeholder
+				/* Write filesize placeholder */
 				var filesizePosition = writer.BaseStream.Position;
 				writer.Write(uint.MaxValue);
 
-				// Write CRC32 placeholder
+				/* Write CRC32 placeholder */
 				var crc32Position = writer.BaseStream.Position;
 				writer.Write(uint.MaxValue);
 
-				// Write machine ID
+				/* Write machine ID */
 				writer.Write(Encoding.ASCII.GetBytes(GenerateMachineIdString(machineName)));
 
-				// Write state data
+				/* Current position is end of header, store for later */
+				var headerSize = writer.BaseStream.Position;
+
+				/* Write state data */
 				var binaryFormatter = new BinaryFormatter();
 				binaryFormatter.Serialize(writer.BaseStream, state);
 
-				// Write filesize
+				/* Write filesize */
 				var lastOffset = writer.BaseStream.Position;
 				writer.BaseStream.Position = filesizePosition;
 				writer.Write((uint)writer.BaseStream.Length);
 				writer.BaseStream.Position = lastOffset;
 
-				// Write CRC32
+				/* Calculate CRC32 for state data, then write CRC32 */
 				lastOffset = writer.BaseStream.Position;
 
 				writer.BaseStream.Position = 0;
-				var crc32 = Crc32.Calculate(writer.BaseStream, 0x20, (int)writer.BaseStream.Length - 0x20);
+				var crc32 = Crc32.Calculate(writer.BaseStream, (int)headerSize, (int)(writer.BaseStream.Length - headerSize));
 
 				writer.BaseStream.Position = crc32Position;
 				writer.Write(crc32);
 				writer.BaseStream.Position = lastOffset;
 
-				// Copy to file
+				/* Copy to file */
 				writer.BaseStream.Position = 0;
 				writer.BaseStream.CopyTo(stream);
 			}
@@ -105,12 +109,14 @@ namespace Essgee.Emulation
 		{
 			if (obj != null)
 			{
-				foreach (var prop in obj.GetType().GetProperties(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
+				/* Restore property values from state */
+				foreach (var prop in obj.GetType().GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
 				{
 					prop.SetValue(obj, state[prop.Name]);
 				}
 
-				foreach (var field in obj.GetType().GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
+				/* Restore field values from state */
+				foreach (var field in obj.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
 				{
 					field.SetValue(obj, state[field.Name]);
 				}
@@ -123,12 +129,14 @@ namespace Essgee.Emulation
 
 			if (obj != null)
 			{
-				foreach (var prop in obj.GetType().GetProperties(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
+				/* Copy property values to state */
+				foreach (var prop in obj.GetType().GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
 				{
 					state.Add(prop.Name, prop.GetValue(obj));
 				}
 
-				foreach (var field in obj.GetType().GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
+				/* Copy field values to state */
+				foreach (var field in obj.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
 				{
 					state.Add(field.Name, field.GetValue(obj));
 				}
