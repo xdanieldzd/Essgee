@@ -228,12 +228,47 @@ namespace Essgee.Emulation.Machines
 
 		public void SetState(Dictionary<string, dynamic> state)
 		{
-			throw new EmulationException($"Savestates not implemented for {ModelName}");
+			configuration.TVStandard = state[nameof(configuration.TVStandard)];
+			configuration.Region = state[nameof(configuration.Region)];
+
+			SaveStateHandler.PerformSetState(bootstrap, state[nameof(bootstrap)]);
+			SaveStateHandler.PerformSetState(cartridge, state[nameof(cartridge)]);
+			wram = state[nameof(wram)];
+			SaveStateHandler.PerformSetState(cpu, state[nameof(cpu)]);
+			SaveStateHandler.PerformSetState(vdp, state[nameof(vdp)]);
+			SaveStateHandler.PerformSetState(psg, state[nameof(psg)]);
+
+			inputDevices = state[nameof(inputDevices)];
+			lightgunLatched = state[nameof(lightgunLatched)];
+
+			portMemoryControl = state[nameof(portMemoryControl)];
+			portIoControl = state[nameof(portIoControl)];
+			hCounterLatched = state[nameof(hCounterLatched)];
+
+			ReconfigureSystem();
 		}
 
 		public Dictionary<string, dynamic> GetState()
 		{
-			throw new EmulationException($"Savestates not implemented for {ModelName}");
+			return new Dictionary<string, dynamic>
+			{
+				[nameof(configuration.TVStandard)] = configuration.TVStandard,
+				[nameof(configuration.Region)] = configuration.Region,
+
+				[nameof(bootstrap)] = SaveStateHandler.PerformGetState(bootstrap),
+				[nameof(cartridge)] = SaveStateHandler.PerformGetState(cartridge),
+				[nameof(wram)] = wram,
+				[nameof(cpu)] = SaveStateHandler.PerformGetState(cpu),
+				[nameof(vdp)] = SaveStateHandler.PerformGetState(vdp),
+				[nameof(psg)] = SaveStateHandler.PerformGetState(psg),
+
+				[nameof(inputDevices)] = inputDevices,
+				[nameof(lightgunLatched)] = lightgunLatched,
+
+				[nameof(portMemoryControl)] = portMemoryControl,
+				[nameof(portIoControl)] = portIoControl,
+				[nameof(hCounterLatched)] = hCounterLatched
+			};
 		}
 
 		public Dictionary<string, dynamic> GetDebugInformation()

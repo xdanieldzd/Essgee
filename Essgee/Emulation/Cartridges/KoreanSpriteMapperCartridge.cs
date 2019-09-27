@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Essgee.Exceptions;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.Cartridges
 {
@@ -15,10 +16,17 @@ namespace Essgee.Emulation.Cartridges
 
 	public class KoreanSpriteMapperCartridge : ICartridge
 	{
-		byte[] romData, ramData;
+		byte[] romData;
+
+		[StateRequired]
+		byte[] ramData;
+
+		[StateRequired]
 		readonly byte[] pagingRegisters;
 
+		[StateRequired]
 		byte romBankMask;
+		[StateRequired]
 		bool hasCartRam;
 
 		bool isRamEnabled { get { return BitUtilities.IsBitSet(pagingRegisters[0], 3); } }
@@ -28,6 +36,7 @@ namespace Essgee.Emulation.Cartridges
 		int romBank1 { get { return pagingRegisters[2]; } }
 		int romBank2 { get { return pagingRegisters[3]; } }
 
+		[StateRequired]
 		bool isBitReverseBank1, isBitReverseBank2;
 
 		public KoreanSpriteMapperCartridge(int romSize, int ramSize)
@@ -65,16 +74,6 @@ namespace Essgee.Emulation.Cartridges
 		public void LoadRam(byte[] data)
 		{
 			Buffer.BlockCopy(data, 0, ramData, 0, Math.Min(data.Length, ramData.Length));
-		}
-
-		public void SetState(Dictionary<string, dynamic> state)
-		{
-			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
-		}
-
-		public Dictionary<string, dynamic> GetState()
-		{
-			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
 		}
 
 		public byte[] GetRomData()

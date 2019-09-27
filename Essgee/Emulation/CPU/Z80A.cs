@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Essgee.Exceptions;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.CPU
 {
@@ -37,19 +38,29 @@ namespace Essgee.Emulation.CPU
 		PortReadDelegate portReadDelegate;
 		PortWriteDelegate portWriteDelegate;
 
+		[StateRequired]
 		protected Register af, bc, de, hl;
+		[StateRequired]
 		protected Register af_, bc_, de_, hl_;
+		[StateRequired]
 		protected Register ix, iy;
+		[StateRequired]
 		protected byte i, r;
+		[StateRequired]
 		protected ushort sp, pc;
 
+		[StateRequired]
 		protected bool iff1, iff2, eiDelay, halt;
+		[StateRequired]
 		protected byte im;
 
+		[StateRequired]
 		protected byte op;
 
+		[StateRequired]
 		InterruptState intState, nmiState;
 
+		[StateRequired]
 		int currentCycles;
 
 		public Z80A(MemoryReadDelegate memoryRead, MemoryWriteDelegate memoryWrite, PortReadDelegate portRead, PortWriteDelegate portWrite)
@@ -140,75 +151,6 @@ namespace Essgee.Emulation.CPU
 			}
 
 			return currentCycles;
-		}
-
-		public void SetState(Dictionary<string, dynamic> state)
-		{
-			af.Word = state[nameof(af)];
-			bc.Word = state[nameof(bc)];
-			de.Word = state[nameof(de)];
-			hl.Word = state[nameof(hl)];
-			af_.Word = state[nameof(af_)];
-			bc_.Word = state[nameof(bc_)];
-			de_.Word = state[nameof(de_)];
-			hl_.Word = state[nameof(hl_)];
-
-			ix.Word = state[nameof(ix)];
-			iy.Word = state[nameof(iy)];
-
-			i = state[nameof(i)];
-			r = state[nameof(r)];
-			sp = state[nameof(sp)];
-			pc = state[nameof(pc)];
-
-			iff1 = state[nameof(iff1)];
-			iff2 = state[nameof(iff2)];
-			eiDelay = state[nameof(eiDelay)];
-			halt = state[nameof(halt)];
-			im = state[nameof(im)];
-
-			op = state[nameof(op)];
-
-			intState = state[nameof(intState)];
-			nmiState = state[nameof(nmiState)];
-
-			currentCycles = state[nameof(currentCycles)];
-		}
-
-		public Dictionary<string, dynamic> GetState()
-		{
-			return new Dictionary<string, dynamic>
-			{
-				[nameof(af)] = af.Word,
-				[nameof(bc)] = bc.Word,
-				[nameof(de)] = de.Word,
-				[nameof(hl)] = hl.Word,
-				[nameof(af_)] = af_.Word,
-				[nameof(bc_)] = bc_.Word,
-				[nameof(de_)] = de_.Word,
-				[nameof(hl_)] = hl_.Word,
-
-				[nameof(ix)] = ix.Word,
-				[nameof(iy)] = iy.Word,
-
-				[nameof(i)] = i,
-				[nameof(r)] = r,
-				[nameof(sp)] = sp,
-				[nameof(pc)] = pc,
-
-				[nameof(iff1)] = iff1,
-				[nameof(iff2)] = iff2,
-				[nameof(eiDelay)] = eiDelay,
-				[nameof(halt)] = halt,
-				[nameof(im)] = im,
-
-				[nameof(op)] = op,
-
-				[nameof(intState)] = intState,
-				[nameof(nmiState)] = nmiState,
-
-				[nameof(currentCycles)] = currentCycles
-			};
 		}
 
 		#region Opcode Execution and Cycle Management

@@ -11,9 +11,6 @@ namespace Essgee.Emulation.Cartridges
 		void LoadRom(byte[] data);
 		void LoadRam(byte[] data);
 
-		void SetState(Dictionary<string, dynamic> state);
-		Dictionary<string, dynamic> GetState();
-
 		byte[] GetRomData();
 		byte[] GetRamData();
 		bool IsRamSaveNeeded();

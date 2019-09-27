@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Essgee.EventArguments;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.VDP
 {
@@ -25,13 +26,18 @@ namespace Essgee.Emulation.VDP
 		public const int PortVCounter = 0x40;       // 0x7E canonically, but mirrored across bus
 		public const int PortHCounter = 0x41;       // 0x7F canonically, but mirrored across bus
 
+		[StateRequired]
 		protected byte[] cram;
 
-		protected int vCounter, hCounter, nametableHeight, vCounterTableIndex;
+		[StateRequired]
+		protected int vCounter, hCounter;
+		protected int nametableHeight, vCounterTableIndex;
+		[StateRequired]
 		protected int lineInterruptCounter;
 		protected int screenHeight;
 
 		bool isLineInterruptEnabled => BitUtilities.IsBitSet(registers[0x00], 4);
+		[StateRequired]
 		bool isLineInterruptPending;
 
 		bool isColumn0MaskEnabled => BitUtilities.IsBitSet(registers[0x00], 5);
@@ -316,6 +322,7 @@ namespace Essgee.Emulation.VDP
 			0xF5, 0xF6, 0xF6, 0xF7, 0xF8, 0xF9, 0xF9, 0xFA, 0xFB, 0xFC, 0xFC, 0xFD, 0xFE, 0xFF, 0xFF
 		};
 
+		[StateRequired]
 		byte horizontalScrollLatched, verticalScrollLatched;
 
 		const byte screenUsageBgLowPriority = screenUsageBackground;

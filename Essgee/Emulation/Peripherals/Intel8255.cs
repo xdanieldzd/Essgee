@@ -5,18 +5,26 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Essgee.Exceptions;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.Peripherals
 {
 	public class Intel8255 : IPeripheral
 	{
+		[StateRequired]
 		public byte PortAInput { get; set; }
+		[StateRequired]
 		public byte PortBInput { get; set; }
+		[StateRequired]
 		public byte PortCInput { get; set; }
+		[StateRequired]
 		public byte PortAOutput { get; set; }
+		[StateRequired]
 		public byte PortBOutput { get; set; }
+		[StateRequired]
 		public byte PortCOutput { get; set; }
 
+		[StateRequired]
 		byte configByte, setResetControlByte;
 
 		int operatingModeGroupA => ((configByte >> 5) & 0x03);
@@ -47,35 +55,6 @@ namespace Essgee.Emulation.Peripherals
 			PortCInput = PortCOutput = 0x00;
 
 			WritePort(0x03, 0x9B);
-		}
-
-		public void SetState(Dictionary<string, dynamic> state)
-		{
-			PortAInput = state[nameof(PortAInput)];
-			PortBInput = state[nameof(PortBInput)];
-			PortCInput = state[nameof(PortCInput)];
-			PortAOutput = state[nameof(PortAOutput)];
-			PortBOutput = state[nameof(PortBOutput)];
-			PortCOutput = state[nameof(PortCOutput)];
-
-			configByte = state[nameof(configByte)];
-			setResetControlByte = state[nameof(setResetControlByte)];
-		}
-
-		public Dictionary<string, dynamic> GetState()
-		{
-			return new Dictionary<string, dynamic>
-			{
-				[nameof(PortAInput)] = PortAInput,
-				[nameof(PortBInput)] = PortBInput,
-				[nameof(PortCInput)] = PortCInput,
-				[nameof(PortAOutput)] = PortAOutput,
-				[nameof(PortBOutput)] = PortBOutput,
-				[nameof(PortCOutput)] = PortCOutput,
-
-				[nameof(configByte)] = configByte,
-				[nameof(setResetControlByte)] = setResetControlByte
-			};
 		}
 
 		public byte ReadPort(byte port)

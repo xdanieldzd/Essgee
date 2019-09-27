@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 
 using Essgee.EventArguments;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.VDP
 {
@@ -44,14 +45,19 @@ namespace Essgee.Emulation.VDP
 		protected double clockRate, refreshRate;
 		protected bool isPalChip;
 
+		[StateRequired]
 		protected byte[] registers, vram;
+		[StateRequired]
 		protected (int Number, int Y, int X, int Pattern, int Attribute)[][] spriteBuffer;
 
 		protected ushort vramMask16k => 0x3FFF;
 		protected ushort vramMask4k => 0x0FFF;
 
+		[StateRequired]
 		protected bool isSecondControlWrite;
+		[StateRequired]
 		protected ushort controlWord;
+		[StateRequired]
 		protected byte readBuffer;
 
 		protected byte codeRegister => (byte)((controlWord >> 14) & 0x03);
@@ -69,6 +75,7 @@ namespace Essgee.Emulation.VDP
 			SpriteOverflow = (1 << 6),
 			FrameInterruptPending = (1 << 7)
 		}
+		[StateRequired]
 		protected StatusFlags statusFlags;
 		protected bool isSpriteCollision
 		{
@@ -87,8 +94,10 @@ namespace Essgee.Emulation.VDP
 		}
 		protected bool isFrameInterruptEnabled => BitUtilities.IsBitSet(registers[0x01], 5);
 
+		[StateRequired]
 		public InterruptState InterruptLine { get; set; }
 
+		[StateRequired]
 		protected int currentScanline;
 
 		protected bool isDisplayBlanked => !BitUtilities.IsBitSet(registers[0x01], 6);
@@ -139,8 +148,10 @@ namespace Essgee.Emulation.VDP
 		protected const byte screenUsageEmpty = 0;
 		protected const byte screenUsageSprite = (1 << 0);
 		protected const byte screenUsageBackground = (1 << 1);
+		[StateRequired]
 		protected byte[] screenUsage;
 
+		[StateRequired]
 		protected int cycleCount;
 		protected byte[] outputFramebuffer;
 
@@ -198,51 +209,6 @@ namespace Essgee.Emulation.VDP
 			ClearScreenUsage();
 
 			cycleCount = 0;
-		}
-
-		public void SetState(Dictionary<string, dynamic> state)
-		{
-			registers = state[nameof(registers)];
-			vram = state[nameof(vram)];
-
-			spriteBuffer = state[nameof(spriteBuffer)];
-
-			isSecondControlWrite = state[nameof(isSecondControlWrite)];
-			controlWord = state[nameof(controlWord)];
-			readBuffer = state[nameof(readBuffer)];
-
-			statusFlags = state[nameof(statusFlags)];
-
-			InterruptLine = state[nameof(InterruptLine)];
-
-			currentScanline = state[nameof(currentScanline)];
-
-			screenUsage = state[nameof(screenUsage)];
-			cycleCount = state[nameof(cycleCount)];
-		}
-
-		public Dictionary<string, dynamic> GetState()
-		{
-			return new Dictionary<string, dynamic>
-			{
-				[nameof(registers)] = registers,
-				[nameof(vram)] = vram,
-
-				[nameof(spriteBuffer)] = spriteBuffer,
-
-				[nameof(isSecondControlWrite)] = isSecondControlWrite,
-				[nameof(controlWord)] = controlWord,
-				[nameof(readBuffer)] = readBuffer,
-
-				[nameof(statusFlags)] = statusFlags,
-
-				[nameof(InterruptLine)] = InterruptLine,
-
-				[nameof(currentScanline)] = currentScanline,
-
-				[nameof(screenUsage)] = screenUsage,
-				[nameof(cycleCount)] = cycleCount
-			};
 		}
 
 		public void SetClockRate(double clock)

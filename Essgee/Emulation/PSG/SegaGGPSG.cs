@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Essgee.EventArguments;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.PSG
 {
@@ -10,6 +10,7 @@ namespace Essgee.Emulation.PSG
 
 		enum OutputChannel : int { Left = 0, Right = 1 }
 
+		[StateRequired]
 		readonly bool[] channel0Enable, channel1Enable, channel2Enable, channel3Enable;
 
 		public SegaGGPSG(int sampleRate, int numOutputChannels) : base(sampleRate, numOutputChannels)

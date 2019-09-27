@@ -193,12 +193,37 @@ namespace Essgee.Emulation.Machines
 
 		public void SetState(Dictionary<string, dynamic> state)
 		{
-			throw new EmulationException($"Savestates not implemented for {ModelName}");
+			SaveStateHandler.PerformSetState(cartridge, state[nameof(cartridge)]);
+			wram = state[nameof(wram)];
+			SaveStateHandler.PerformSetState(cpu, state[nameof(cpu)]);
+			SaveStateHandler.PerformSetState(vdp, state[nameof(vdp)]);
+			SaveStateHandler.PerformSetState(psg, state[nameof(psg)]);
+
+			portControls1 = state[nameof(portControls1)];
+			portControls2 = state[nameof(portControls2)];
+			controlsReadMode = state[nameof(controlsReadMode)];
+			isNmi = state[nameof(isNmi)];
+			isNmiPending = state[nameof(isNmiPending)];
+
+			ReconfigureSystem();
 		}
 
 		public Dictionary<string, dynamic> GetState()
 		{
-			throw new EmulationException($"Savestates not implemented for {ModelName}");
+			return new Dictionary<string, dynamic>
+			{
+				[nameof(cartridge)] = SaveStateHandler.PerformGetState(cartridge),
+				[nameof(wram)] = wram,
+				[nameof(cpu)] = SaveStateHandler.PerformGetState(cpu),
+				[nameof(vdp)] = SaveStateHandler.PerformGetState(vdp),
+				[nameof(psg)] = SaveStateHandler.PerformGetState(psg),
+
+				[nameof(portControls1)] = portControls1,
+				[nameof(portControls2)] = portControls2,
+				[nameof(controlsReadMode)] = controlsReadMode,
+				[nameof(isNmi)] = isNmi,
+				[nameof(isNmiPending)] = isNmiPending
+			};
 		}
 
 		public Dictionary<string, dynamic> GetDebugInformation()

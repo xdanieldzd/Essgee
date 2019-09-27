@@ -218,12 +218,33 @@ namespace Essgee.Emulation.Machines
 
 		public void SetState(Dictionary<string, dynamic> state)
 		{
-			throw new EmulationException($"Savestates not implemented for {ModelName}");
+			configuration.TVStandard = state[nameof(configuration.TVStandard)];
+
+			SaveStateHandler.PerformSetState(cartridge, state[nameof(cartridge)]);
+			wram = state[nameof(wram)];
+			SaveStateHandler.PerformSetState(cpu, state[nameof(cpu)]);
+			SaveStateHandler.PerformSetState(vdp, state[nameof(vdp)]);
+			SaveStateHandler.PerformSetState(psg, state[nameof(psg)]);
+			SaveStateHandler.PerformSetState(ppi, state[nameof(ppi)]);
+			keyboard = state[nameof(keyboard)];
+
+			ReconfigureSystem();
 		}
 
 		public Dictionary<string, dynamic> GetState()
 		{
-			throw new EmulationException($"Savestates not implemented for {ModelName}");
+			return new Dictionary<string, dynamic>
+			{
+				[nameof(configuration.TVStandard)] = configuration.TVStandard,
+
+				[nameof(cartridge)] = SaveStateHandler.PerformGetState(cartridge),
+				[nameof(wram)] = wram,
+				[nameof(cpu)] = SaveStateHandler.PerformGetState(cpu),
+				[nameof(vdp)] = SaveStateHandler.PerformGetState(vdp),
+				[nameof(psg)] = SaveStateHandler.PerformGetState(psg),
+				[nameof(ppi)] = SaveStateHandler.PerformGetState(ppi),
+				[nameof(keyboard)] = keyboard
+			};
 		}
 
 		public Dictionary<string, dynamic> GetDebugInformation()

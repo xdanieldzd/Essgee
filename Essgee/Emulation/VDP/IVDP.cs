@@ -27,9 +27,6 @@ namespace Essgee.Emulation.VDP
 		void Reset();
 		void Step(int clockCyclesInStep);
 
-		void SetState(Dictionary<string, dynamic> state);
-		Dictionary<string, dynamic> GetState();
-
 		void SetClockRate(double clock);
 		void SetRefreshRate(double refresh);
 

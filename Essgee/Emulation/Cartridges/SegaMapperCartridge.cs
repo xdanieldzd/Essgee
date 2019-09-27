@@ -6,15 +6,23 @@ using System.Threading.Tasks;
 using System.IO;
 
 using Essgee.Exceptions;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.Cartridges
 {
 	public class SegaMapperCartridge : ICartridge
 	{
-		byte[] romData, ramData;
+		byte[] romData;
+
+		[StateRequired]
+		byte[] ramData;
+
+		[StateRequired]
 		readonly byte[] pagingRegisters;
 
+		[StateRequired]
 		byte romBankMask;
+		[StateRequired]
 		bool hasCartRam;
 
 		bool isRamEnabled { get { return BitUtilities.IsBitSet(pagingRegisters[0], 3); } }
@@ -57,16 +65,6 @@ namespace Essgee.Emulation.Cartridges
 		public void LoadRam(byte[] data)
 		{
 			Buffer.BlockCopy(data, 0, ramData, 0, Math.Min(data.Length, ramData.Length));
-		}
-
-		public void SetState(Dictionary<string, dynamic> state)
-		{
-			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
-		}
-
-		public Dictionary<string, dynamic> GetState()
-		{
-			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
 		}
 
 		public byte[] GetRomData()

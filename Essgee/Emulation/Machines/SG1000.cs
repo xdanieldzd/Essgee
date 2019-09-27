@@ -190,12 +190,12 @@ namespace Essgee.Emulation.Machines
 		{
 			configuration.TVStandard = state[nameof(configuration.TVStandard)];
 
-			cartridge.SetState(state[nameof(cartridge)]);
+			SaveStateHandler.PerformSetState(cartridge, state[nameof(cartridge)]);
 			wram = state[nameof(wram)];
-			cpu.SetState(state[nameof(cpu)]);
-			vdp.SetState(state[nameof(vdp)]);
-			psg.SetState(state[nameof(psg)]);
-			ppi.SetState(state[nameof(ppi)]);
+			SaveStateHandler.PerformSetState(cpu, state[nameof(cpu)]);
+			SaveStateHandler.PerformSetState(vdp, state[nameof(vdp)]);
+			SaveStateHandler.PerformSetState(psg, state[nameof(psg)]);
+			SaveStateHandler.PerformSetState(ppi, state[nameof(ppi)]);
 
 			ReconfigureSystem();
 		}
@@ -206,12 +206,12 @@ namespace Essgee.Emulation.Machines
 			{
 				[nameof(configuration.TVStandard)] = configuration.TVStandard,
 
-				[nameof(cartridge)] = cartridge.GetState(),
+				[nameof(cartridge)] = SaveStateHandler.PerformGetState(cartridge),
 				[nameof(wram)] = wram,
-				[nameof(cpu)] = cpu.GetState(),
-				[nameof(vdp)] = vdp.GetState(),
-				[nameof(psg)] = psg.GetState(),
-				[nameof(ppi)] = ppi.GetState()
+				[nameof(cpu)] = SaveStateHandler.PerformGetState(cpu),
+				[nameof(vdp)] = SaveStateHandler.PerformGetState(vdp),
+				[nameof(psg)] = SaveStateHandler.PerformGetState(psg),
+				[nameof(ppi)] = SaveStateHandler.PerformGetState(ppi)
 			};
 		}
 

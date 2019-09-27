@@ -100,5 +100,41 @@ namespace Essgee.Emulation
 		{
 			return machineId.Substring(0, Math.Min(machineId.Length, 16)).PadRight(16);
 		}
+
+		public static void PerformSetState(object obj, Dictionary<string, dynamic> state)
+		{
+			if (obj != null)
+			{
+				foreach (var prop in obj.GetType().GetProperties(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
+				{
+					prop.SetValue(obj, state[prop.Name]);
+				}
+
+				foreach (var field in obj.GetType().GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
+				{
+					field.SetValue(obj, state[field.Name]);
+				}
+			}
+		}
+
+		public static Dictionary<string, dynamic> PerformGetState(object obj)
+		{
+			var state = new Dictionary<string, dynamic>();
+
+			if (obj != null)
+			{
+				foreach (var prop in obj.GetType().GetProperties(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
+				{
+					state.Add(prop.Name, prop.GetValue(obj));
+				}
+
+				foreach (var field in obj.GetType().GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).Where(x => x.GetCustomAttributes(typeof(StateRequiredAttribute), false).Length != 0))
+				{
+					state.Add(field.Name, field.GetValue(obj));
+				}
+			}
+
+			return state;
+		}
 	}
 }

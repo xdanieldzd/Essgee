@@ -5,12 +5,19 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
+using Essgee.Utilities;
+
 namespace Essgee.Emulation.Cartridges
 {
 	public class SegaSGCartridge : ICartridge
 	{
-		byte[] romData, ramData;
-		int romMask, ramMask;
+		byte[] romData;
+
+		[StateRequired]
+		byte[] ramData;
+
+		[StateRequired]
+		readonly int romMask, ramMask;
 
 		public SegaSGCartridge(int romSize, int ramSize)
 		{
@@ -32,21 +39,6 @@ namespace Essgee.Emulation.Cartridges
 		public void LoadRam(byte[] data)
 		{
 			Buffer.BlockCopy(data, 0, ramData, 0, Math.Min(data.Length, ramData.Length));
-		}
-
-		public void SetState(Dictionary<string, dynamic> state)
-		{
-			romMask = state[nameof(romMask)];
-			ramMask = state[nameof(ramMask)];
-		}
-
-		public Dictionary<string, dynamic> GetState()
-		{
-			return new Dictionary<string, dynamic>
-			{
-				[nameof(romMask)] = romMask,
-				[nameof(ramMask)] = ramMask
-			};
 		}
 
 		public byte[] GetRomData()

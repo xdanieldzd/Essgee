@@ -6,6 +6,6 @@ using System.Threading.Tasks;
 
 namespace Essgee.Utilities
 {
-	[AttributeUsage(AttributeTargets.Property)]
-	public class IsBootstrapRomPathAttribute : Attribute { }
+	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+	public class StateRequiredAttribute : Attribute { }
 }

@@ -163,6 +163,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="EventArguments\RenderScreenEventArgs.cs" />
     <Compile Include="Utilities\MachineIndexAttribute.cs" />
+    <Compile Include="Utilities\StateRequiredAttribute.cs" />
     <Compile Include="Utilities\TypeNameJsonConverter.cs" />
     <Content Include="EssgeeIcon.ico" />
     <EmbeddedResource Include="Assets\OsdFont.png" />

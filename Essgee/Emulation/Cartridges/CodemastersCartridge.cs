@@ -5,15 +5,23 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Essgee.Exceptions;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.Cartridges
 {
 	public class CodemastersCartridge : ICartridge
 	{
-		byte[] romData, ramData;
+		byte[] romData;
+
+		[StateRequired]
+		byte[] ramData;
+
+		[StateRequired]
 		readonly byte[] pagingRegisters;
+		[StateRequired]
 		readonly byte bankMask;
 
+		[StateRequired]
 		bool isRamEnabled;
 
 		public CodemastersCartridge(int romSize, int ramSize)
@@ -39,16 +47,6 @@ namespace Essgee.Emulation.Cartridges
 		public void LoadRam(byte[] data)
 		{
 			Buffer.BlockCopy(data, 0, ramData, 0, Math.Min(data.Length, ramData.Length));
-		}
-
-		public void SetState(Dictionary<string, dynamic> state)
-		{
-			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
-		}
-
-		public Dictionary<string, dynamic> GetState()
-		{
-			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
 		}
 
 		public byte[] GetRomData()

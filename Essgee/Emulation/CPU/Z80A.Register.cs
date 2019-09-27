@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Essgee.Emulation.CPU
@@ -7,12 +8,16 @@ namespace Essgee.Emulation.CPU
 	{
 		[DebuggerDisplay("{Word}")]
 		[StructLayout(LayoutKind.Explicit)]
+		[Serializable]
 		public struct Register
 		{
+			[NonSerialized]
 			[FieldOffset(0)]
 			public byte Low;
+			[NonSerialized]
 			[FieldOffset(1)]
 			public byte High;
+
 			[FieldOffset(0)]
 			public ushort Word;
 		}

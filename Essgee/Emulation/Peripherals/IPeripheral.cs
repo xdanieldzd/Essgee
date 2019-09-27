@@ -12,9 +12,6 @@ namespace Essgee.Emulation.Peripherals
 		void Shutdown();
 		void Reset();
 
-		void SetState(Dictionary<string, dynamic> state);
-		Dictionary<string, dynamic> GetState();
-
 		byte ReadPort(byte port);
 		void WritePort(byte port, byte value);
 	}

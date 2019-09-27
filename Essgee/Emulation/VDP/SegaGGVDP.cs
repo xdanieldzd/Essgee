@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Essgee.Utilities;
+
 namespace Essgee.Emulation.VDP
 {
 	/* Sega 315-5378, Game Gear */
@@ -14,6 +16,7 @@ namespace Essgee.Emulation.VDP
 		public override (int X, int Y, int Width, int Height) Viewport => (85, 64, 160, 144);
 		// y -- ((ScreenHeight / 2) - (144 / 2)) ????
 
+		[StateRequired]
 		ushort cramLatch;
 
 		public SegaGGVDP() : base()

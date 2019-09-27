@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 
 using Essgee.Exceptions;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.Cartridges
 {
@@ -14,8 +15,11 @@ namespace Essgee.Emulation.Cartridges
 	public class Multicart4PakAllActionCartridge : ICartridge
 	{
 		byte[] romData;
+
+		[StateRequired]
 		readonly int romMask;
 
+		[StateRequired]
 		int romBank0, romBank1, romBank2;
 
 		public Multicart4PakAllActionCartridge(int romSize, int ramSize)
@@ -37,16 +41,6 @@ namespace Essgee.Emulation.Cartridges
 		public void LoadRam(byte[] data)
 		{
 			//
-		}
-
-		public void SetState(Dictionary<string, dynamic> state)
-		{
-			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
-		}
-
-		public Dictionary<string, dynamic> GetState()
-		{
-			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
 		}
 
 		public byte[] GetRomData()

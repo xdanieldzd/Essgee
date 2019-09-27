@@ -512,7 +512,7 @@ namespace Essgee
 			loadStateToolStripMenuItem.DropDownItems.Clear();
 			saveStateToolStripMenuItem.DropDownItems.Clear();
 
-			for (int i = 0; i < maxSaveStateCount; i++)
+			for (int i = 1; i <= maxSaveStateCount; i++)
 			{
 				var stateFileInfo = new FileInfo(emulatorHandler.GetSaveStateFilename(i));
 

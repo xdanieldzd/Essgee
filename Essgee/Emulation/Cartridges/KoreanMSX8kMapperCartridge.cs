@@ -6,14 +6,18 @@ using System.Threading.Tasks;
 using System.IO;
 
 using Essgee.Exceptions;
+using Essgee.Utilities;
 
 namespace Essgee.Emulation.Cartridges
 {
 	public class KoreanMSX8kMapperCartridge : ICartridge
 	{
 		byte[] romData;
+
+		[StateRequired]
 		readonly byte[] pagingRegisters;
 
+		[StateRequired]
 		byte bankMask;
 
 		public KoreanMSX8kMapperCartridge(int romSize, int ramSize)
@@ -36,16 +40,6 @@ namespace Essgee.Emulation.Cartridges
 		public void LoadRam(byte[] data)
 		{
 			//
-		}
-
-		public void SetState(Dictionary<string, dynamic> state)
-		{
-			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
-		}
-
-		public Dictionary<string, dynamic> GetState()
-		{
-			throw new EmulationException($"Savestates not implemented for {GetType().Name}");
 		}
 
 		public byte[] GetRomData()
