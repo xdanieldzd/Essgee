@@ -699,9 +699,9 @@ namespace Essgee
 			var version = new Version(Application.ProductVersion);
 			var versionMinor = (version.Minor != 0 ? $".{version.Minor}" : string.Empty);
 			titleStringBuilder.Append($"{Application.ProductName} v{version.Major:D3}{versionMinor}");
-#if DEBUG
-			titleStringBuilder.Append($" ({buildName})");
-#endif
+
+			if (Program.AppEnvironment.DebugMode)
+				titleStringBuilder.Append($" ({buildName})");
 
 			if (emulatorHandler != null)
 			{
@@ -1041,6 +1041,12 @@ namespace Essgee
 			aboutBuilder.AppendLine($"{copyright}");
 			aboutBuilder.AppendLine();
 			aboutBuilder.AppendLine($"{buildDateTimeString} on {buildMachineInfo}");
+
+			if (Program.AppEnvironment.DebugMode)
+			{
+				aboutBuilder.AppendLine();
+				aboutBuilder.AppendLine("(I'm MR.CHRONO. Now on DEBUG...)");
+			}
 
 			MessageBox.Show(aboutBuilder.ToString(), $"About {Application.ProductName}", MessageBoxButtons.OK, MessageBoxIcon.Information);
 		}

@@ -24,9 +24,7 @@ namespace Essgee.Graphics
 		bool isRuntime => (LicenseManager.UsageMode != LicenseUsageMode.Designtime);
 		bool isReady => (isRuntime && GraphicsContext.CurrentContext != null);
 
-#if DEBUG
 		DebugProc debugCallback;
-#endif
 
 		bool wasShown = false;
 
@@ -92,10 +90,13 @@ namespace Essgee.Graphics
 		protected override void OnLoad(EventArgs e)
 		{
 			if (!isReady) return;
-#if DEBUG
-			debugCallback = new DebugProc(GLDebugCallback);
-			GL.DebugMessageCallback(debugCallback, IntPtr.Zero);
-#endif
+
+			if (Program.AppEnvironment.EnableOpenGLDebug)
+			{
+				debugCallback = new DebugProc(GLDebugCallback);
+				GL.DebugMessageCallback(debugCallback, IntPtr.Zero);
+			}
+
 			GL.ClearColor(BackColor);
 			base.OnLoad(e);
 		}

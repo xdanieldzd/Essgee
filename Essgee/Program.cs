@@ -22,6 +22,8 @@ namespace Essgee
 			public static readonly bool EnableCustomUnhandledExceptionHandler = true;
 
 			public static readonly bool EnableSuperSlowCPULogger = false;
+
+			public static readonly bool EnableOpenGLDebug = false;
 		}
 
 		const string jsonConfigFileName = "Config.json";

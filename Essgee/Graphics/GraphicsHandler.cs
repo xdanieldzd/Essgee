@@ -52,9 +52,10 @@ namespace Essgee.Graphics
 		public GraphicsHandler(OnScreenDisplayHandler osdHandler)
 		{
 			onScreenDisplayHandler = osdHandler;
-#if DEBUG
-			GL.Enable(EnableCap.DebugOutput);
-#endif
+
+			if (Program.AppEnvironment.EnableOpenGLDebug)
+				GL.Enable(EnableCap.DebugOutput);
+
 			GLRenderer = GL.GetString(StringName.Renderer);
 			GLVersion = GL.GetString(StringName.Version);
 
