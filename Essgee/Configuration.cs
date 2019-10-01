@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
+using System.Drawing;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -32,6 +33,8 @@ namespace Essgee
 		[JsonConverter(typeof(InterfaceDictionaryConverter<IConfiguration>))]
 		public Dictionary<string, IConfiguration> Machines { get; set; }
 
+		public Dictionary<string, Point> DebugWindows { get; set; }
+
 		public Configuration()
 		{
 			LimitFps = true;
@@ -45,6 +48,8 @@ namespace Essgee
 			RecentFiles = new List<string>(RecentFilesCapacity);
 
 			Machines = new Dictionary<string, IConfiguration>();
+
+			DebugWindows = new Dictionary<string, Point>();
 		}
 	}
 }

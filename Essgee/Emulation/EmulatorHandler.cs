@@ -32,6 +32,8 @@ namespace Essgee.Emulation
 		volatile bool stateLoadRequested = false, stateSaveRequested = false;
 		int stateNumber = -1;
 
+		volatile Queue<bool> pauseStateChangesRequested = new Queue<bool>();
+
 		public event EventHandler<SendLogMessageEventArgs> SendLogMessage
 		{
 			add { emulator.SendLogMessage += value; }
@@ -74,20 +76,18 @@ namespace Essgee.Emulation
 			remove { emulator.EnqueueSamples -= value; }
 		}
 
+		public event EventHandler<EventArgs> PauseChanged;
+
 		GameMetadata currentGameMetadata;
 
 		public bool IsCartridgeLoaded { get; private set; }
 
 		public bool IsRunning => emulationThreadRunning;
-		public bool IsPaused
-		{
-			get { return emulationThreadPaused; }
-			set { emulationThreadPaused = value; }
-		}
+		public bool IsPaused => emulationThreadPaused;
 
 		public bool IsHandlingSaveState => (stateLoadRequested || stateSaveRequested);
 
-		public (string Manufacturer, string Model, string DatFileName) Information => (emulator.ManufacturerName, emulator.ModelName, emulator.DatFilename);
+		public (string Manufacturer, string Model, string DatFileName, double RefreshRate) Information => (emulator.ManufacturerName, emulator.ModelName, emulator.DatFilename, emulator.RefreshRate);
 
 		public EmulatorHandler(Type type, Action<Exception> exceptionHandler = null)
 		{
@@ -136,6 +136,11 @@ namespace Essgee.Emulation
 			emulationThread?.Join();
 
 			emulator.Shutdown();
+		}
+
+		public void Pause(bool pauseState)
+		{
+			pauseStateChangesRequested.Enqueue(pauseState);
 		}
 
 		public string GetSaveStateFilename(int number)
@@ -204,6 +209,11 @@ namespace Essgee.Emulation
 			emulator.GraphicsEnableStates = state;
 		}
 
+		public void SetSoundEnableStates(SoundEnableState state)
+		{
+			emulator.SoundEnableStates = state;
+		}
+
 		public int FramesPerSecond { get; private set; }
 
 		private void ThreadMainLoop()
@@ -244,6 +254,14 @@ namespace Essgee.Emulation
 					var targetElapsedTime = TimeSpan.FromTicks((long)Math.Round(TimeSpan.TicksPerSecond / refreshRate));
 
 					var startTime = stopWatch.Elapsed;
+
+					while (pauseStateChangesRequested.Count > 0)
+					{
+						var newPauseState = pauseStateChangesRequested.Dequeue();
+						emulationThreadPaused = newPauseState;
+
+						PauseChanged?.Invoke(this, EventArgs.Empty);
+					}
 
 					if (!emulationThreadPaused)
 					{

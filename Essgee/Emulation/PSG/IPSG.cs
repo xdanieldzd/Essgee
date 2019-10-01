@@ -13,6 +13,8 @@ namespace Essgee.Emulation.PSG
 		event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples;
 		void OnEnqueueSamples(EnqueueSamplesEventArgs e);
 
+		SoundEnableState SoundEnableStates { get; set; }
+
 		void Startup();
 		void Shutdown();
 		void Reset();

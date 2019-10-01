@@ -15,6 +15,7 @@ using System.Globalization;
 
 using OpenTK.Graphics.OpenGL;
 
+using Essgee.Debugging;
 using Essgee.Graphics;
 using Essgee.Sound;
 using Essgee.Emulation;
@@ -64,8 +65,11 @@ namespace Essgee
 		EmulatorHandler emulatorHandler;
 
 		GraphicsEnableState graphicsEnableStates;
+		SoundEnableState soundEnableStates;
 
-		bool lastUserPauseState, lastTemporaryPauseState;
+		SoundDebuggerForm soundDebuggerForm;
+
+		bool lastUserPauseState;
 		(int x, int y, int width, int height) currentViewport;
 		byte[] lastFramebufferData;
 		(int width, int height) lastFramebufferSize;
@@ -98,13 +102,15 @@ namespace Essgee
 			SetFileFilters();
 
 			graphicsEnableStates = (GraphicsEnableState.Backgrounds | GraphicsEnableState.Sprites | GraphicsEnableState.Borders);
+			soundEnableStates = SoundEnableState.All;
 
 			CreateRecentFilesMenu();
 			CreatePowerOnMenu();
 			CreateShaderMenu();
 			CreateScreenSizeMenu();
 			CreateSizeModeMenu();
-			CreateShowLayersMenu();
+			CreateShowGraphicsLayersMenu();
+			CreateEnableSoundChannelsMenu();
 
 			limitFPSToolStripMenuItem.DataBindings.Add(nameof(limitFPSToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.LimitFps), false, DataSourceUpdateMode.OnPropertyChanged);
 			limitFPSToolStripMenuItem.CheckedChanged += (s, e) => { emulatorHandler?.SetFpsLimiting(Program.Configuration.LimitFps); };
@@ -216,6 +222,16 @@ namespace Essgee
 			gameMetadataHandler = new GameMetadataHandler(onScreenDisplayHandler);
 		}
 
+		private void InitializeDebuggers()
+		{
+			soundDebuggerForm = new SoundDebuggerForm() { Location = Program.Configuration.DebugWindows[typeof(SoundDebuggerForm).Name] };
+		}
+
+		private void ShutdownDebuggers()
+		{
+			soundDebuggerForm.Close();
+		}
+
 		private void InitializeEmulation(Type machineType)
 		{
 			if (emulatorHandler != null)
@@ -231,15 +247,24 @@ namespace Essgee
 			emulatorHandler.ChangeViewport += EmulatorHandler_ChangeViewport;
 			emulatorHandler.PollInput += EmulatorHandler_PollInput;
 			emulatorHandler.EnqueueSamples += soundHandler.EnqueueSamples;
+			emulatorHandler.PauseChanged += EmulatorHandler_PauseChanged;
+
+			emulatorHandler.EnqueueSamples += soundDebuggerForm.WaveformControl.EnqueueSamples;
 
 			emulatorHandler.SetFpsLimiting(Program.Configuration.LimitFps);
 			emulatorHandler.SetGraphicsEnableStates(graphicsEnableStates);
+			emulatorHandler.SetSoundEnableStates(soundEnableStates);
 
 			emulatorHandler.SetConfiguration(Program.Configuration.Machines[machineType.Name]);
 
 			pauseToolStripMenuItem.DataBindings.Clear();
-			pauseToolStripMenuItem.DataBindings.Add(nameof(pauseToolStripMenuItem.Checked), emulatorHandler, nameof(emulatorHandler.IsPaused), false, DataSourceUpdateMode.OnPropertyChanged);
-			pauseToolStripMenuItem.CheckedChanged += (s, e) => { SetWindowTitleAndStatus(); };
+			pauseToolStripMenuItem.CheckedChanged += (s, e) =>
+			{
+				var pauseState = (s as ToolStripMenuItem).Checked;
+
+				emulatorHandler.Pause(pauseState);
+				lastUserPauseState = pauseState;
+			};
 
 			onScreenDisplayHandler.EnqueueMessageSuccess($"{emulatorHandler.Information.Manufacturer} {emulatorHandler.Information.Model} emulation initialized.");
 		}
@@ -248,20 +273,10 @@ namespace Essgee
 		{
 			if (emulatorHandler == null || !emulatorHandler.IsRunning) return;
 
-			if (!lastTemporaryPauseState && newTemporaryPauseState)
-				lastUserPauseState = emulatorHandler.IsPaused;
-
-			if (lastUserPauseState)
-			{
-				emulatorHandler.IsPaused = lastUserPauseState;
-			}
-			else
-			{
-				if (!newTemporaryPauseState)
-					soundHandler?.ClearSampleBuffer();
-
-				emulatorHandler.IsPaused = lastTemporaryPauseState = newTemporaryPauseState;
-			}
+			if (newTemporaryPauseState)
+				emulatorHandler.Pause(true);
+			else if (!lastUserPauseState)
+				emulatorHandler.Pause(false);
 		}
 
 		private void PowerOnWithoutCartridge(Type machineType)
@@ -393,6 +408,9 @@ namespace Essgee
 			emulatorHandler.ChangeViewport -= EmulatorHandler_ChangeViewport;
 			emulatorHandler.PollInput -= EmulatorHandler_PollInput;
 			emulatorHandler.EnqueueSamples -= soundHandler.EnqueueSamples;
+			emulatorHandler.PauseChanged -= EmulatorHandler_PauseChanged;
+
+			emulatorHandler.EnqueueSamples -= soundDebuggerForm.WaveformControl.EnqueueSamples;
 
 			emulatorHandler.Shutdown();
 			while (emulatorHandler.IsRunning) { }
@@ -652,9 +670,9 @@ namespace Essgee
 			}
 		}
 
-		private void CreateShowLayersMenu()
+		private void CreateShowGraphicsLayersMenu()
 		{
-			showLayersToolStripMenuItem.DropDownItems.Clear();
+			showGraphicsLayersToolStripMenuItem.DropDownItems.Clear();
 
 			foreach (var layer in Enum.GetValues(typeof(GraphicsEnableState)))
 			{
@@ -681,7 +699,7 @@ namespace Essgee
 
 						emulatorHandler.SetGraphicsEnableStates(graphicsEnableStates);
 
-						foreach (ToolStripMenuItem showLayersMenuItem in showLayersToolStripMenuItem.DropDownItems)
+						foreach (ToolStripMenuItem showLayersMenuItem in showGraphicsLayersToolStripMenuItem.DropDownItems)
 						{
 							if (showLayersMenuItem.Tag is GraphicsEnableState gfxLayerCheck)
 								showLayersMenuItem.Checked = (graphicsEnableStates & gfxLayerCheck) == gfxLayerCheck;
@@ -689,7 +707,48 @@ namespace Essgee
 
 					}
 				};
-				showLayersToolStripMenuItem.DropDownItems.Add(menuItem);
+				showGraphicsLayersToolStripMenuItem.DropDownItems.Add(menuItem);
+			}
+		}
+
+		private void CreateEnableSoundChannelsMenu()
+		{
+			enableSoundChannelsToolStripMenuItem.DropDownItems.Clear();
+
+			foreach (var channel in Enum.GetValues(typeof(SoundEnableState)))
+			{
+				var ignore = channel.GetType().GetField(channel.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored;
+				if (ignore ?? false) continue;
+
+				var desc = channel.GetType().GetField(channel.ToString())?.GetAttribute<DescriptionAttribute>()?.Description ?? channel.ToString();
+
+				var menuItem = new ToolStripMenuItem($"{desc}")
+				{
+					Checked = ((soundEnableStates & (SoundEnableState)channel) == (SoundEnableState)channel),
+					Tag = channel
+				};
+				menuItem.Click += (s, e) =>
+				{
+					if ((s as ToolStripMenuItem).Tag is object sndChannel && Enum.IsDefined(typeof(SoundEnableState), sndChannel))
+					{
+						var enableState = (SoundEnableState)sndChannel;
+
+						if ((soundEnableStates & enableState) == enableState)
+							soundEnableStates &= ~enableState;
+						else
+							soundEnableStates |= enableState;
+
+						emulatorHandler.SetSoundEnableStates(soundEnableStates);
+
+						foreach (ToolStripMenuItem enableSoundChannelsMenuItem in enableSoundChannelsToolStripMenuItem.DropDownItems)
+						{
+							if (enableSoundChannelsMenuItem.Tag is SoundEnableState sndChannelCheck)
+								enableSoundChannelsMenuItem.Checked = (soundEnableStates & sndChannelCheck) == sndChannelCheck;
+						}
+
+					}
+				};
+				enableSoundChannelsToolStripMenuItem.DropDownItems.Add(menuItem);
 			}
 		}
 
@@ -787,6 +846,7 @@ namespace Essgee
 
 		private void MainForm_Shown(object sender, EventArgs e)
 		{
+			InitializeDebuggers();
 			InitializeHandlers();
 		}
 
@@ -795,6 +855,8 @@ namespace Essgee
 			SignalStopEmulation();
 
 			soundHandler?.Shutdown();
+
+			ShutdownDebuggers();
 
 			Program.SaveConfiguration();
 		}
@@ -847,6 +909,9 @@ namespace Essgee
 
 				var debugInfos = emulatorHandler.GetDebugInformation();
 				DrawInputDisplay(debugInfos);
+
+				// TODO: move elsewhere?
+				soundHandler.MaxQueueLength = (int)(emulatorHandler.FramesPerSecond / emulatorHandler.Information.RefreshRate) + 1;
 			}
 
 			graphicsHandler.Render();
@@ -939,6 +1004,14 @@ namespace Essgee
 			e.MousePosition = ((int)(mousePosition.x / dvx) - vx, (int)(mousePosition.y / dvy) - currentViewport.y);
 		}
 
+		private void EmulatorHandler_PauseChanged(object sender, EventArgs e)
+		{
+			SetWindowTitleAndStatus();
+
+			if (emulatorHandler.IsPaused)
+				soundHandler?.ClearSampleBuffer();
+		}
+
 		private void openROMToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			var lastFile = (Program.Configuration.RecentFiles.Count > 0 ? Program.Configuration.RecentFiles.First() : string.Empty);
@@ -1022,6 +1095,12 @@ namespace Essgee
 			}
 
 			SetTemporaryPause(false);
+		}
+
+		private void soundDebuggerToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			soundDebuggerForm.Show();
+			soundDebuggerForm.BringToFront();
 		}
 
 		private void aboutToolStripMenuItem_Click(object sender, EventArgs e)

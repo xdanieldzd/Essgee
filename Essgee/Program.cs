@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Reflection;
+using System.Drawing;
 
+using Essgee.Debugging;
 using Essgee.Emulation.Configuration;
 
 namespace Essgee
@@ -78,6 +80,12 @@ namespace Essgee
 			{
 				if (!Configuration.Machines.ContainsKey(machineConfigType.Name))
 					Configuration.Machines.Add(machineConfigType.Name, (IConfiguration)Activator.CreateInstance(machineConfigType));
+			}
+
+			foreach (var debuggerFormType in Assembly.GetExecutingAssembly().GetTypes().Where(x => typeof(IDebuggerForm).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract))
+			{
+				if (!Configuration.DebugWindows.ContainsKey(debuggerFormType.Name))
+					Configuration.DebugWindows.Add(debuggerFormType.Name, Point.Empty);
 			}
 		}
 

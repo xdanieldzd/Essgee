@@ -72,6 +72,12 @@ namespace Essgee.Emulation.Machines
 			set { vdp.GraphicsEnableStates = value; }
 		}
 
+		public SoundEnableState SoundEnableStates
+		{
+			get { return psg.SoundEnableStates; }
+			set { psg.SoundEnableStates = value; }
+		}
+
 		ICartridge cartridge;
 		byte[] wram;
 		ICPU cpu;

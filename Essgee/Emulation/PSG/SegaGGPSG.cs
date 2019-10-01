@@ -37,10 +37,10 @@ namespace Essgee.Emulation.PSG
 		private short GetMixedSample(OutputChannel channel)
 		{
 			short mixed = 0;
-			if (channel0Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 0.5 : -0.5));
-			if (channel1Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 0.5 : -0.5));
-			if (channel2Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 0.5 : -0.5));
-			if (channel3Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[3]] * (noiseLfsr & 0x1));
+			if (EnableToneChannel1 && channel0Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 0.5 : -0.5));
+			if (EnableToneChannel2 && channel1Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 0.5 : -0.5));
+			if (EnableToneChannel3 && channel2Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 0.5 : -0.5));
+			if (EnableNoiseChannel && channel3Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[3]] * (noiseLfsr & 0x1));
 			return mixed;
 		}
 

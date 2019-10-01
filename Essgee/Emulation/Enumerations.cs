@@ -65,4 +65,20 @@ namespace Essgee.Emulation
 		[ValueIgnored(true)]
 		All = (Backgrounds | Sprites | Borders | OffScreen)
 	}
+
+	[Flags]
+	public enum SoundEnableState
+	{
+		[Description("Tone Channel 1")]
+		ToneChannel1 = (1 << 0),
+		[Description("Tone Channel 2")]
+		ToneChannel2 = (1 << 1),
+		[Description("Tone Channel 3")]
+		ToneChannel3 = (1 << 2),
+		[Description("Noise Channel")]
+		NoiseChannel = (1 << 3),
+
+		[ValueIgnored(true)]
+		All = (ToneChannel1 | ToneChannel2 | ToneChannel3 | NoiseChannel)
+	}
 }

@@ -24,12 +24,16 @@ namespace Essgee.Sound
 		public int SampleFrequency { get; private set; }
 		public int NumChannels { get; private set; }
 
+		public int MaxQueueLength { get; set; }
+
 		AudioContext context;
 		int source;
 		EffectsExtension effects;
 		int filter;
 		int[] buffers;
+
 		Queue<short[]> sampleQueue;
+		short[] lastSamples;
 
 		bool muted;
 		float volume;
@@ -48,10 +52,14 @@ namespace Essgee.Sound
 			SampleFrequency = sampleFrequency;
 			NumChannels = numChannels;
 
+			MaxQueueLength = 2;
+
 			source = -1;
 			filter = -1;
 			buffers = new int[numBuffers];
+
 			sampleQueue = new Queue<short[]>();
+			lastSamples = new short[512];
 
 			InitializeOpenAL();
 			InitializeFilters();
@@ -167,25 +175,26 @@ namespace Essgee.Sound
 
 		public void EnqueueSamples(object sender, EnqueueSamplesEventArgs e)
 		{
-			if (sampleQueue.Count > 4)
+			if (sampleQueue.Count > MaxQueueLength)
 				sampleQueue.Clear();
 
-			sampleQueue.Enqueue(e.Samples);
+			sampleQueue.Enqueue(e.Samples.ToArray());
 		}
 
 		public void ClearSampleBuffer()
 		{
 			sampleQueue.Clear();
+			for (int i = 0; i < lastSamples.Length; i++)
+				lastSamples[i] = 0;
 		}
 
 		private void GenerateBuffer(int buffer)
 		{
-			var samples = (sampleQueue.Count > 0 ? sampleQueue.Dequeue() : new short[512]);
-			if (samples != null)
-			{
-				AL.BufferData(buffer, ALFormat.Stereo16, samples, samples.Length * sizeof(short), SampleFrequency);
-				AL.SourceQueueBuffer(source, buffer);
-			}
+			if (sampleQueue.Count > 0)
+				lastSamples = sampleQueue.Dequeue();
+
+			AL.BufferData(buffer, ALFormat.Stereo16, lastSamples, lastSamples.Length * sizeof(short), SampleFrequency);
+			AL.SourceQueueBuffer(source, buffer);
 		}
 	}
 }

@@ -59,6 +59,14 @@ namespace Essgee.Emulation.PSG
 		[StateRequired]
 		int sampleCycleCount, frameCycleCount, dividerCount;
 
+		/* User-facing channel toggles */
+		public SoundEnableState SoundEnableStates { get; set; }
+
+		protected bool EnableToneChannel1 { get { return (SoundEnableStates & SoundEnableState.ToneChannel1) == SoundEnableState.ToneChannel1; } }
+		protected bool EnableToneChannel2 { get { return (SoundEnableStates & SoundEnableState.ToneChannel2) == SoundEnableState.ToneChannel2; } }
+		protected bool EnableToneChannel3 { get { return (SoundEnableStates & SoundEnableState.ToneChannel3) == SoundEnableState.ToneChannel3; } }
+		protected bool EnableNoiseChannel { get { return (SoundEnableStates & SoundEnableState.NoiseChannel) == SoundEnableState.NoiseChannel; } }
+
 		public SN76489(int sampleRate, int numOutputChannels)
 		{
 			this.sampleRate = sampleRate;
@@ -157,11 +165,14 @@ namespace Essgee.Emulation.PSG
 				sampleCycleCount -= cyclesPerSample;
 			}
 
-			if (frameCycleCount >= cyclesPerFrame)
+			if (sampleBuffer.Count >= (samplesPerFrame * numOutputChannels))
 			{
 				OnEnqueueSamples(new EnqueueSamplesEventArgs(sampleBuffer.ToArray()));
 				sampleBuffer.Clear();
+			}
 
+			if (frameCycleCount >= cyclesPerFrame)
+			{
 				frameCycleCount -= cyclesPerFrame;
 				sampleCycleCount = frameCycleCount;
 			}
@@ -225,10 +236,10 @@ namespace Essgee.Emulation.PSG
 			/* Mix samples together */
 			/* TODO: verify mixing/multiplication; set to 1.0/0.0 for Populous voice samples, glitched with 1.0/-1.0 */
 			short mixed = 0;
-			mixed += (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 1.0 : 0.0));
-			mixed += (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 1.0 : 0.0));
-			mixed += (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 1.0 : 0.0));
-			mixed += (short)(volumeTable[volumeRegisters[3]] * (noiseLfsr & 0x1));
+			if (EnableToneChannel1) mixed += (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 1.0 : 0.0));
+			if (EnableToneChannel2) mixed += (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 1.0 : 0.0));
+			if (EnableToneChannel3) mixed += (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 1.0 : 0.0));
+			if (EnableNoiseChannel) mixed += (short)(volumeTable[volumeRegisters[3]] * (noiseLfsr & 0x1));
 			return mixed;
 		}
 

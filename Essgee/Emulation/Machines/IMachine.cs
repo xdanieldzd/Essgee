@@ -27,6 +27,7 @@ namespace Essgee.Emulation.Machines
 		double RefreshRate { get; }
 
 		GraphicsEnableState GraphicsEnableStates { get; set; }
+		SoundEnableState SoundEnableStates { get; set; }
 
 		Dictionary<string, dynamic> GetDebugInformation();
 
