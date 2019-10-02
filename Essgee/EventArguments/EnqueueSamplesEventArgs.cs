@@ -8,11 +8,17 @@ namespace Essgee.EventArguments
 {
 	public class EnqueueSamplesEventArgs : EventArgs
 	{
-		public short[] Samples { get; set; }
+		public int NumChannels { get; set; }
+		public short[][] ChannelSamples { get; set; }
+		public bool[] IsChannelMuted { get; set; }
+		public short[] MixedSamples { get; set; }
 
-		public EnqueueSamplesEventArgs(short[] samples)
+		public EnqueueSamplesEventArgs(int numChannels, short[][] channelSamples, bool[] isMuted, short[] mixedSamples)
 		{
-			Samples = samples;
+			NumChannels = numChannels;
+			ChannelSamples = channelSamples;
+			IsChannelMuted = isMuted;
+			MixedSamples = mixedSamples;
 		}
 	}
 }

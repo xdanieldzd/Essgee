@@ -178,7 +178,7 @@ namespace Essgee.Sound
 			if (sampleQueue.Count > MaxQueueLength)
 				sampleQueue.Clear();
 
-			sampleQueue.Enqueue(e.Samples.ToArray());
+			sampleQueue.Enqueue(e.MixedSamples.ToArray());
 		}
 
 		public void ClearSampleBuffer()

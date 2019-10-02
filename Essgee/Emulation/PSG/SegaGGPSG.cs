@@ -8,8 +8,6 @@ namespace Essgee.Emulation.PSG
 	{
 		public const int PortStereoControl = 0x06;
 
-		enum OutputChannel : int { Left = 0, Right = 1 }
-
 		[StateRequired]
 		readonly bool[] channel0Enable, channel1Enable, channel2Enable, channel3Enable;
 
@@ -31,17 +29,25 @@ namespace Essgee.Emulation.PSG
 		protected override void GenerateSample()
 		{
 			for (int i = 0; i < numOutputChannels; i++)
-				sampleBuffer.Add(GetMixedSample((i % 2) == 0 ? OutputChannel.Left : OutputChannel.Right));
-		}
+			{
+				var ch1 = (channel0Enable[i] ? (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 0.5 : -0.5)) : (short)0);
+				var ch2 = (channel1Enable[i] ? (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 0.5 : -0.5)) : (short)0);
+				var ch3 = (channel2Enable[i] ? (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 0.5 : -0.5)) : (short)0);
+				var ch4 = (channel3Enable[i] ? (short)(volumeTable[volumeRegisters[3]] * (noiseLfsr & 0x1)) : (short)0);
 
-		private short GetMixedSample(OutputChannel channel)
-		{
-			short mixed = 0;
-			if (EnableToneChannel1 && channel0Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 0.5 : -0.5));
-			if (EnableToneChannel2 && channel1Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 0.5 : -0.5));
-			if (EnableToneChannel3 && channel2Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 0.5 : -0.5));
-			if (EnableNoiseChannel && channel3Enable[(int)channel]) mixed += (short)(volumeTable[volumeRegisters[3]] * (noiseLfsr & 0x1));
-			return mixed;
+				channelSampleBuffer[0].Add(ch1);
+				channelSampleBuffer[1].Add(ch2);
+				channelSampleBuffer[2].Add(ch3);
+				channelSampleBuffer[3].Add(ch4);
+
+				var mixed = (short)0;
+				if (EnableToneChannel1) mixed += ch1;
+				if (EnableToneChannel2) mixed += ch2;
+				if (EnableToneChannel3) mixed += ch3;
+				if (EnableNoiseChannel) mixed += ch4;
+
+				mixedSampleBuffer.Add(mixed);
+			}
 		}
 
 		public override void WritePort(byte port, byte data)
@@ -49,17 +55,17 @@ namespace Essgee.Emulation.PSG
 			if (port == 0x06)
 			{
 				/* Stereo control */
-				channel0Enable[(int)OutputChannel.Left] = ((data & 0x10) != 0);
-				channel0Enable[(int)OutputChannel.Right] = ((data & 0x01) != 0);
+				channel0Enable[0] = ((data & 0x10) != 0);   /* Ch1 Left */
+				channel0Enable[1] = ((data & 0x01) != 0);   /* Ch1 Right */
 
-				channel1Enable[(int)OutputChannel.Left] = ((data & 0x20) != 0);
-				channel1Enable[(int)OutputChannel.Right] = ((data & 0x02) != 0);
+				channel1Enable[0] = ((data & 0x20) != 0);   /* Ch2 Left */
+				channel1Enable[1] = ((data & 0x02) != 0);   /* Ch2 Right */
 
-				channel2Enable[(int)OutputChannel.Left] = ((data & 0x40) != 0);
-				channel2Enable[(int)OutputChannel.Right] = ((data & 0x04) != 0);
+				channel2Enable[0] = ((data & 0x40) != 0);   /* Ch3 Left */
+				channel2Enable[1] = ((data & 0x04) != 0);   /* Ch3 Right */
 
-				channel3Enable[(int)OutputChannel.Left] = ((data & 0x80) != 0);
-				channel3Enable[(int)OutputChannel.Right] = ((data & 0x08) != 0);
+				channel3Enable[0] = ((data & 0x80) != 0);   /* Ch4 Left */
+				channel3Enable[1] = ((data & 0x08) != 0);   /* Ch4 Right */
 			}
 			else
 				base.WritePort(port, data);

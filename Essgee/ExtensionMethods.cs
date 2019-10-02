@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 using System.Reflection;
 using System.IO;
 using System.Drawing;
-using System.IO.Compression;
+using System.Windows.Forms;
 
 using Newtonsoft.Json;
-
-using Essgee.Emulation.Machines;
 
 namespace Essgee
 {
@@ -89,6 +87,12 @@ namespace Essgee
 				}
 			}
 			return target;
+		}
+
+		public static void CheckInvokeMethod(this Form form, MethodInvoker methodInvoker)
+		{
+			if (form.InvokeRequired) form.BeginInvoke(methodInvoker);
+			else methodInvoker();
 		}
 	}
 }

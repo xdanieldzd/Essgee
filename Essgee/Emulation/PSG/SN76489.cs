@@ -23,7 +23,8 @@ namespace Essgee.Emulation.PSG
 		protected virtual int noiseBitShift => 14;
 
 		/* Sample generation & event handling */
-		protected List<short> sampleBuffer;
+		protected List<short>[] channelSampleBuffer;
+		protected List<short> mixedSampleBuffer;
 		public virtual event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples;
 		public virtual void OnEnqueueSamples(EnqueueSamplesEventArgs e) { EnqueueSamples?.Invoke(this, e); }
 
@@ -72,7 +73,10 @@ namespace Essgee.Emulation.PSG
 			this.sampleRate = sampleRate;
 			this.numOutputChannels = numOutputChannels;
 
-			sampleBuffer = new List<short>();
+			channelSampleBuffer = new List<short>[numChannels];
+			for (int i = 0; i < numChannels; i++) channelSampleBuffer[i] = new List<short>();
+
+			mixedSampleBuffer = new List<short>();
 
 			volumeRegisters = new ushort[numChannels];
 			toneRegisters = new ushort[numChannels];
@@ -165,10 +169,15 @@ namespace Essgee.Emulation.PSG
 				sampleCycleCount -= cyclesPerSample;
 			}
 
-			if (sampleBuffer.Count >= (samplesPerFrame * numOutputChannels))
+			if (mixedSampleBuffer.Count >= (samplesPerFrame * numOutputChannels))
 			{
-				OnEnqueueSamples(new EnqueueSamplesEventArgs(sampleBuffer.ToArray()));
-				sampleBuffer.Clear();
+				OnEnqueueSamples(new EnqueueSamplesEventArgs(
+					numChannels,
+					channelSampleBuffer.Select(x => x.ToArray()).ToArray(),
+					new bool[] { !EnableToneChannel1, !EnableToneChannel2, !EnableToneChannel3, !EnableNoiseChannel },
+					mixedSampleBuffer.ToArray()));
+
+				FlushSamples();
 			}
 
 			if (frameCycleCount >= cyclesPerFrame)
@@ -228,24 +237,34 @@ namespace Essgee.Emulation.PSG
 		protected virtual void GenerateSample()
 		{
 			for (int i = 0; i < numOutputChannels; i++)
-				sampleBuffer.Add(GetMixedSample());
-		}
+			{
+				/* TODO: verify mixing/multiplication; set to 1.0/0.0 for Populous voice samples, glitched with 1.0/-1.0 */
+				var ch1 = (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 1.0 : 0.0));
+				var ch2 = (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 1.0 : 0.0));
+				var ch3 = (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 1.0 : 0.0));
+				var ch4 = (short)(volumeTable[volumeRegisters[3]] * (noiseLfsr & 0x1));
 
-		private short GetMixedSample()
-		{
-			/* Mix samples together */
-			/* TODO: verify mixing/multiplication; set to 1.0/0.0 for Populous voice samples, glitched with 1.0/-1.0 */
-			short mixed = 0;
-			if (EnableToneChannel1) mixed += (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 1.0 : 0.0));
-			if (EnableToneChannel2) mixed += (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 1.0 : 0.0));
-			if (EnableToneChannel3) mixed += (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 1.0 : 0.0));
-			if (EnableNoiseChannel) mixed += (short)(volumeTable[volumeRegisters[3]] * (noiseLfsr & 0x1));
-			return mixed;
+				channelSampleBuffer[0].Add(ch1);
+				channelSampleBuffer[1].Add(ch2);
+				channelSampleBuffer[2].Add(ch3);
+				channelSampleBuffer[3].Add(ch4);
+
+				var mixed = (short)0;
+				if (EnableToneChannel1) mixed += ch1;
+				if (EnableToneChannel2) mixed += ch2;
+				if (EnableToneChannel3) mixed += ch3;
+				if (EnableNoiseChannel) mixed += ch4;
+
+				mixedSampleBuffer.Add(mixed);
+			}
 		}
 
 		public void FlushSamples()
 		{
-			sampleBuffer.Clear();
+			for (int i = 0; i < numChannels; i++)
+				channelSampleBuffer[i].Clear();
+
+			mixedSampleBuffer.Clear();
 		}
 
 		private ushort CheckParity(ushort val)

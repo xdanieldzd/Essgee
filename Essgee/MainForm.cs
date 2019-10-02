@@ -139,7 +139,7 @@ namespace Essgee
 
 		private void ExceptionHandler(Exception ex)
 		{
-			CheckInvokeMethod(() =>
+			this.CheckInvokeMethod(() =>
 			{
 				var exceptionInfoBuilder = new StringBuilder();
 				exceptionInfoBuilder.AppendLine($"Thread: {ex.Data["Thread"] ?? "<unnamed>"}");
@@ -249,7 +249,7 @@ namespace Essgee
 			emulatorHandler.EnqueueSamples += soundHandler.EnqueueSamples;
 			emulatorHandler.PauseChanged += EmulatorHandler_PauseChanged;
 
-			emulatorHandler.EnqueueSamples += soundDebuggerForm.WaveformControl.EnqueueSamples;
+			emulatorHandler.EnqueueSamples += soundDebuggerForm.EnqueueSamples;
 
 			emulatorHandler.SetFpsLimiting(Program.Configuration.LimitFps);
 			emulatorHandler.SetGraphicsEnableStates(graphicsEnableStates);
@@ -410,7 +410,7 @@ namespace Essgee
 			emulatorHandler.EnqueueSamples -= soundHandler.EnqueueSamples;
 			emulatorHandler.PauseChanged -= EmulatorHandler_PauseChanged;
 
-			emulatorHandler.EnqueueSamples -= soundDebuggerForm.WaveformControl.EnqueueSamples;
+			emulatorHandler.EnqueueSamples -= soundDebuggerForm.EnqueueSamples;
 
 			emulatorHandler.Shutdown();
 			while (emulatorHandler.IsRunning) { }
@@ -945,25 +945,19 @@ namespace Essgee
 			graphicsHandler.Resize(renderControl.ClientRectangle, new Size((int)(baseScreenSize * aspectRatio), (int)baseScreenSize));
 		}
 
-		private void CheckInvokeMethod(MethodInvoker methodInvoker)
-		{
-			if (InvokeRequired) BeginInvoke(methodInvoker);
-			else methodInvoker();
-		}
-
 		private void EmulatorHandler_SendLogMessage(object sender, SendLogMessageEventArgs e)
 		{
-			CheckInvokeMethod(delegate () { onScreenDisplayHandler.EnqueueMessageCore($"{emulatorHandler.Information.Model}: {e.Message}"); });
+			this.CheckInvokeMethod(delegate () { onScreenDisplayHandler.EnqueueMessageCore($"{emulatorHandler.Information.Model}: {e.Message}"); });
 		}
 
 		private void EmulatorHandler_EmulationReset(object sender, EventArgs e)
 		{
-			CheckInvokeMethod(delegate () { onScreenDisplayHandler.EnqueueMessage("Emulation reset."); });
+			this.CheckInvokeMethod(delegate () { onScreenDisplayHandler.EnqueueMessage("Emulation reset."); });
 		}
 
 		private void EmulatorHandler_RenderScreen(object sender, RenderScreenEventArgs e)
 		{
-			CheckInvokeMethod(delegate ()
+			this.CheckInvokeMethod(delegate ()
 			{
 				if (e.Width != lastFramebufferSize.width || e.Height != lastFramebufferSize.height)
 				{
@@ -977,7 +971,7 @@ namespace Essgee
 
 		private void EmulatorHandler_SizeScreen(object sender, SizeScreenEventArgs e)
 		{
-			CheckInvokeMethod(delegate ()
+			this.CheckInvokeMethod(delegate ()
 			{
 				lastFramebufferSize = (e.Width, e.Height);
 				graphicsHandler?.SetTextureSize(e.Width, e.Height);
@@ -986,7 +980,7 @@ namespace Essgee
 
 		private void EmulatorHandler_ChangeViewport(object sender, ChangeViewportEventArgs e)
 		{
-			CheckInvokeMethod(delegate ()
+			this.CheckInvokeMethod(delegate ()
 			{
 				graphicsHandler?.SetScreenViewport(currentViewport = e.Viewport);
 				SizeAndPositionWindow();

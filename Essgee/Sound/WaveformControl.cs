@@ -26,13 +26,11 @@ namespace Essgee.Sound
 			SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
 		}
 
-		public void EnqueueSamples(object sender, EnqueueSamplesEventArgs e)
+		public void EnqueueSamples(short[] samples)
 		{
-			currentSamples = e.Samples;
+			currentSamples = samples;
 
 			horizontalScale = ((currentSamples.Length / 2.0f) / ClientRectangle.Width);
-
-			Invalidate();
 		}
 
 		protected override void OnResize(EventArgs e)
@@ -64,7 +62,7 @@ namespace Essgee.Sound
 						e.Graphics.DrawRectangle(pen, x, y, 1.0f, 1.0f);
 					}
 				}
-				else if (true)
+				else if (false)
 				{
 					for (float x = 0; x < ClientRectangle.Width; x += horizontalScale)
 					{
@@ -72,10 +70,10 @@ namespace Essgee.Sound
 						var nextSampleIdx = Math.Min((int)Math.Round(x + 1.0f, MidpointRounding.AwayFromZero), currentSamples.Length);
 						var y1 = verticalCenter - (currentSamples[currSampleIdx] * verticalScale);
 						var y2 = verticalCenter - (currentSamples[nextSampleIdx] * verticalScale);
-						e.Graphics.DrawLine(pen, x, y1, x + horizontalScale, y2);
+						e.Graphics.DrawLine(pen, x, y1, x + Math.Min(1.0f, horizontalScale), y2);
 					}
 				}
-				else if (false)
+				else if (true)
 				{
 					for (var i = 0; i < currentSamples.Length; i++)
 					{
