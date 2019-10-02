@@ -37,8 +37,8 @@ namespace Essgee.Sound
 		{
 			base.OnResize(e);
 
-			verticalCenter = (ClientRectangle.Height / 2.0f);
-			verticalScale = (ClientRectangle.Height / (float)short.MaxValue);
+			verticalCenter = ClientRectangle.Height - (ClientRectangle.Height / 4.0f);
+			verticalScale = (ClientRectangle.Height / (float)ushort.MaxValue);
 		}
 
 		protected override void OnPaint(PaintEventArgs e)

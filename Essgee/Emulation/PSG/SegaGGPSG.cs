@@ -30,9 +30,10 @@ namespace Essgee.Emulation.PSG
 		{
 			for (int i = 0; i < numOutputChannels; i++)
 			{
-				var ch1 = (channel0Enable[i] ? (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 0.5 : -0.5)) : (short)0);
-				var ch2 = (channel1Enable[i] ? (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 0.5 : -0.5)) : (short)0);
-				var ch3 = (channel2Enable[i] ? (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 0.5 : -0.5)) : (short)0);
+				/* Generate samples */
+				var ch1 = (channel0Enable[i] ? (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 1.0 : 0.0)) : (short)0);
+				var ch2 = (channel1Enable[i] ? (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 1.0 : 0.0)) : (short)0);
+				var ch3 = (channel2Enable[i] ? (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 1.0 : 0.0)) : (short)0);
 				var ch4 = (channel3Enable[i] ? (short)(volumeTable[volumeRegisters[3]] * (noiseLfsr & 0x1)) : (short)0);
 
 				channelSampleBuffer[0].Add(ch1);
@@ -40,13 +41,15 @@ namespace Essgee.Emulation.PSG
 				channelSampleBuffer[2].Add(ch3);
 				channelSampleBuffer[3].Add(ch4);
 
-				var mixed = (short)0;
+				/* Mix samples */
+				var mixed = 0;
 				if (EnableToneChannel1) mixed += ch1;
 				if (EnableToneChannel2) mixed += ch2;
 				if (EnableToneChannel3) mixed += ch3;
 				if (EnableNoiseChannel) mixed += ch4;
+				mixed /= numChannels;
 
-				mixedSampleBuffer.Add(mixed);
+				mixedSampleBuffer.Add((short)mixed);
 			}
 		}
 

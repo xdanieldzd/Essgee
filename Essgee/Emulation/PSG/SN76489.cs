@@ -15,7 +15,7 @@ namespace Essgee.Emulation.PSG
 		/* http://www.smspower.org/Development/SN76489 */
 		/* Differences in various system's PSGs: http://forums.nesdev.com/viewtopic.php?p=190216#p190216 */
 
-		const int numChannels = 4, numToneChannels = 3, noiseChannelIndex = 3;
+		protected const int numChannels = 4, numToneChannels = 3, noiseChannelIndex = 3;
 
 		/* Noise generation constants */
 		protected virtual ushort noiseLfsrMask => 0x7FFF;
@@ -84,10 +84,9 @@ namespace Essgee.Emulation.PSG
 			channelCounters = new ushort[numChannels];
 			channelOutput = new bool[numChannels];
 
-			/* https://gitlab.com/higan/higan/blob/master/higan/ms/psg/psg.cpp */
 			volumeTable = new short[16];
 			for (int i = 0; i < volumeTable.Length; i++)
-				volumeTable[i] = (short)(0x2000 * Math.Pow(2.0, i * -2.0 / 6.0) + 0.5);
+				volumeTable[i] = (short)(short.MaxValue * Math.Pow(2.0, i * -2.0 / 6.0));
 			volumeTable[15] = 0;
 
 			samplesPerFrame = cyclesPerFrame = cyclesPerSample = -1;
@@ -238,7 +237,7 @@ namespace Essgee.Emulation.PSG
 		{
 			for (int i = 0; i < numOutputChannels; i++)
 			{
-				/* TODO: verify mixing/multiplication; set to 1.0/0.0 for Populous voice samples, glitched with 1.0/-1.0 */
+				/* Generate samples */
 				var ch1 = (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 1.0 : 0.0));
 				var ch2 = (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 1.0 : 0.0));
 				var ch3 = (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 1.0 : 0.0));
@@ -249,13 +248,15 @@ namespace Essgee.Emulation.PSG
 				channelSampleBuffer[2].Add(ch3);
 				channelSampleBuffer[3].Add(ch4);
 
-				var mixed = (short)0;
+				/* Mix samples */
+				var mixed = 0;
 				if (EnableToneChannel1) mixed += ch1;
 				if (EnableToneChannel2) mixed += ch2;
 				if (EnableToneChannel3) mixed += ch3;
 				if (EnableNoiseChannel) mixed += ch4;
+				mixed /= numChannels;
 
-				mixedSampleBuffer.Add(mixed);
+				mixedSampleBuffer.Add((short)mixed);
 			}
 		}
 
