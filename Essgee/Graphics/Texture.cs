@@ -29,9 +29,8 @@ namespace Essgee.Graphics
 		};
 
 		readonly static int maxTextureSize;
-		readonly static bool isPboSupported;
 
-		int textureHandle, pboHandle;
+		int textureHandle;
 
 		public int Width { get; private set; }
 		public int Height { get; private set; }
@@ -50,7 +49,6 @@ namespace Essgee.Graphics
 		static Texture()
 		{
 			maxTextureSize = GL.GetInteger(GetPName.MaxTextureSize);
-			isPboSupported = GL.GetString(StringName.Extensions).Contains("GL_ARB_pixel_buffer_object");
 		}
 
 		public Texture(int width, int height, PixelFormat pixelFormat, FilterMode filter = FilterMode.Linear, WrapMode wrap = WrapMode.Repeat)
@@ -92,9 +90,6 @@ namespace Essgee.Graphics
 			{
 				if (GL.IsTexture(textureHandle))
 					GL.DeleteTexture(textureHandle);
-
-				if (isPboSupported && GL.IsBuffer(pboHandle))
-					GL.DeleteBuffer(pboHandle);
 			}
 
 			disposed = true;
@@ -145,8 +140,6 @@ namespace Essgee.Graphics
 		private void GenerateHandles()
 		{
 			textureHandle = GL.GenTexture();
-			if (isPboSupported)
-				pboHandle = GL.GenBuffer();
 		}
 
 		private void InitializeTexture()
@@ -159,13 +152,6 @@ namespace Essgee.Graphics
 			GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
 			GL.TexImage2D(TextureTarget.Texture2D, 0, pixelInternalFormat, Width, Height, 0, glPixelFormat, PixelType.UnsignedByte, IntPtr.Zero);
 			GL.BindTexture(TextureTarget.Texture2D, 0);
-
-			if (isPboSupported)
-			{
-				GL.BindBuffer(BufferTarget.PixelUnpackBuffer, pboHandle);
-				GL.BufferData(BufferTarget.PixelUnpackBuffer, dataSize, IntPtr.Zero, BufferUsageHint.StreamDraw);
-				GL.BindBuffer(BufferTarget.PixelUnpackBuffer, 0);
-			}
 		}
 
 		public void SetData(byte[] data)
@@ -173,12 +159,8 @@ namespace Essgee.Graphics
 			if (data == null) throw new ArgumentNullException(nameof(data), "Image data is null");
 			if (data.Length != dataSize) throw new ArgumentException($"Image data size mismatch; excepted {dataSize} bytes, got {data.Length} bytes", nameof(data));
 
-			currentData = data;
-
-			if (isPboSupported)
-				SetDataPBO(currentData);
-			else
-				SetDataNormal(currentData);
+			GL.BindTexture(TextureTarget.Texture2D, textureHandle);
+			GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, Width, Height, glPixelFormat, PixelType.UnsignedByte, (currentData = data));
 		}
 
 		public byte[] GetData()
@@ -190,27 +172,6 @@ namespace Essgee.Graphics
 		{
 			var emptyData = new byte[dataSize];
 			SetData(emptyData);
-		}
-
-		private void SetDataPBO(byte[] data)
-		{
-			GL.BindTexture(TextureTarget.Texture2D, textureHandle);
-			GL.BindBuffer(BufferTarget.PixelUnpackBuffer, pboHandle);
-			GL.BufferData(BufferTarget.PixelUnpackBuffer, dataSize, IntPtr.Zero, BufferUsageHint.StreamDraw);
-			var ptr = GL.MapBuffer(BufferTarget.PixelUnpackBuffer, BufferAccess.WriteOnly);
-			if (ptr != IntPtr.Zero)
-			{
-				Marshal.Copy(data, 0, ptr, dataSize);
-				GL.UnmapBuffer(BufferTarget.PixelUnpackBuffer);
-			}
-			GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, Width, Height, glPixelFormat, PixelType.UnsignedByte, IntPtr.Zero);
-			GL.BindBuffer(BufferTarget.PixelUnpackBuffer, 0);
-		}
-
-		private void SetDataNormal(byte[] data)
-		{
-			GL.BindTexture(TextureTarget.Texture2D, textureHandle);
-			GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, Width, Height, glPixelFormat, PixelType.UnsignedByte, data);
 		}
 
 		public void Activate()
