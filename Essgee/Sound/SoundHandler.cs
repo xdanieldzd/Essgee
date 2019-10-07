@@ -106,7 +106,6 @@ namespace Essgee.Sound
 			effects.Filter(filter, EfxFilteri.FilterType, (int)EfxFilterType.Lowpass);
 			effects.Filter(filter, EfxFilterf.LowpassGain, 0.9f);
 			effects.Filter(filter, EfxFilterf.LowpassGainHF, 0.75f);
-			AL.Source(source, ALSourcei.EfxDirectFilter, filter);
 		}
 
 		public void Startup()
@@ -171,6 +170,11 @@ namespace Essgee.Sound
 		public void SetMute(bool mute)
 		{
 			AL.Source(source, ALSourcef.Gain, (muted = mute) ? 0.0f : volume);
+		}
+
+		public void SetLowPassFilter(bool enable)
+		{
+			AL.Source(source, ALSourcei.EfxDirectFilter, (enable ? filter : 0));
 		}
 
 		public void EnqueueSamples(object sender, EnqueueSamplesEventArgs e)

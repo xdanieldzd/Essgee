@@ -23,6 +23,7 @@ namespace Essgee
 		public bool ShowFps { get; set; }
 		public bool Mute { get; set; }
 		public float Volume { get; set; }
+		public bool LowPassFilter { get; set; }
 		public int ScreenSize { get; set; }
 		[JsonConverter(typeof(StringEnumConverter))]
 		public ScreenSizeMode ScreenSizeMode { get; set; }
@@ -41,6 +42,7 @@ namespace Essgee
 			ShowFps = false;
 			Mute = false;
 			Volume = 1.0f;
+			LowPassFilter = true;
 			ScreenSize = 2;
 			ScreenSizeMode = ScreenSizeMode.Scale;
 			LastShader = DefaultShaderName;

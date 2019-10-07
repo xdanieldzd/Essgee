@@ -120,6 +120,9 @@ namespace Essgee
 			muteToolStripMenuItem.DataBindings.Add(nameof(muteToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.Mute), false, DataSourceUpdateMode.OnPropertyChanged);
 			muteToolStripMenuItem.CheckedChanged += (s, e) => { soundHandler?.SetMute(Program.Configuration.Mute); };
 
+			lowPassFilterToolStripMenuItem.DataBindings.Add(nameof(loadStateToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.LowPassFilter), false, DataSourceUpdateMode.OnPropertyChanged);
+			lowPassFilterToolStripMenuItem.CheckedChanged += (s, e) => { soundHandler?.SetLowPassFilter(Program.Configuration.LowPassFilter); };
+
 			foreach (ToolStripMenuItem sizeMenuItem in screenSizeToolStripMenuItem.DropDownItems)
 				sizeMenuItem.Click += (s, e) => { Program.Configuration.ScreenSize = (int)(s as ToolStripMenuItem).Tag; SizeAndPositionWindow(); };
 
@@ -217,6 +220,7 @@ namespace Essgee
 			soundHandler = new SoundHandler(onScreenDisplayHandler, 44100, 2, ExceptionHandler);
 			soundHandler.SetVolume(Program.Configuration.Volume);
 			soundHandler.SetMute(Program.Configuration.Mute);
+			soundHandler.SetLowPassFilter(Program.Configuration.LowPassFilter);
 			soundHandler.Startup();
 
 			gameMetadataHandler = new GameMetadataHandler(onScreenDisplayHandler);
@@ -672,7 +676,7 @@ namespace Essgee
 
 		private void CreateShowGraphicsLayersMenu()
 		{
-			showGraphicsLayersToolStripMenuItem.DropDownItems.Clear();
+			toggleLayersToolStripMenuItem.DropDownItems.Clear();
 
 			foreach (var layer in Enum.GetValues(typeof(GraphicsEnableState)))
 			{
@@ -699,21 +703,21 @@ namespace Essgee
 
 						emulatorHandler.SetGraphicsEnableStates(graphicsEnableStates);
 
-						foreach (ToolStripMenuItem showLayersMenuItem in showGraphicsLayersToolStripMenuItem.DropDownItems)
+						foreach (ToolStripMenuItem toggleLayersMenuItem in toggleLayersToolStripMenuItem.DropDownItems)
 						{
-							if (showLayersMenuItem.Tag is GraphicsEnableState gfxLayerCheck)
-								showLayersMenuItem.Checked = (graphicsEnableStates & gfxLayerCheck) == gfxLayerCheck;
+							if (toggleLayersMenuItem.Tag is GraphicsEnableState gfxLayerCheck)
+								toggleLayersMenuItem.Checked = (graphicsEnableStates & gfxLayerCheck) == gfxLayerCheck;
 						}
 
 					}
 				};
-				showGraphicsLayersToolStripMenuItem.DropDownItems.Add(menuItem);
+				toggleLayersToolStripMenuItem.DropDownItems.Add(menuItem);
 			}
 		}
 
 		private void CreateEnableSoundChannelsMenu()
 		{
-			enableSoundChannelsToolStripMenuItem.DropDownItems.Clear();
+			enableChannelsToolStripMenuItem.DropDownItems.Clear();
 
 			foreach (var channel in Enum.GetValues(typeof(SoundEnableState)))
 			{
@@ -740,15 +744,15 @@ namespace Essgee
 
 						emulatorHandler.SetSoundEnableStates(soundEnableStates);
 
-						foreach (ToolStripMenuItem enableSoundChannelsMenuItem in enableSoundChannelsToolStripMenuItem.DropDownItems)
+						foreach (ToolStripMenuItem toggleChannelsMenuItem in enableChannelsToolStripMenuItem.DropDownItems)
 						{
-							if (enableSoundChannelsMenuItem.Tag is SoundEnableState sndChannelCheck)
-								enableSoundChannelsMenuItem.Checked = (soundEnableStates & sndChannelCheck) == sndChannelCheck;
+							if (toggleChannelsMenuItem.Tag is SoundEnableState sndChannelCheck)
+								toggleChannelsMenuItem.Checked = (soundEnableStates & sndChannelCheck) == sndChannelCheck;
 						}
 
 					}
 				};
-				enableSoundChannelsToolStripMenuItem.DropDownItems.Add(menuItem);
+				enableChannelsToolStripMenuItem.DropDownItems.Add(menuItem);
 			}
 		}
 
