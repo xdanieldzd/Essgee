@@ -254,6 +254,8 @@ namespace Essgee.Graphics
 				logY -= characterSourceSize;
 				shader.SetUniform(glslUniformTextColor, @string.Color);
 				ParseAndRenderString(@string, ref x, ref y);
+
+				if ((logY + characterSourceSize) < 0) break;
 			}
 
 			var timeNow = DateTime.Now;

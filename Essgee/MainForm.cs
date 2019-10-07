@@ -993,7 +993,7 @@ namespace Essgee
 
 		private void EmulatorHandler_PollInput(object sender, PollInputEventArgs e)
 		{
-			e.Keyboard = keysDown;
+			e.Keyboard = new List<Keys>(keysDown);
 			e.MouseButtons = mouseButtonsDown;
 
 			var vx = (currentViewport.x - 50);

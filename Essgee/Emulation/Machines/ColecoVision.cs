@@ -130,6 +130,13 @@ namespace Essgee.Emulation.Machines
 			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			vdp = new TMS99xxA();
 			psg = new SN76489(44100, 2);
+
+			vdp.EndOfScanline += (s, e) =>
+			{
+				PollInputEventArgs pollInputEventArgs = new PollInputEventArgs();
+				OnPollInput(pollInputEventArgs);
+				ParseInput(pollInputEventArgs);
+			};
 		}
 
 		public void SetConfiguration(IConfiguration config)
@@ -264,10 +271,6 @@ namespace Essgee.Emulation.Machines
 
 		public virtual void RunFrame()
 		{
-			PollInputEventArgs pollInputEventArgs = new PollInputEventArgs();
-			PollInput?.Invoke(this, pollInputEventArgs);
-			ParseInput(pollInputEventArgs);
-
 			while (currentMasterClockCyclesInFrame < totalMasterClockCyclesInFrame)
 				RunStep();
 

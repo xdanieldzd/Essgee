@@ -150,6 +150,18 @@ namespace Essgee.Emulation.Machines
 			inputDevices = new InputDevice[2];
 			inputDevices[0] = InputDevice.None;
 			inputDevices[1] = InputDevice.None;
+
+			vdp.EndOfScanline += (s, e) =>
+			{
+				PollInputEventArgs pollInputEventArgs = new PollInputEventArgs();
+				OnPollInput(pollInputEventArgs);
+
+				lastKeysDown = pollInputEventArgs.Keyboard;
+				lastMouseButtons = pollInputEventArgs.MouseButtons;
+				lastMousePosition = pollInputEventArgs.MousePosition;
+
+				HandlePauseButton();
+			};
 		}
 
 		public void SetConfiguration(IConfiguration config)
@@ -312,15 +324,6 @@ namespace Essgee.Emulation.Machines
 
 		public virtual void RunFrame()
 		{
-			PollInputEventArgs pollInputEventArgs = new PollInputEventArgs();
-			PollInput?.Invoke(this, pollInputEventArgs);
-
-			lastKeysDown = pollInputEventArgs.Keyboard;
-			lastMouseButtons = pollInputEventArgs.MouseButtons;
-			lastMousePosition = pollInputEventArgs.MousePosition;
-
-			HandlePauseButton();
-
 			while (currentMasterClockCyclesInFrame < totalMasterClockCyclesInFrame)
 				RunStep();
 
@@ -351,6 +354,8 @@ namespace Essgee.Emulation.Machines
 
 		private void HandlePauseButton()
 		{
+			if (lastKeysDown == null) return;
+
 			var pausePressed = lastKeysDown.Contains(configuration.InputPause);
 			var pauseButtonHeld = (pauseButtonToggle && pausePressed);
 			if (pausePressed)

@@ -15,6 +15,9 @@ namespace Essgee.Emulation.VDP
 		event EventHandler<RenderScreenEventArgs> RenderScreen;
 		void OnRenderScreen(RenderScreenEventArgs e);
 
+		event EventHandler<EventArgs> EndOfScanline;
+		void OnEndOfScanline(EventArgs e);
+
 		event EventHandler<SizeScreenEventArgs> SizeScreen;
 		void OnSizeScreen(SizeScreenEventArgs e);
 

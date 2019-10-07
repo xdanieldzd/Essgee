@@ -391,6 +391,8 @@ namespace Essgee.Emulation.VDP
 
 			if (cycleCount >= clockCyclesPerLine)
 			{
+				OnEndOfScanline(EventArgs.Empty);
+
 				horizontalScrollLatched = registers[0x08];
 
 				if (currentScanline == scanlineActiveDisplay)

@@ -39,6 +39,9 @@ namespace Essgee.Emulation.VDP
 		public virtual event EventHandler<RenderScreenEventArgs> RenderScreen;
 		public virtual void OnRenderScreen(RenderScreenEventArgs e) { RenderScreen?.Invoke(this, e); }
 
+		public virtual event EventHandler<EventArgs> EndOfScanline;
+		public virtual void OnEndOfScanline(EventArgs e) { EndOfScanline?.Invoke(this, e); }
+
 		protected const int NumSprites = 32;
 		protected const int NumSpritesPerLine = 4;
 
@@ -296,6 +299,8 @@ namespace Essgee.Emulation.VDP
 
 			if (cycleCount >= clockCyclesPerLine)
 			{
+				OnEndOfScanline(EventArgs.Empty);
+
 				CheckSpriteOverflow(currentScanline);
 
 				RenderLine(currentScanline);
