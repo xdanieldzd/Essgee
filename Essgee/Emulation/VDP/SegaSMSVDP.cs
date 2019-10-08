@@ -375,7 +375,7 @@ namespace Essgee.Emulation.VDP
 
 			/* Create arrays */
 			screenUsage = new byte[numTotalPixelsPerScanline * numTotalScanlines];
-			outputFramebuffer = new byte[(numTotalPixelsPerScanline * numTotalScanlines) * 3];
+			outputFramebuffer = new byte[(numTotalPixelsPerScanline * numTotalScanlines) * 4];
 
 			/* Update resolution/display timing */
 			UpdateResolution();
@@ -525,7 +525,7 @@ namespace Essgee.Emulation.VDP
 
 		protected void SetPixel(int y, int x, int palette, int color)
 		{
-			WriteColorToFramebuffer(palette, color, ((y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)) * 3);
+			WriteColorToFramebuffer(palette, color, ((y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)) * 4);
 		}
 
 		private void RenderLineMode4Background(int y)
@@ -893,10 +893,7 @@ namespace Essgee.Emulation.VDP
 			if (!isBitM4Set)
 				colorValue = (legacyColorMap[colorValue & 0x000F]);
 
-			byte r = (byte)((colorValue >> 0) & 0x3), g = (byte)((colorValue >> 2) & 0x3), b = (byte)((colorValue >> 4) & 0x3);
-			outputFramebuffer[address + 0] = (byte)((b << 6) | (b << 4) | (b << 2) | b);
-			outputFramebuffer[address + 1] = (byte)((g << 6) | (g << 4) | (g << 2) | g);
-			outputFramebuffer[address + 2] = (byte)((r << 6) | (r << 4) | (r << 2) | r);
+			BitUtilities.RGB222toBGRA8888(colorValue, ref outputFramebuffer, address);
 		}
 
 		protected override void WriteDataPort(byte value)

@@ -7,7 +7,7 @@ void main(void)
 
     output_colors[0] = texture(source[0], vertTexCoord);
     output_colors[1] = texture(source[1], vertTexCoord);
-    for (int i = 0; i < numSamplers; i++) output_color += output_colors[i] * (1.0 / float(numSamplers));
+    output_color = (output_colors[0] * 0.8) + (output_colors[1] * 0.2);
 
     // Basic scanlines
     output_color = vec4(clamp(mod(gl_FragCoord.y, 3.0), 0.8, 1.0) * output_color.rgb, 1.0);

@@ -117,7 +117,7 @@ namespace Essgee.Graphics
 		private void CreateTextures()
 		{
 			for (int i = 0; i < textures.Length; i++)
-				textures[i] = new Texture(textureSize.Width, textureSize.Height, PixelFormat.Rgb888, shaderBundle.Manifest.Filter, shaderBundle.Manifest.Wrap);
+				textures[i] = new Texture(textureSize.Width, textureSize.Height, PixelFormat.Rgba8888, shaderBundle.Manifest.Filter, shaderBundle.Manifest.Wrap);
 			lastTextureUpdate = 0;
 		}
 
@@ -191,7 +191,7 @@ namespace Essgee.Graphics
 			}
 
 			for (int i = 0; i < shaderBundle.Manifest.Samplers; i++)
-				textures[i]?.Activate(TextureUnit.Texture0 + i);
+				textures[i]?.Activate(TextureUnit.Texture0 + ((lastTextureUpdate + i) % shaderBundle.Manifest.Samplers));
 
 			shaderBundle.Activate();
 			vertexBuffer.Render();

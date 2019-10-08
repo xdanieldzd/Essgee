@@ -24,8 +24,8 @@ namespace Essgee.Graphics
 
 		static readonly Dictionary<PixelFormat, (PixelInternalFormat, GlPixelFormat, int)> glPixelFormatMap = new Dictionary<PixelFormat, (PixelInternalFormat, GlPixelFormat, int)>()
 		{
-			{ PixelFormat.Rgba8888, (PixelInternalFormat.Rgba, GlPixelFormat.Bgra, 4) },
-			{ PixelFormat.Rgb888, (PixelInternalFormat.Rgb, GlPixelFormat.Bgr, 3) }
+			{ PixelFormat.Rgba8888, (PixelInternalFormat.Rgba8, GlPixelFormat.Bgra, 4) },
+			{ PixelFormat.Rgb888, (PixelInternalFormat.Rgb8, GlPixelFormat.Bgr, 3) }
 		};
 
 		readonly static int maxTextureSize;
@@ -149,7 +149,7 @@ namespace Essgee.Graphics
 			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)magFilter);
 			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)wrapMode);
 			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)wrapMode);
-			GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
+			if (bytesPerPixel != 4) GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
 			GL.TexImage2D(TextureTarget.Texture2D, 0, pixelInternalFormat, Width, Height, 0, glPixelFormat, PixelType.UnsignedByte, IntPtr.Zero);
 			GL.BindTexture(TextureTarget.Texture2D, 0);
 		}

@@ -236,7 +236,7 @@ namespace Essgee.Emulation.VDP
 
 			/* Create arrays */
 			screenUsage = new byte[numTotalPixelsPerScanline * numTotalScanlines];
-			outputFramebuffer = new byte[(numTotalPixelsPerScanline * numTotalScanlines) * 3];
+			outputFramebuffer = new byte[(numTotalPixelsPerScanline * numTotalScanlines) * 4];
 
 			/* Scanline parameters */
 			if (!isPalChip)
@@ -412,12 +412,12 @@ namespace Essgee.Emulation.VDP
 
 		protected void SetPixel(int y, int x, ushort colorValue)
 		{
-			WriteColorToFramebuffer(colorValue, ((y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)) * 3);
+			WriteColorToFramebuffer(colorValue, ((y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)) * 4);
 		}
 
 		protected void SetPixel(int y, int x, byte b, byte g, byte r)
 		{
-			WriteColorToFramebuffer(b, g, r, ((y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)) * 3);
+			WriteColorToFramebuffer(b, g, r, ((y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)) * 4);
 		}
 
 		protected byte GetScreenUsageFlag(int y, int x)
@@ -771,6 +771,7 @@ namespace Essgee.Emulation.VDP
 			outputFramebuffer[address + 0] = b;
 			outputFramebuffer[address + 1] = g;
 			outputFramebuffer[address + 2] = r;
+			outputFramebuffer[address + 3] = 0xFF;
 		}
 
 		protected virtual void WriteColorToFramebuffer(ushort colorValue, int address)
@@ -778,6 +779,7 @@ namespace Essgee.Emulation.VDP
 			outputFramebuffer[address + 0] = colorValuesBgr[colorValue & 0x0F][0];
 			outputFramebuffer[address + 1] = colorValuesBgr[colorValue & 0x0F][1];
 			outputFramebuffer[address + 2] = colorValuesBgr[colorValue & 0x0F][2];
+			outputFramebuffer[address + 3] = 0xFF;
 		}
 
 		protected virtual byte ReadVram(ushort address)
