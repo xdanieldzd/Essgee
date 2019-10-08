@@ -39,7 +39,7 @@ namespace Essgee.Emulation.VDP
 
 		protected override void WriteColorToFramebuffer(ushort colorValue, int address)
 		{
-			BitUtilities.RGB444toBGRA8888(colorValue, ref outputFramebuffer, address);
+			Utilities.RGB444toBGRA8888(colorValue, ref outputFramebuffer, address);
 		}
 
 		protected override void WriteDataPort(byte value)

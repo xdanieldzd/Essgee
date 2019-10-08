@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Essgee.Emulation
 {
-	public static class BitUtilities
+	public static class Utilities
 	{
 		public static bool IsBitSet(byte value, int bit)
 		{

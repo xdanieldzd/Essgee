@@ -165,7 +165,7 @@
     <Compile Include="Emulation\CPU\Z80A.OpcodesPrefixDDFDCB.cs" />
     <Compile Include="Emulation\CPU\Z80A.OpcodesPrefixED.cs" />
     <Compile Include="Emulation\CPU\Z80A.Register.cs" />
-    <Compile Include="Emulation\BitUtilities.cs" />
+    <Compile Include="Emulation\Utilities.cs" />
     <Compile Include="Emulation\Machines\SG1000.cs" />
     <Compile Include="Emulation\PSG\SN76489.cs" />
     <Compile Include="Emulation\VDP\TMS99xxA.cs" />

@@ -36,15 +36,15 @@ namespace Essgee.Emulation.VDP
 		protected int lineInterruptCounter;
 		protected int screenHeight;
 
-		bool isLineInterruptEnabled => BitUtilities.IsBitSet(registers[0x00], 4);
+		bool isLineInterruptEnabled => Utilities.IsBitSet(registers[0x00], 4);
 		[StateRequired]
 		bool isLineInterruptPending;
 
-		bool isColumn0MaskEnabled => BitUtilities.IsBitSet(registers[0x00], 5);
-		bool isVScrollPartiallyDisabled => BitUtilities.IsBitSet(registers[0x00], 7);       /* Columns 24-31, i.e. pixels 192-255 */
-		bool isHScrollPartiallyDisabled => BitUtilities.IsBitSet(registers[0x00], 6);       /* Rows 0-1, i.e. pixels 0-15 */
+		bool isColumn0MaskEnabled => Utilities.IsBitSet(registers[0x00], 5);
+		bool isVScrollPartiallyDisabled => Utilities.IsBitSet(registers[0x00], 7);       /* Columns 24-31, i.e. pixels 192-255 */
+		bool isHScrollPartiallyDisabled => Utilities.IsBitSet(registers[0x00], 6);       /* Rows 0-1, i.e. pixels 0-15 */
 
-		bool isBitM4Set => BitUtilities.IsBitSet(registers[0x00], 2);
+		bool isBitM4Set => Utilities.IsBitSet(registers[0x00], 2);
 
 		protected override bool isModeGraphics1 => !(isBitM1Set || isBitM2Set || isBitM3Set || isBitM4Set);
 		protected override bool isModeText => (isBitM1Set && !(isBitM2Set || isBitM3Set || isBitM4Set));
@@ -54,7 +54,7 @@ namespace Essgee.Emulation.VDP
 		protected bool isSMS240LineMode => (!isBitM1Set && isBitM2Set && isBitM3Set && isBitM4Set);
 		protected bool isSMS224LineMode => (isBitM1Set && isBitM2Set && !isBitM3Set && isBitM4Set);
 
-		bool isSpriteShiftLeft8 => BitUtilities.IsBitSet(registers[0x00], 3);
+		bool isSpriteShiftLeft8 => Utilities.IsBitSet(registers[0x00], 3);
 
 		protected override ushort nametableBaseAddress
 		{
@@ -893,7 +893,7 @@ namespace Essgee.Emulation.VDP
 			if (!isBitM4Set)
 				colorValue = (legacyColorMap[colorValue & 0x000F]);
 
-			BitUtilities.RGB222toBGRA8888(colorValue, ref outputFramebuffer, address);
+			Utilities.RGB222toBGRA8888(colorValue, ref outputFramebuffer, address);
 		}
 
 		protected override void WriteDataPort(byte value)

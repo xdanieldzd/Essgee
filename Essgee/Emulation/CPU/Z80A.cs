@@ -407,7 +407,7 @@ namespace Essgee.Emulation.CPU
 			// Register is I or R?
 			if (specialRegs)
 			{
-				SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(register, 7));
+				SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(register, 7));
 				SetClearFlagConditional(Flags.Zero, (register == 0x00));
 				ClearFlag(Flags.HalfCarry);
 				SetClearFlagConditional(Flags.ParityOrOverflow, (iff2));
@@ -488,9 +488,9 @@ namespace Essgee.Emulation.CPU
 
 			// S
 			// Z
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(n, 1));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(n, 1));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(n, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(n, 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, (bc.Word != 0));
 			ClearFlag(Flags.Subtract);
 			// C
@@ -519,9 +519,9 @@ namespace Essgee.Emulation.CPU
 
 			// S
 			// Z
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(n, 1));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(n, 1));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(n, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(n, 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, (bc.Word != 0));
 			ClearFlag(Flags.Subtract);
 			// C
@@ -549,11 +549,11 @@ namespace Essgee.Emulation.CPU
 			bool halfCarry = (((af.High ^ result ^ operand) & 0x10) != 0);
 			byte n = (byte)(result - (halfCarry ? 1 : 0));
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet((byte)result, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet((byte)result, 7));
 			SetClearFlagConditional(Flags.Zero, (af.High == operand));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(n, 1));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(n, 1));
 			SetClearFlagConditional(Flags.HalfCarry, halfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(n, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(n, 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, (bc.Word != 0));
 			SetFlag(Flags.Subtract);
 			// C
@@ -581,11 +581,11 @@ namespace Essgee.Emulation.CPU
 			bool halfCarry = (((af.High ^ result ^ operand) & 0x10) != 0);
 			byte n = (byte)(result - (halfCarry ? 1 : 0));
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet((byte)result, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet((byte)result, 7));
 			SetClearFlagConditional(Flags.Zero, (af.High == operand));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(n, 1));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(n, 1));
 			SetClearFlagConditional(Flags.HalfCarry, halfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(n, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(n, 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, (bc.Word != 0));
 			SetFlag(Flags.Subtract);
 			// C
@@ -611,11 +611,11 @@ namespace Essgee.Emulation.CPU
 			int operandWithCarry = (operand + (withCarry && IsFlagSet(Flags.Carry) ? 1 : 0));
 			int result = (af.High + operandWithCarry);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet((byte)result, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet((byte)result, 7));
 			SetClearFlagConditional(Flags.Zero, ((result & 0xFF) == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet((byte)result, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet((byte)result, 5));
 			SetClearFlagConditional(Flags.HalfCarry, (((af.High ^ result ^ operand) & 0x10) != 0));
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet((byte)result, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet((byte)result, 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, (((operand ^ af.High ^ 0x80) & (af.High ^ result) & 0x80) != 0));
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, (result > 0xFF));
@@ -628,11 +628,11 @@ namespace Essgee.Emulation.CPU
 			int operandWithCarry = (operand + (withCarry && IsFlagSet(Flags.Carry) ? 1 : 0));
 			int result = (af.High - operandWithCarry);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet((byte)result, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet((byte)result, 7));
 			SetClearFlagConditional(Flags.Zero, ((result & 0xFF) == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet((byte)result, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet((byte)result, 5));
 			SetClearFlagConditional(Flags.HalfCarry, (((af.High ^ result ^ operand) & 0x10) != 0));
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet((byte)result, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet((byte)result, 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, (((operand ^ af.High) & (af.High ^ result) & 0x80) != 0));
 			SetFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, (af.High < operandWithCarry));
@@ -644,11 +644,11 @@ namespace Essgee.Emulation.CPU
 		{
 			int result = (af.High & operand);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet((byte)result, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet((byte)result, 7));
 			SetClearFlagConditional(Flags.Zero, ((result & 0xFF) == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet((byte)result, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet((byte)result, 5));
 			SetFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet((byte)result, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet((byte)result, 3));
 			CalculateAndSetParity((byte)result);
 			ClearFlag(Flags.Subtract);
 			ClearFlag(Flags.Carry);
@@ -660,11 +660,11 @@ namespace Essgee.Emulation.CPU
 		{
 			int result = (af.High | operand);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet((byte)result, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet((byte)result, 7));
 			SetClearFlagConditional(Flags.Zero, ((result & 0xFF) == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet((byte)result, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet((byte)result, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet((byte)result, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet((byte)result, 3));
 			CalculateAndSetParity((byte)result);
 			ClearFlag(Flags.Subtract);
 			ClearFlag(Flags.Carry);
@@ -676,11 +676,11 @@ namespace Essgee.Emulation.CPU
 		{
 			int result = (af.High ^ operand);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet((byte)result, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet((byte)result, 7));
 			SetClearFlagConditional(Flags.Zero, ((result & 0xFF) == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet((byte)result, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet((byte)result, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet((byte)result, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet((byte)result, 3));
 			CalculateAndSetParity((byte)result);
 			ClearFlag(Flags.Subtract);
 			ClearFlag(Flags.Carry);
@@ -692,11 +692,11 @@ namespace Essgee.Emulation.CPU
 		{
 			int result = (af.High - operand);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet((byte)result, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet((byte)result, 7));
 			SetClearFlagConditional(Flags.Zero, ((result & 0xFF) == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(operand, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(operand, 5));
 			SetClearFlagConditional(Flags.HalfCarry, (((af.High ^ result ^ operand) & 0x10) != 0));
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(operand, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(operand, 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, (((operand ^ af.High) & (af.High ^ result) & 0x80) != 0));
 			SetFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, (af.High < operand));
@@ -706,11 +706,11 @@ namespace Essgee.Emulation.CPU
 		{
 			byte result = (byte)(register + 1);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(result, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(result, 7));
 			SetClearFlagConditional(Flags.Zero, (result == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(result, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(result, 5));
 			SetClearFlagConditional(Flags.HalfCarry, ((register & 0x0F) == 0x0F));
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(result, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(result, 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, (register == 0x7F));
 			ClearFlag(Flags.Subtract);
 			// C
@@ -729,11 +729,11 @@ namespace Essgee.Emulation.CPU
 		{
 			byte result = (byte)(register - 1);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(result, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(result, 7));
 			SetClearFlagConditional(Flags.Zero, (result == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(result, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(result, 5));
 			SetClearFlagConditional(Flags.HalfCarry, ((register & 0x0F) == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(result, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(result, 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, (register == 0x80));
 			SetFlag(Flags.Subtract);
 			// C
@@ -797,11 +797,11 @@ namespace Essgee.Emulation.CPU
 			else
 				result = (byte)(before - diff);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(result, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(result, 7));
 			SetClearFlagConditional(Flags.Zero, (result == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(result, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(result, 5));
 			// H (set above)
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(result, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(result, 3));
 			CalculateAndSetParity(result);
 			// N
 			// C (set above)
@@ -815,9 +815,9 @@ namespace Essgee.Emulation.CPU
 
 			SetClearFlagConditional(Flags.Sign, ((result & 0xFF) >= 0x80));
 			SetClearFlagConditional(Flags.Zero, ((result & 0xFF) == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet((byte)(result & 0xFF), 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet((byte)(result & 0xFF), 5));
 			SetClearFlagConditional(Flags.HalfCarry, ((0 - (af.High & 0x0F)) < 0));
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet((byte)(result & 0xFF), 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet((byte)(result & 0xFF), 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, (af.High == 0x80));
 			SetFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, (af.High != 0x00));
@@ -836,9 +836,9 @@ namespace Essgee.Emulation.CPU
 
 			// S
 			// Z
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet((byte)(result >> 8), 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet((byte)(result >> 8), 5));
 			SetClearFlagConditional(Flags.HalfCarry, (((dest.Word & 0x0FFF) + (operandWithCarry & 0x0FFF)) > 0x0FFF));
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet((byte)(result >> 8), 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet((byte)(result >> 8), 3));
 			// PV
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, (((dest.Word & 0xFFFF) + (operandWithCarry & 0xFFFF)) > 0xFFFF));
@@ -859,9 +859,9 @@ namespace Essgee.Emulation.CPU
 
 			SetClearFlagConditional(Flags.Sign, ((result & 0x8000) != 0x0000));
 			SetClearFlagConditional(Flags.Zero, ((result & 0xFFFF) == 0x0000));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet((byte)(result >> 8), 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet((byte)(result >> 8), 5));
 			SetClearFlagConditional(Flags.HalfCarry, ((((dest.Word ^ result ^ operand) >> 8) & 0x10) != 0));
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet((byte)(result >> 8), 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet((byte)(result >> 8), 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, (((operand ^ dest.Word) & (dest.Word ^ result) & 0x8000) != 0));
 			SetFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, ((result & 0x10000) != 0));
@@ -894,15 +894,15 @@ namespace Essgee.Emulation.CPU
 		protected void RotateLeft(ref byte value)
 		{
 			bool isCarrySet = IsFlagSet(Flags.Carry);
-			bool isMsbSet = BitUtilities.IsBitSet(value, 7);
+			bool isMsbSet = Utilities.IsBitSet(value, 7);
 			value <<= 1;
 			if (isCarrySet) SetBit(ref value, 0);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(value, 7));
 			SetClearFlagConditional(Flags.Zero, (value == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(value, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(value, 3));
 			CalculateAndSetParity(value);
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -918,15 +918,15 @@ namespace Essgee.Emulation.CPU
 
 		protected void RotateLeftCircular(ref byte value)
 		{
-			bool isMsbSet = BitUtilities.IsBitSet(value, 7);
+			bool isMsbSet = Utilities.IsBitSet(value, 7);
 			value <<= 1;
 			if (isMsbSet) SetBit(ref value, 0);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(value, 7));
 			SetClearFlagConditional(Flags.Zero, (value == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(value, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(value, 3));
 			CalculateAndSetParity(value);
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -943,15 +943,15 @@ namespace Essgee.Emulation.CPU
 		protected void RotateRight(ref byte value)
 		{
 			bool isCarrySet = IsFlagSet(Flags.Carry);
-			bool isLsbSet = BitUtilities.IsBitSet(value, 0);
+			bool isLsbSet = Utilities.IsBitSet(value, 0);
 			value >>= 1;
 			if (isCarrySet) SetBit(ref value, 7);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(value, 7));
 			SetClearFlagConditional(Flags.Zero, (value == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(value, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(value, 3));
 			CalculateAndSetParity(value);
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -967,15 +967,15 @@ namespace Essgee.Emulation.CPU
 
 		protected void RotateRightCircular(ref byte value)
 		{
-			bool isLsbSet = BitUtilities.IsBitSet(value, 0);
+			bool isLsbSet = Utilities.IsBitSet(value, 0);
 			value >>= 1;
 			if (isLsbSet) SetBit(ref value, 7);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(value, 7));
 			SetClearFlagConditional(Flags.Zero, (value == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(value, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(value, 3));
 			CalculateAndSetParity(value);
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -984,15 +984,15 @@ namespace Essgee.Emulation.CPU
 		protected void RotateLeftAccumulator()
 		{
 			bool isCarrySet = IsFlagSet(Flags.Carry);
-			bool isMsbSet = BitUtilities.IsBitSet(af.High, 7);
+			bool isMsbSet = Utilities.IsBitSet(af.High, 7);
 			af.High <<= 1;
 			if (isCarrySet) SetBit(ref af.High, 0);
 
 			// S
 			// Z
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(af.High, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(af.High, 3));
 			// PV
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -1000,15 +1000,15 @@ namespace Essgee.Emulation.CPU
 
 		protected void RotateLeftAccumulatorCircular()
 		{
-			bool isMsbSet = BitUtilities.IsBitSet(af.High, 7);
+			bool isMsbSet = Utilities.IsBitSet(af.High, 7);
 			af.High <<= 1;
 			if (isMsbSet) SetBit(ref af.High, 0);
 
 			// S
 			// Z
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(af.High, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(af.High, 3));
 			// PV
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -1017,15 +1017,15 @@ namespace Essgee.Emulation.CPU
 		protected void RotateRightAccumulator()
 		{
 			bool isCarrySet = IsFlagSet(Flags.Carry);
-			bool isLsbSet = BitUtilities.IsBitSet(af.High, 0);
+			bool isLsbSet = Utilities.IsBitSet(af.High, 0);
 			af.High >>= 1;
 			if (isCarrySet) SetBit(ref af.High, 7);
 
 			// S
 			// Z
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(af.High, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(af.High, 3));
 			// PV
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -1033,15 +1033,15 @@ namespace Essgee.Emulation.CPU
 
 		protected void RotateRightAccumulatorCircular()
 		{
-			bool isLsbSet = BitUtilities.IsBitSet(af.High, 0);
+			bool isLsbSet = Utilities.IsBitSet(af.High, 0);
 			af.High >>= 1;
 			if (isLsbSet) SetBit(ref af.High, 7);
 
 			// S
 			// Z
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(af.High, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(af.High, 3));
 			// PV
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -1063,11 +1063,11 @@ namespace Essgee.Emulation.CPU
 
 			WriteMemory8(hl.Word, hlValue);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(af.High, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(af.High, 7));
 			SetClearFlagConditional(Flags.Zero, (af.High == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(af.High, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(af.High, 3));
 			CalculateAndSetParity(af.High);
 			ClearFlag(Flags.Subtract);
 			// C
@@ -1089,11 +1089,11 @@ namespace Essgee.Emulation.CPU
 
 			WriteMemory8(hl.Word, hlValue);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(af.High, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(af.High, 7));
 			SetClearFlagConditional(Flags.Zero, (af.High == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(af.High, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(af.High, 3));
 			CalculateAndSetParity(af.High);
 			ClearFlag(Flags.Subtract);
 			// C
@@ -1109,14 +1109,14 @@ namespace Essgee.Emulation.CPU
 
 		protected void ShiftLeftArithmetic(ref byte value)
 		{
-			bool isMsbSet = BitUtilities.IsBitSet(value, 7);
+			bool isMsbSet = Utilities.IsBitSet(value, 7);
 			value <<= 1;
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(value, 7));
 			SetClearFlagConditional(Flags.Zero, (value == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(value, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(value, 3));
 			CalculateAndSetParity(value);
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -1132,16 +1132,16 @@ namespace Essgee.Emulation.CPU
 
 		protected void ShiftRightArithmetic(ref byte value)
 		{
-			bool isLsbSet = BitUtilities.IsBitSet(value, 0);
-			bool isMsbSet = BitUtilities.IsBitSet(value, 7);
+			bool isLsbSet = Utilities.IsBitSet(value, 0);
+			bool isMsbSet = Utilities.IsBitSet(value, 7);
 			value >>= 1;
 			if (isMsbSet) SetBit(ref value, 7);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(value, 7));
 			SetClearFlagConditional(Flags.Zero, (value == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(value, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(value, 3));
 			CalculateAndSetParity(value);
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -1157,15 +1157,15 @@ namespace Essgee.Emulation.CPU
 
 		protected void ShiftLeftLogical(ref byte value)
 		{
-			bool isMsbSet = BitUtilities.IsBitSet(value, 7);
+			bool isMsbSet = Utilities.IsBitSet(value, 7);
 			value <<= 1;
 			value |= 0x01;
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(value, 7));
 			SetClearFlagConditional(Flags.Zero, (value == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(value, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(value, 3));
 			CalculateAndSetParity(value);
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -1181,14 +1181,14 @@ namespace Essgee.Emulation.CPU
 
 		protected void ShiftRightLogical(ref byte value)
 		{
-			bool isLsbSet = BitUtilities.IsBitSet(value, 0);
+			bool isLsbSet = Utilities.IsBitSet(value, 0);
 			value >>= 1;
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(value, 7));
 			SetClearFlagConditional(Flags.Zero, (value == 0x00));
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(value, 5));
 			ClearFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(value, 3));
 			CalculateAndSetParity(value);
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -1230,8 +1230,8 @@ namespace Essgee.Emulation.CPU
 
 			TestBit(value, bit);
 
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet((byte)(address >> 8), 5));
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet((byte)(address >> 8), 3));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet((byte)(address >> 8), 5));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet((byte)(address >> 8), 3));
 		}
 
 		protected void TestBit(byte value, int bit)
@@ -1240,9 +1240,9 @@ namespace Essgee.Emulation.CPU
 
 			SetClearFlagConditional(Flags.Sign, (bit == 7 && isBitSet));
 			SetClearFlagConditional(Flags.Zero, !isBitSet);
-			SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
+			SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(value, 5));
 			SetFlag(Flags.HalfCarry);
-			SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
+			SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(value, 3));
 			SetClearFlagConditional(Flags.ParityOrOverflow, !isBitSet);
 			ClearFlag(Flags.Subtract);
 			// C
@@ -1334,7 +1334,7 @@ namespace Essgee.Emulation.CPU
 		{
 			dest = ReadPort(port);
 
-			SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(dest, 7));
+			SetClearFlagConditional(Flags.Sign, Utilities.IsBitSet(dest, 7));
 			SetClearFlagConditional(Flags.Zero, (dest == 0x00));
 			ClearFlag(Flags.HalfCarry);
 			CalculateAndSetParity(dest);

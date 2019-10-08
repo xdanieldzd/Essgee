@@ -25,8 +25,8 @@ namespace Essgee.Emulation.Cartridges
 		[StateRequired]
 		bool hasCartRam;
 
-		bool isRamEnabled { get { return BitUtilities.IsBitSet(pagingRegisters[0], 3); } }
-		bool isRomWriteEnable { get { return BitUtilities.IsBitSet(pagingRegisters[0], 7); } }
+		bool isRamEnabled { get { return Utilities.IsBitSet(pagingRegisters[0], 3); } }
+		bool isRomWriteEnable { get { return Utilities.IsBitSet(pagingRegisters[0], 7); } }
 		int ramBank { get { return ((pagingRegisters[0] >> 2) & 0x01); } }
 		int romBank0 { get { return pagingRegisters[1]; } }
 		int romBank1 { get { return pagingRegisters[2]; } }

@@ -284,7 +284,7 @@ namespace Essgee.Emulation.PSG
 
 		public virtual void WritePort(byte port, byte data)
 		{
-			if (BitUtilities.IsBitSet(data, 7))
+			if (Utilities.IsBitSet(data, 7))
 			{
 				/* LATCH/DATA byte; get channel (0-3) and type (0 is tone/noise, 1 is volume) */
 				latchedChannel = (byte)((data >> 5) & 0x03);

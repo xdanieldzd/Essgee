@@ -60,7 +60,7 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.Increment8(ref c.hl.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.Decrement8(ref c.hl.Low); }),
 			new SimpleOpcodeDelegate((c) => { c.LoadRegisterImmediate8(ref c.hl.Low, false); }),
-			new SimpleOpcodeDelegate((c) => { c.af.High ^= 0xFF; c.SetFlag(Flags.Subtract | Flags.HalfCarry); c.SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(c.af.High, 5)); c.SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(c.af.High, 3)); }),
+			new SimpleOpcodeDelegate((c) => { c.af.High ^= 0xFF; c.SetFlag(Flags.Subtract | Flags.HalfCarry); c.SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(c.af.High, 5)); c.SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(c.af.High, 3)); }),
 			/* 0x30 */
 			new SimpleOpcodeDelegate((c) => { c.JumpConditional8(!c.IsFlagSet(Flags.Carry)); }),
 			new SimpleOpcodeDelegate((c) => { c.LoadRegisterImmediate16(ref c.sp); }),
@@ -69,7 +69,7 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.IncrementMemory8(c.hl.Word); }),
 			new SimpleOpcodeDelegate((c) => { c.DecrementMemory8(c.hl.Word); }),
 			new SimpleOpcodeDelegate((c) => { c.LoadMemory8(c.hl.Word, c.ReadMemory8(c.pc++)); }),
-			new SimpleOpcodeDelegate((c) => { c.SetFlag(Flags.Carry); c.ClearFlag(Flags.Subtract | Flags.HalfCarry); c.SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(c.af.High, 5)); c.SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(c.af.High, 3)); }),
+			new SimpleOpcodeDelegate((c) => { c.SetFlag(Flags.Carry); c.ClearFlag(Flags.Subtract | Flags.HalfCarry); c.SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(c.af.High, 5)); c.SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(c.af.High, 3)); }),
 			new SimpleOpcodeDelegate((c) => { c.JumpConditional8(c.IsFlagSet(Flags.Carry)); }),
 			new SimpleOpcodeDelegate((c) => { c.Add16(ref c.hl, c.sp, false); }),
 			new SimpleOpcodeDelegate((c) => { c.LoadRegisterFromMemory8(ref c.af.High, c.ReadMemory16(c.pc), false); c.pc += 2; }),
@@ -77,7 +77,7 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.Increment8(ref c.af.High); }),
 			new SimpleOpcodeDelegate((c) => { c.Decrement8(ref c.af.High); }),
 			new SimpleOpcodeDelegate((c) => { c.LoadRegisterImmediate8(ref c.af.High, false); }),
-			new SimpleOpcodeDelegate((c) => { c.SetClearFlagConditional(Flags.HalfCarry, c.IsFlagSet(Flags.Carry)); c.SetClearFlagConditional(Flags.Carry, !c.IsFlagSet(Flags.Carry)); c.ClearFlag(Flags.Subtract); c.SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(c.af.High, 5)); c.SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(c.af.High, 3)); }),
+			new SimpleOpcodeDelegate((c) => { c.SetClearFlagConditional(Flags.HalfCarry, c.IsFlagSet(Flags.Carry)); c.SetClearFlagConditional(Flags.Carry, !c.IsFlagSet(Flags.Carry)); c.ClearFlag(Flags.Subtract); c.SetClearFlagConditional(Flags.UnusedBitY, Utilities.IsBitSet(c.af.High, 5)); c.SetClearFlagConditional(Flags.UnusedBitX, Utilities.IsBitSet(c.af.High, 3)); }),
 			/* 0x40 */
 			new SimpleOpcodeDelegate((c) => { c.LoadRegister8(ref c.bc.High, c.bc.High, false); }),
 			new SimpleOpcodeDelegate((c) => { c.LoadRegister8(ref c.bc.High, c.bc.Low, false); }),

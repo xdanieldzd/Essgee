@@ -95,7 +95,7 @@ namespace Essgee.Emulation.VDP
 			get { return ((statusFlags & StatusFlags.FrameInterruptPending) == StatusFlags.FrameInterruptPending); }
 			set { statusFlags = ((statusFlags & ~StatusFlags.FrameInterruptPending) | (value ? StatusFlags.FrameInterruptPending : StatusFlags.None)); }
 		}
-		protected bool isFrameInterruptEnabled => BitUtilities.IsBitSet(registers[0x01], 5);
+		protected bool isFrameInterruptEnabled => Utilities.IsBitSet(registers[0x01], 5);
 
 		[StateRequired]
 		public InterruptState InterruptLine { get; set; }
@@ -103,21 +103,21 @@ namespace Essgee.Emulation.VDP
 		[StateRequired]
 		protected int currentScanline;
 
-		protected bool isDisplayBlanked => !BitUtilities.IsBitSet(registers[0x01], 6);
+		protected bool isDisplayBlanked => !Utilities.IsBitSet(registers[0x01], 6);
 
-		protected bool is16kVRAMEnabled => BitUtilities.IsBitSet(registers[0x01], 7);
+		protected bool is16kVRAMEnabled => Utilities.IsBitSet(registers[0x01], 7);
 
-		protected bool isBitM1Set => BitUtilities.IsBitSet(registers[0x01], 4);
-		protected bool isBitM2Set => BitUtilities.IsBitSet(registers[0x00], 1);
-		protected bool isBitM3Set => BitUtilities.IsBitSet(registers[0x01], 3);
+		protected bool isBitM1Set => Utilities.IsBitSet(registers[0x01], 4);
+		protected bool isBitM2Set => Utilities.IsBitSet(registers[0x00], 1);
+		protected bool isBitM3Set => Utilities.IsBitSet(registers[0x01], 3);
 
 		protected virtual bool isModeGraphics1 => !(isBitM1Set || isBitM2Set || isBitM3Set);
 		protected virtual bool isModeText => (isBitM1Set && !(isBitM2Set || isBitM3Set));
 		protected virtual bool isModeGraphics2 => (isBitM2Set && !(isBitM1Set || isBitM3Set));
 		protected virtual bool isModeMulticolor => (isBitM3Set && !(isBitM1Set || isBitM2Set));
 
-		protected bool isLargeSprites => BitUtilities.IsBitSet(registers[0x01], 1);
-		protected bool isZoomedSprites => BitUtilities.IsBitSet(registers[0x01], 0);
+		protected bool isLargeSprites => Utilities.IsBitSet(registers[0x01], 1);
+		protected bool isZoomedSprites => Utilities.IsBitSet(registers[0x01], 0);
 
 		protected virtual ushort nametableBaseAddress => (ushort)((registers[0x02] & 0x0F) << 10);
 		protected virtual ushort spriteAttribTableBaseAddress => (ushort)((registers[0x05] & 0x7F) << 7);

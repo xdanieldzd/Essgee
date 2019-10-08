@@ -119,8 +119,8 @@ namespace Essgee.Emulation.Machines
 		byte portMemoryControl, portIoControl, hCounterLatched, portIoAB, portIoBMisc;
 		byte portIoC, portParallelData, portDataDirNMI, portTxBuffer, portRxBuffer, portSerialControl;
 
-		bool isWorkRamEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 4); } }
-		bool isBootstrapRomEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 3); } }
+		bool isWorkRamEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 4); } }
+		bool isBootstrapRomEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 3); } }
 
 		int currentMasterClockCyclesInFrame, totalMasterClockCyclesInFrame;
 
