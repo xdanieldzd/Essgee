@@ -1068,18 +1068,15 @@ namespace Essgee
 
 			using (var bitmap = new Bitmap(lastFramebufferSize.width, lastFramebufferSize.height))
 			{
-				var newScreenshotPath = string.Empty;
-				var screenshotPrefix = Path.GetFileNameWithoutExtension(lastGameMetadata.FileName);
+				var screenshotPrefix = $"{Path.GetFileNameWithoutExtension(lastGameMetadata.FileName)} ({DateTime.Now:yyyy-MM-dd HH-mm-ss})";
+				var newScreenshotPath = Path.Combine(Program.ScreenshotPath, $"{screenshotPrefix}.png");
 				var existingShots = Directory.EnumerateFiles(Program.ScreenshotPath, $"{screenshotPrefix}*.png");
-				for (int i = 0; existingShots.Contains(newScreenshotPath = Path.Combine(Program.ScreenshotPath, $"{screenshotPrefix} (Shot {i:D3}).png")); i++) { }
+				if (existingShots.Contains(newScreenshotPath))
+					for (int i = 2; existingShots.Contains(newScreenshotPath = Path.Combine(Program.ScreenshotPath, $"{screenshotPrefix} (Shot {i}).png")); i++) { }
 
 				var bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, bitmap.PixelFormat);
 				var dataSize = Math.Min(bitmapData.Stride * bitmapData.Height, lastFramebufferData.Length);
-				for (int i = 0, j = 0; i < dataSize; i += 3, j += 4)
-				{
-					Marshal.Copy(lastFramebufferData, i, bitmapData.Scan0 + j, 3);
-					Marshal.WriteByte(bitmapData.Scan0 + j + 3, 0xFF);
-				}
+				Marshal.Copy(lastFramebufferData, 0, bitmapData.Scan0, dataSize);
 				bitmap.UnlockBits(bitmapData);
 
 				using (var croppedBitmap = new Bitmap(currentViewport.width, currentViewport.height))
