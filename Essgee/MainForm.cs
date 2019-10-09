@@ -915,7 +915,7 @@ namespace Essgee
 				DrawInputDisplay(debugInfos);
 
 				// TODO: move elsewhere?
-				soundHandler.MaxQueueLength = (int)(emulatorHandler.FramesPerSecond / emulatorHandler.Information.RefreshRate) + 1;
+				soundHandler.MaxQueueLength = (int)Math.Min(1.0, (emulatorHandler.FramesPerSecond / emulatorHandler.Information.RefreshRate) + 1.0);
 			}
 
 			graphicsHandler.Render();

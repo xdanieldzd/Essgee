@@ -180,7 +180,11 @@ namespace Essgee.Sound
 		public void EnqueueSamples(object sender, EnqueueSamplesEventArgs e)
 		{
 			if (sampleQueue.Count > MaxQueueLength)
-				sampleQueue.Clear();
+			{
+				var samplesToDrop = (sampleQueue.Count - MaxQueueLength);
+				onScreenDisplayHandler.EnqueueMessageDebug($"({GetType().Name}/{DateTime.Now.Second:D2}s) Sample queue overflow; dropping {samplesToDrop} of {sampleQueue.Count} samples.");
+				for (int i = 0; i < samplesToDrop; i++) sampleQueue.Dequeue();
+			}
 
 			sampleQueue.Enqueue(e.MixedSamples.ToArray());
 		}

@@ -17,6 +17,8 @@ namespace Essgee.Graphics
 	public class OnScreenDisplayHandler
 	{
 		readonly static int messageDefaultSeconds = 5;
+		readonly static int maxStringListLength = 128;
+		readonly static int stringListPurgeSize = 16;
 
 		readonly static string glslUniformProjection = "projection";
 		readonly static string glslUniformModelview = "modelview";
@@ -50,6 +52,7 @@ namespace Essgee.Graphics
 		readonly static Color4 colorWarning = new Color4(255, 192, 160, 255);
 		readonly static Color4 colorError = new Color4(255, 128, 128, 255);
 		readonly static Color4 colorCore = new Color4(192, 192, 255, 255);
+		readonly static Color4 colorDebug = new Color4(192, 128, 255, 255);
 
 		readonly OnScreenDisplayVertex[] characterVertices;
 
@@ -205,6 +208,12 @@ namespace Essgee.Graphics
 			EnqueueMessage(str, colorCore);
 		}
 
+		public void EnqueueMessageDebug(string str)
+		{
+			if (Program.AppEnvironment.DebugMode)
+				EnqueueMessage(str, colorDebug);
+		}
+
 		public void Render(float deltaTime)
 		{
 			shader.Activate();
@@ -215,6 +224,9 @@ namespace Essgee.Graphics
 
 			stringList.RemoveAll(x => !x.IsLogEntry && x.ShowUntil < DateTime.Now);
 			stringList.RemoveAll(x => x.IsLogEntry && x.Color.A <= 0.0f);
+
+			if (stringList.Count > maxStringListLength)
+				stringList.RemoveRange(0, stringListPurgeSize);
 		}
 
 		private int MeasureString(string @string)
@@ -235,7 +247,7 @@ namespace Essgee.Graphics
 
 		private void RenderStrings(float deltaTime)
 		{
-			foreach (var @string in stringList.Where(x => !x.IsLogEntry))
+			foreach (var @string in stringList.ToList().Where(x => !x.IsLogEntry))
 			{
 				float x = @string.X, y = @string.Y;
 				if (x < 0.0f) x = (viewport.Width + x) - MeasureString(@string.Text);
@@ -248,7 +260,7 @@ namespace Essgee.Graphics
 		private void RenderLogMessages(float deltaTime)
 		{
 			var logY = (viewport.Height - (characterSourceSize + (characterSourceSize / 2)));
-			foreach (var @string in stringList.Where(x => x.IsLogEntry).OrderByDescending(x => x.ShowUntil))
+			foreach (var @string in stringList.ToList().Where(x => x.IsLogEntry).OrderByDescending(x => x.ShowUntil))
 			{
 				float x = characterSourceSize / 2.0f, y = logY;
 				logY -= characterSourceSize;
@@ -259,7 +271,7 @@ namespace Essgee.Graphics
 			}
 
 			var timeNow = DateTime.Now;
-			foreach (var @string in stringList.Where(x => x.IsLogEntry))
+			foreach (var @string in stringList.ToList().Where(x => x.IsLogEntry))
 			{
 				if ((@string.ShowUntil.Ticks - timeNow.Ticks) < TimeSpan.TicksPerSecond)
 					@string.Color = new Color4(@string.Color.R, @string.Color.G, @string.Color.B, Math.Max(0.0f, @string.Color.A - (deltaTime / 25.0f)));
