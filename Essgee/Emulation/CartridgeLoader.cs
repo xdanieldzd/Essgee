@@ -29,10 +29,13 @@ namespace Essgee.Emulation
 			}
 		}
 
-		public static (Type, byte[]) Load(string fileName)
+		public static (Type, byte[]) Load(string fileName, string fileType)
 		{
 			Type machineType = null;
 			byte[] romData = null;
+
+			if (!File.Exists(fileName))
+				throw new CartridgeLoaderException($"{fileType} file not found.");
 
 			try
 			{
@@ -69,7 +72,7 @@ namespace Essgee.Emulation
 			}
 
 			if (machineType == null)
-				throw new CartridgeLoaderException("File could not be recognized.");
+				throw new CartridgeLoaderException($"File could not be recognized as {fileType}.");
 
 			return (machineType, romData);
 		}

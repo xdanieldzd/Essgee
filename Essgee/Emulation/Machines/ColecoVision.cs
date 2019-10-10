@@ -165,12 +165,9 @@ namespace Essgee.Emulation.Machines
 
 		private void LoadBios()
 		{
-			if (configuration.BiosRom != string.Empty)
-			{
-				var (type, bootstrapRomData) = CartridgeLoader.Load(configuration.BiosRom);
-				bios = new ColecoCartridge(bootstrapRomData.Length, 0);
-				bios.LoadRom(bootstrapRomData);
-			}
+			var (type, bootstrapRomData) = CartridgeLoader.Load(configuration.BiosRom, "ColecoVision BIOS");
+			bios = new ColecoCartridge(bootstrapRomData.Length, 0);
+			bios.LoadRom(bootstrapRomData);
 		}
 
 		public void Startup()

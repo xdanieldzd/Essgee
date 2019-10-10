@@ -204,9 +204,9 @@ namespace Essgee.Emulation.Machines
 
 		private void LoadBootstrap()
 		{
-			if (configuration.UseBootstrap && configuration.BootstrapRom != string.Empty)
+			if (configuration.UseBootstrap)
 			{
-				var (type, bootstrapRomData) = CartridgeLoader.Load(configuration.BootstrapRom);
+				var (type, bootstrapRomData) = CartridgeLoader.Load(configuration.BootstrapRom, "Master System Bootstrap");
 				bootstrap = new SegaMapperCartridge(bootstrapRomData.Length, 0);
 				bootstrap.LoadRom(bootstrapRomData);
 			}

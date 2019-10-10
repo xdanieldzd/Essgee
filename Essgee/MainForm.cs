@@ -299,14 +299,14 @@ namespace Essgee
 			SizeAndPositionWindow();
 			SetWindowTitleAndStatus();
 
-			onScreenDisplayHandler.EnqueueMessage($"Power on without cartridge.");
+			onScreenDisplayHandler.EnqueueMessage("Power on without cartridge.");
 		}
 
 		private void LoadAndRunCartridge(string fileName)
 		{
 			try
 			{
-				var (machineType, romData) = CartridgeLoader.Load(fileName);
+				var (machineType, romData) = CartridgeLoader.Load(fileName, "ROM image");
 
 				InitializeEmulation(machineType);
 
@@ -375,7 +375,7 @@ namespace Essgee
 			}
 
 			if (forcePowerOnWithoutCart)
-				onScreenDisplayHandler.EnqueueMessageWarning($"Bootstrap ROM is disabled in settings; enabling it for this startup.");
+				onScreenDisplayHandler.EnqueueMessageWarning("Bootstrap ROM is disabled in settings; enabling it for this startup.");
 
 			if (hasTVStandardOverride)
 				onScreenDisplayHandler.EnqueueMessageWarning($"Overriding TV standard setting; running game as {lastGameMetadata?.PreferredTVStandard}.");
@@ -779,7 +779,7 @@ namespace Essgee
 				if (emulatorHandler.IsCartridgeLoaded)
 					statusStringBuilder.Append($"playing {lastGameMetadata?.KnownName.Replace("&", "&&") ?? "unrecognized game"}");
 				else
-					statusStringBuilder.Append($"powered on without cartridge");
+					statusStringBuilder.Append("powered on without cartridge");
 
 				tsslStatus.Text = statusStringBuilder.ToString();
 				tsslEmulationStatus.Text = (emulatorHandler.IsRunning ? (emulatorHandler.IsPaused ? "Paused" : "Running") : "Stopped");
