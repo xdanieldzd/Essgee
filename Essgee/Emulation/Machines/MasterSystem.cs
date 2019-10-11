@@ -151,6 +151,8 @@ namespace Essgee.Emulation.Machines
 			inputDevices[0] = InputDevice.None;
 			inputDevices[1] = InputDevice.None;
 
+			lastKeysDown = new List<Keys>();
+
 			vdp.EndOfScanline += (s, e) =>
 			{
 				PollInputEventArgs pollInputEventArgs = new PollInputEventArgs();
@@ -354,8 +356,6 @@ namespace Essgee.Emulation.Machines
 
 		private void HandlePauseButton()
 		{
-			if (lastKeysDown == null) return;
-
 			var pausePressed = lastKeysDown.Contains(configuration.InputPause);
 			var pauseButtonHeld = (pauseButtonToggle && pausePressed);
 			if (pausePressed)
