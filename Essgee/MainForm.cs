@@ -212,17 +212,24 @@ namespace Essgee
 
 		private void InitializeHandlers()
 		{
+			InitializeOSDHandler();
+			InitializeGraphicsHandler();
+			InitializeSoundHandler();
+			InitializeMetadataHandler();
+		}
+
+		private void InitializeOSDHandler()
+		{
 			var osdFontText = Assembly.GetExecutingAssembly().ReadEmbeddedImageFile($"{Application.ProductName}.Assets.OsdFont.png");
 			onScreenDisplayHandler = new OnScreenDisplayHandler(osdFontText);
 
 			if (onScreenDisplayHandler == null) throw new HandlerException("Failed to initialize OSD handler");
+		}
 
+		private void InitializeGraphicsHandler()
+		{
 			graphicsHandler = new GraphicsHandler(onScreenDisplayHandler);
 			graphicsHandler?.LoadShaderBundle(Program.Configuration.LastShader);
-
-			InitializeSoundHandler();
-
-			gameMetadataHandler = new GameMetadataHandler(onScreenDisplayHandler);
 		}
 
 		private void InitializeSoundHandler()
@@ -232,6 +239,11 @@ namespace Essgee
 			soundHandler.SetMute(Program.Configuration.Mute);
 			soundHandler.SetLowPassFilter(Program.Configuration.LowPassFilter);
 			soundHandler.Startup();
+		}
+
+		private void InitializeMetadataHandler()
+		{
+			gameMetadataHandler = new GameMetadataHandler(onScreenDisplayHandler);
 		}
 
 		private void InitializeDebuggers()
