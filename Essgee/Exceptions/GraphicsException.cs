@@ -2,6 +2,7 @@
 
 namespace Essgee.Exceptions
 {
+	[Serializable]
 	public class GraphicsException : Exception
 	{
 		public GraphicsException() : base() { }

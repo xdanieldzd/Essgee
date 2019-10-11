@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Essgee.Utilities
 {
+	[SuppressMessage("Microsoft.Design", "CA1063:ImplementIDisposableCorrectly",
+		Justification = "False positive.  IDisposable is inherited via IFunctionality.  See http://stackoverflow.com/questions/8925925/code-analysis-ca1063-fires-when-deriving-from-idisposable-and-providing-implemen for details.")]
 	public class BindableToolStripMenuItem : ToolStripMenuItem, IBindableComponent
 	{
 		public BindableToolStripMenuItem() : base() { }

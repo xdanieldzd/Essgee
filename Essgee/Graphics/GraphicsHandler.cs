@@ -17,7 +17,7 @@ using Essgee.Graphics.Shaders;
 
 namespace Essgee.Graphics
 {
-	public class GraphicsHandler
+	public class GraphicsHandler : IDisposable
 	{
 		static readonly CommonVertex[] vertices = new CommonVertex[]
 		{
@@ -48,6 +48,8 @@ namespace Essgee.Graphics
 
 		Stopwatch stopwatch;
 		float deltaTime;
+
+		bool disposed = false;
 
 		public GraphicsHandler(OnScreenDisplayHandler osdHandler)
 		{
@@ -86,6 +88,30 @@ namespace Essgee.Graphics
 			};
 
 			onScreenDisplayHandler.EnqueueMessageSuccess($"Graphics initialized; {GLRenderer}, {GLVersion}.");
+		}
+
+		~GraphicsHandler()
+		{
+			Dispose(false);
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposed) return;
+
+			if (disposing)
+			{
+				if (vertexBuffer != null) vertexBuffer.Dispose();
+				if (shaderBundle != null) shaderBundle.Dispose();
+			}
+
+			disposed = true;
 		}
 
 		public void LoadShaderBundle(string shaderName)

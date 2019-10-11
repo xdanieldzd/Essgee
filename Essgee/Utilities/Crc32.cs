@@ -87,6 +87,7 @@ namespace Essgee.Utilities
 		}
 	}
 
+	[Serializable]
 	public class Crc32Exception : Exception
 	{
 		public Crc32Exception() : base() { }

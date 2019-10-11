@@ -2,6 +2,7 @@
 
 namespace Essgee.Exceptions
 {
+	[Serializable]
 	public class CartridgeLoaderException : Exception
 	{
 		public CartridgeLoaderException() : base() { }

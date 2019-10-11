@@ -53,8 +53,7 @@ namespace Essgee
 
 		public static string ReadEmbeddedTextFile(this Assembly assembly, string resourceName)
 		{
-			using (var stream = assembly.GetManifestResourceStream(resourceName))
-			using (var reader = new StreamReader(stream))
+			using (var reader = new StreamReader(assembly.GetManifestResourceStream(resourceName)))
 				return reader.ReadToEnd();
 		}
 

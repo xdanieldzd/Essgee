@@ -2,6 +2,7 @@
 
 namespace Essgee.Exceptions
 {
+	[Serializable]
 	public class EmulationException : Exception
 	{
 		public EmulationException() : base() { }

@@ -9,6 +9,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 using OpenTK;
 using OpenTK.Graphics;
@@ -17,6 +18,8 @@ using OpenTK.Graphics.OpenGL;
 namespace Essgee.Graphics
 {
 	[DesignTimeVisible(true), ToolboxItem(true)]
+	[SuppressMessage("Microsoft.Design", "CA1063:ImplementIDisposableCorrectly",
+		Justification = "False positive.  IDisposable is inherited via IFunctionality.  See http://stackoverflow.com/questions/8925925/code-analysis-ca1063-fires-when-deriving-from-idisposable-and-providing-implemen for details.")]
 	public class RenderControl : GLControl, IComponent
 	{
 		public event EventHandler<EventArgs> Render;

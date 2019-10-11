@@ -143,6 +143,20 @@ namespace Essgee
 			keysDown = new List<Keys>();
 		}
 
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing)
+			{
+				if (components != null) components.Dispose();
+
+				if (onScreenDisplayHandler != null) onScreenDisplayHandler.Dispose();
+				if (graphicsHandler != null) graphicsHandler.Dispose();
+				if (soundHandler != null) soundHandler.Dispose();
+			}
+
+			base.Dispose(disposing);
+		}
+
 		private void ExceptionHandler(Exception ex)
 		{
 			this.CheckInvokeMethod(() =>

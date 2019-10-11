@@ -2,6 +2,7 @@
 
 namespace Essgee.Exceptions
 {
+	[Serializable]
 	public class HandlerException : Exception
 	{
 		public HandlerException() : base() { }

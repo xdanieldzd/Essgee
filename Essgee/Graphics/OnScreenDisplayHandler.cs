@@ -14,7 +14,7 @@ using Essgee.Graphics.Shaders;
 
 namespace Essgee.Graphics
 {
-	public class OnScreenDisplayHandler
+	public class OnScreenDisplayHandler : IDisposable
 	{
 		readonly static int messageDefaultSeconds = 5;
 		readonly static int maxStringListLength = 128;
@@ -71,6 +71,8 @@ namespace Essgee.Graphics
 		readonly List<OnScreenDisplayMessage> stringList;
 
 		(int X, int Y, int Width, int Height) viewport;
+
+		bool disposed = false;
 
 		public OnScreenDisplayHandler(Bitmap osdFontBitmap)
 		{
@@ -135,6 +137,31 @@ namespace Essgee.Graphics
 			shader.SetUniform(glslUniformCharacterOffset, Vector2.Zero);
 
 			stringList = new List<OnScreenDisplayMessage>();
+		}
+
+		~OnScreenDisplayHandler()
+		{
+			Dispose(false);
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposed) return;
+
+			if (disposing)
+			{
+				if (fontTexture != null) fontTexture.Dispose();
+				if (characterVertexBuffer != null) characterVertexBuffer.Dispose();
+				if (shader != null) shader.Dispose();
+			}
+
+			disposed = true;
 		}
 
 		public void SetViewport(ValueTuple<int, int, int, int> view)
