@@ -145,7 +145,7 @@ namespace Essgee.Emulation.Machines
 			wram = new byte[ramSize];
 			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			vdp = new SegaSMSVDP();
-			psg = new SegaSMSPSG(44100, 2);
+			psg = new SegaSMSPSG();
 
 			inputDevices = new InputDevice[2];
 			inputDevices[0] = InputDevice.None;
@@ -192,6 +192,8 @@ namespace Essgee.Emulation.Machines
 			vdp?.SetClockRate(vdpClock);
 			vdp?.SetRefreshRate(RefreshRate);
 
+			psg?.SetSampleRate(Program.Configuration.SampleRate);
+			psg?.SetOutputChannels(2);
 			psg?.SetClockRate(psgClock);
 			psg?.SetRefreshRate(RefreshRate);
 

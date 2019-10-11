@@ -11,7 +11,7 @@ namespace Essgee.Emulation.PSG
 		[StateRequired]
 		readonly bool[] channel0Enable, channel1Enable, channel2Enable, channel3Enable;
 
-		public SegaGGPSG(int sampleRate, int numOutputChannels) : base(sampleRate, numOutputChannels)
+		public SegaGGPSG() : base()
 		{
 			channel0Enable = new bool[2];
 			channel1Enable = new bool[2];

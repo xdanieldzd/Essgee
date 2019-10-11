@@ -129,7 +129,7 @@ namespace Essgee.Emulation.Machines
 			wram = new byte[ramSize];
 			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			vdp = new TMS99xxA();
-			psg = new SN76489(44100, 2);
+			psg = new SN76489();
 
 			vdp.EndOfScanline += (s, e) =>
 			{
@@ -154,6 +154,8 @@ namespace Essgee.Emulation.Machines
 			vdp?.SetClockRate(vdpClock);
 			vdp?.SetRefreshRate(refreshRate);
 
+			psg?.SetSampleRate(Program.Configuration.SampleRate);
+			psg?.SetOutputChannels(2);
 			psg?.SetClockRate(psgClock);
 			psg?.SetRefreshRate(refreshRate);
 

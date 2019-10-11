@@ -21,7 +21,7 @@ namespace Essgee.Sound
 
 		OnScreenDisplayHandler onScreenDisplayHandler;
 
-		public int SampleFrequency { get; private set; }
+		public int SampleRate { get; private set; }
 		public int NumChannels { get; private set; }
 
 		public int MaxQueueLength { get; set; }
@@ -43,13 +43,13 @@ namespace Essgee.Sound
 
 		bool disposed = false;
 
-		public SoundHandler(OnScreenDisplayHandler osdHandler, int sampleFrequency, int numChannels, Action<Exception> exceptionHandler = null)
+		public SoundHandler(OnScreenDisplayHandler osdHandler, int sampleRate, int numChannels, Action<Exception> exceptionHandler = null)
 		{
 			this.exceptionHandler = exceptionHandler;
 
 			onScreenDisplayHandler = osdHandler;
 
-			SampleFrequency = sampleFrequency;
+			SampleRate = sampleRate;
 			NumChannels = numChannels;
 
 			MaxQueueLength = 2;
@@ -64,7 +64,7 @@ namespace Essgee.Sound
 			InitializeOpenAL();
 			InitializeFilters();
 
-			onScreenDisplayHandler.EnqueueMessageSuccess($"Sound initialized; {SampleFrequency} Hz, {NumChannels} channel(s).");
+			onScreenDisplayHandler.EnqueueMessageSuccess($"Sound initialized; {SampleRate} Hz, {NumChannels} channel(s).");
 		}
 
 		~SoundHandler()
@@ -201,7 +201,7 @@ namespace Essgee.Sound
 			if (sampleQueue.Count > 0)
 				lastSamples = sampleQueue.Dequeue();
 
-			AL.BufferData(buffer, ALFormat.Stereo16, lastSamples, lastSamples.Length * sizeof(short), SampleFrequency);
+			AL.BufferData(buffer, ALFormat.Stereo16, lastSamples, lastSamples.Length * sizeof(short), SampleRate);
 			AL.SourceQueueBuffer(source, buffer);
 		}
 	}

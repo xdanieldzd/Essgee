@@ -11,7 +11,7 @@ namespace Essgee.Emulation.PSG
 		protected override ushort noiseTappedBits => 0x0009;
 		protected override int noiseBitShift => 15;
 
-		public SegaSMSPSG(int sampleRate, int numOutputChannels) : base(sampleRate, numOutputChannels) { }
+		public SegaSMSPSG() : base() { }
 
 		public override void Reset()
 		{

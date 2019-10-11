@@ -20,6 +20,8 @@ namespace Essgee.Emulation.PSG
 		void Reset();
 		void Step(int clockCyclesInStep);
 
+		void SetSampleRate(int rate);
+		void SetOutputChannels(int channels);
 		void SetClockRate(double clock);
 		void SetRefreshRate(double refresh);
 

@@ -68,11 +68,8 @@ namespace Essgee.Emulation.PSG
 		protected bool EnableToneChannel3 { get { return (SoundEnableStates & SoundEnableState.ToneChannel3) == SoundEnableState.ToneChannel3; } }
 		protected bool EnableNoiseChannel { get { return (SoundEnableStates & SoundEnableState.NoiseChannel) == SoundEnableState.NoiseChannel; } }
 
-		public SN76489(int sampleRate, int numOutputChannels)
+		public SN76489()
 		{
-			this.sampleRate = sampleRate;
-			this.numOutputChannels = numOutputChannels;
-
 			channelSampleBuffer = new List<short>[numChannels];
 			for (int i = 0; i < numChannels; i++) channelSampleBuffer[i] = new List<short>();
 
@@ -90,6 +87,18 @@ namespace Essgee.Emulation.PSG
 			volumeTable[15] = 0;
 
 			samplesPerFrame = cyclesPerFrame = cyclesPerSample = -1;
+		}
+
+		public void SetSampleRate(int rate)
+		{
+			sampleRate = rate;
+			ConfigureTimings();
+		}
+
+		public void SetOutputChannels(int channels)
+		{
+			numOutputChannels = channels;
+			ConfigureTimings();
 		}
 
 		public void SetClockRate(double clock)

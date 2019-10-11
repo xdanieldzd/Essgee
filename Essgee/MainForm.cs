@@ -31,8 +31,10 @@ namespace Essgee
 	{
 		readonly static double baseScreenSize = 240.0;
 		readonly static double aspectRatio = (4.0 / 3.0);
+		readonly static int baseSampleRate = 11025;
 
 		readonly static int maxScreenSizeFactor = 3;
+		readonly static int maxSampleRateFactor = 3;
 		readonly static int maxSaveStateCount = 8;
 
 		readonly static string buildName = $"{BuildInformation.Properties["GitBranch"]}-{BuildInformation.Properties["LatestCommitHash"]}{(BuildInformation.Properties["GitPendingChanges"] ? "-dirty" : string.Empty)}";
@@ -110,6 +112,7 @@ namespace Essgee
 			CreateScreenSizeMenu();
 			CreateSizeModeMenu();
 			CreateShowGraphicsLayersMenu();
+			CreateSampleRateMenu();
 			CreateEnableSoundChannelsMenu();
 
 			limitFPSToolStripMenuItem.DataBindings.Add(nameof(limitFPSToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.LimitFps), false, DataSourceUpdateMode.OnPropertyChanged);
@@ -217,13 +220,18 @@ namespace Essgee
 			graphicsHandler = new GraphicsHandler(onScreenDisplayHandler);
 			graphicsHandler?.LoadShaderBundle(Program.Configuration.LastShader);
 
-			soundHandler = new SoundHandler(onScreenDisplayHandler, 44100, 2, ExceptionHandler);
+			InitializeSoundHandler();
+
+			gameMetadataHandler = new GameMetadataHandler(onScreenDisplayHandler);
+		}
+
+		private void InitializeSoundHandler()
+		{
+			soundHandler = new SoundHandler(onScreenDisplayHandler, Program.Configuration.SampleRate, 2, ExceptionHandler);
 			soundHandler.SetVolume(Program.Configuration.Volume);
 			soundHandler.SetMute(Program.Configuration.Mute);
 			soundHandler.SetLowPassFilter(Program.Configuration.LowPassFilter);
 			soundHandler.Startup();
-
-			gameMetadataHandler = new GameMetadataHandler(onScreenDisplayHandler);
 		}
 
 		private void InitializeDebuggers()
@@ -713,6 +721,50 @@ namespace Essgee
 				};
 				toggleLayersToolStripMenuItem.DropDownItems.Add(menuItem);
 			}
+		}
+
+		private void CreateSampleRateMenu()
+		{
+			sampleRateToolStripMenuItem.DropDownItems.Clear();
+
+			for (int i = 0; i < maxSampleRateFactor; i++)
+			{
+				var sampleRate = (baseSampleRate << i);
+				var menuItem = new ToolStripMenuItem($"{sampleRate} Hz")
+				{
+					Checked = (Program.Configuration.SampleRate == sampleRate),
+					Tag = sampleRate
+				};
+				menuItem.Click += (s, e) =>
+				{
+					if ((s as ToolStripMenuItem).Tag is int rate)
+					{
+						Program.Configuration.SampleRate = rate;
+
+						if (soundHandler != null)
+						{
+							if (emulatorHandler != null) emulatorHandler.EnqueueSamples -= soundHandler.EnqueueSamples;
+							soundHandler?.ClearSampleBuffer();
+							soundHandler?.Shutdown();
+						}
+
+						InitializeSoundHandler();
+
+						if (emulatorHandler != null)
+						{
+							var machineType = emulatorHandler.GetMachineType();
+							emulatorHandler.SetConfiguration(Program.Configuration.Machines[machineType.Name]);
+
+							emulatorHandler.EnqueueSamples += soundHandler.EnqueueSamples;
+						}
+
+						foreach (ToolStripMenuItem sampleRateMenuItem in sampleRateToolStripMenuItem.DropDownItems)
+							sampleRateMenuItem.Checked = (int)sampleRateMenuItem.Tag == Program.Configuration.SampleRate;
+					}
+				};
+				sampleRateToolStripMenuItem.DropDownItems.Add(menuItem);
+			}
+
 		}
 
 		private void CreateEnableSoundChannelsMenu()
