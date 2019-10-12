@@ -37,9 +37,6 @@ namespace Essgee
 		readonly static int maxSampleRateFactor = 3;
 		readonly static int maxSaveStateCount = 8;
 
-		readonly static string buildName = $"{BuildInformation.Properties["GitBranch"]}-{BuildInformation.Properties["LatestCommitHash"]}{(BuildInformation.Properties["GitPendingChanges"] ? "-dirty" : string.Empty)}";
-		readonly static string buildMachineInfo = $"{BuildInformation.Properties["BuildMachineName"]} ({BuildInformation.Properties["BuildMachineProcessorArchitecture"]}, {BuildInformation.Properties["BuildMachineOSPlatform"]} v{BuildInformation.Properties["BuildMachineOSVersion"]})";
-
 		// https://stackoverflow.com/a/21319086
 		private bool cursorShown = true;
 		public bool CursorShown
@@ -161,38 +158,66 @@ namespace Essgee
 		{
 			this.CheckInvokeMethod(() =>
 			{
-				var exceptionInfoBuilder = new StringBuilder();
-				exceptionInfoBuilder.AppendLine($"Thread: {ex.Data["Thread"] ?? "<unnamed>"}");
-				exceptionInfoBuilder.AppendLine($"Function: {ex.TargetSite.ReflectedType.FullName}.{ex.TargetSite.Name}");
-				exceptionInfoBuilder.AppendLine($"Exception: {ex.GetType().Name}");
-				exceptionInfoBuilder.Append($"Message: {ex.Message}");
-
-				var isUnhandled = Convert.ToBoolean(ex.Data["IsUnhandled"]);
-
-				if (!isUnhandled && ex is CartridgeLoaderException)
+				if (!Program.AppEnvironment.TemporaryDisableCustomExceptionForm)
 				{
-					MessageBox.Show($"{ ex.InnerException?.Message ?? ex.Message}\n\nFailed to load cartridge.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-				}
-				else if (!isUnhandled && ex is EmulationException)
-				{
-					MessageBox.Show($"An emulation exception has occured!\n\n{exceptionInfoBuilder.ToString()}\n\nEmulation cannot continue and will be terminated.", "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					SignalStopEmulation();
+					(_, ExceptionResult result, string prefix, string postfix) = ExceptionForm.GetExceptionInfo(ex);
+
+					if (result == ExceptionResult.Continue)
+					{
+						MessageBox.Show($"{prefix}{ex.InnerException?.Message ?? ex.Message}\n\n{postfix}.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+					}
+					else
+					{
+						var exceptionForm = new ExceptionForm(ex) { Owner = this };
+						exceptionForm.ShowDialog();
+
+						switch (result)
+						{
+							case ExceptionResult.StopEmulation:
+								SignalStopEmulation();
+								break;
+
+							case ExceptionResult.ExitApplication:
+								Environment.Exit(-1);
+								break;
+						}
+					}
 				}
 				else
 				{
-					var errorBuilder = new StringBuilder();
-					errorBuilder.AppendLine("An unhandled exception has occured!");
-					errorBuilder.AppendLine();
-					errorBuilder.AppendLine(exceptionInfoBuilder.ToString());
-					errorBuilder.AppendLine();
-					errorBuilder.AppendLine("Exception occured:");
-					errorBuilder.AppendLine($"{ex.StackTrace}");
-					errorBuilder.AppendLine();
-					errorBuilder.AppendLine("Execution cannot continue and the application will be terminated.");
+					var exceptionInfoBuilder = new StringBuilder();
+					exceptionInfoBuilder.AppendLine($"Thread: {ex.Data["Thread"] ?? "<unnamed>"}");
+					exceptionInfoBuilder.AppendLine($"Function: {ex.TargetSite.ReflectedType.FullName}.{ex.TargetSite.Name}");
+					exceptionInfoBuilder.AppendLine($"Exception: {ex.GetType().Name}");
+					exceptionInfoBuilder.Append($"Message: {ex.Message}");
 
-					MessageBox.Show(errorBuilder.ToString(), "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					var isUnhandled = Convert.ToBoolean(ex.Data["IsUnhandled"]);
 
-					Environment.Exit(-1);
+					if (!isUnhandled && ex is CartridgeLoaderException)
+					{
+						MessageBox.Show($"{ ex.InnerException?.Message ?? ex.Message}\n\nFailed to load cartridge.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+					}
+					else if (!isUnhandled && ex is EmulationException)
+					{
+						MessageBox.Show($"An emulation exception has occured!\n\n{exceptionInfoBuilder.ToString()}\n\nEmulation cannot continue and will be terminated.", "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
+						SignalStopEmulation();
+					}
+					else
+					{
+						var errorBuilder = new StringBuilder();
+						errorBuilder.AppendLine("An unhandled exception has occured!");
+						errorBuilder.AppendLine();
+						errorBuilder.AppendLine(exceptionInfoBuilder.ToString());
+						errorBuilder.AppendLine();
+						errorBuilder.AppendLine("Exception occured:");
+						errorBuilder.AppendLine($"{ex.StackTrace}");
+						errorBuilder.AppendLine();
+						errorBuilder.AppendLine("Execution cannot continue and the application will be terminated.");
+
+						MessageBox.Show(errorBuilder.ToString(), "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+						Environment.Exit(-1);
+					}
 				}
 			});
 		}
@@ -843,7 +868,7 @@ namespace Essgee
 			titleStringBuilder.Append($"{Application.ProductName} v{version.Major:D3}{versionMinor}");
 
 			if (Program.AppEnvironment.DebugMode)
-				titleStringBuilder.Append($" ({buildName})");
+				titleStringBuilder.Append($" ({Program.BuildName})");
 
 			if (emulatorHandler != null)
 			{
@@ -1189,11 +1214,11 @@ namespace Essgee
 			var buildDateTimeString = $"{buildDateTime} (UTC{(buildTimeOffset >= TimeSpan.Zero ? "+" : "-")}{Math.Abs(buildTimeOffset.Hours):D2}:{Math.Abs(buildTimeOffset.Minutes):D2})";
 
 			var aboutBuilder = new StringBuilder();
-			aboutBuilder.AppendLine($"{Application.ProductName} v{version.Major:D3}{versionMinor} ({buildName}) - {CultureInfo.CurrentCulture.TextInfo.ToTitleCase(description)}");
+			aboutBuilder.AppendLine($"{Application.ProductName} v{version.Major:D3}{versionMinor} ({Program.BuildName}) - {CultureInfo.CurrentCulture.TextInfo.ToTitleCase(description)}");
 			aboutBuilder.AppendLine();
 			aboutBuilder.AppendLine($"{copyright}");
 			aboutBuilder.AppendLine();
-			aboutBuilder.AppendLine($"{buildDateTimeString} on {buildMachineInfo}");
+			aboutBuilder.AppendLine($"{buildDateTimeString} on {Program.BuildMachineInfo}");
 
 			if (Program.AppEnvironment.DebugMode)
 			{

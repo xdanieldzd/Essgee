@@ -14,6 +14,9 @@ namespace Essgee
 {
 	static class Program
 	{
+		public readonly static string BuildName = $"{BuildInformation.Properties["GitBranch"]}-{BuildInformation.Properties["LatestCommitHash"]}{(BuildInformation.Properties["GitPendingChanges"] ? "-dirty" : string.Empty)}";
+		public readonly static string BuildMachineInfo = $"{BuildInformation.Properties["BuildMachineName"]} ({BuildInformation.Properties["BuildMachineProcessorArchitecture"]}, {BuildInformation.Properties["BuildMachineOSPlatform"]} v{BuildInformation.Properties["BuildMachineOSVersion"]})";
+
 		public static class AppEnvironment
 		{
 #if DEBUG
@@ -22,6 +25,7 @@ namespace Essgee
 			public static readonly bool DebugMode = false;
 #endif
 			public static readonly bool EnableCustomUnhandledExceptionHandler = true;
+			public static readonly bool TemporaryDisableCustomExceptionForm = false;
 
 			public static readonly bool EnableSuperSlowCPULogger = false;
 

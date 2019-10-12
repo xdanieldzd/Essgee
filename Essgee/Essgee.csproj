@@ -64,6 +64,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BuildInformation.cs" />
+    <EmbeddedResource Include="Debugging\ExceptionForm.resx">
+      <DependentUpon>ExceptionForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Debugging\SoundDebuggerForm.resx">
       <DependentUpon>SoundDebuggerForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -71,6 +74,12 @@
       <DependentUpon>WaveformControl.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="BuildInformationTemplate.cs" />
+    <Compile Include="Debugging\ExceptionForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Debugging\ExceptionForm.Designer.cs">
+      <DependentUpon>ExceptionForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Debugging\IDebuggerForm.cs" />
     <Compile Include="Debugging\SoundDebuggerForm.cs">
       <SubType>Form</SubType>
