@@ -86,6 +86,7 @@ namespace Essgee.Metadata
 				gameMetadata.HasNonVolatileRam = cartridgeInfo.HasNonVolatileRam;
 				gameMetadata.PreferredTVStandard = cartridgeInfo.PreferredTVStandard;
 				gameMetadata.PreferredRegion = cartridgeInfo.PreferredRegion;
+				gameMetadata.AllowMemoryControl = cartridgeInfo.AllowMemoryControl;
 			}
 
 			return gameMetadata;
@@ -113,6 +114,9 @@ namespace Essgee.Metadata
 
 			[JsonProperty(Required = Required.Default), JsonConverter(typeof(StringEnumConverter)), DefaultValue(Region.Auto)]
 			public Region PreferredRegion { get; set; } = Region.Auto;
+
+			[JsonProperty(Required = Required.Default), DefaultValue(true)]
+			public bool AllowMemoryControl { get; set; } = true;
 		}
 
 		public class DatHeader

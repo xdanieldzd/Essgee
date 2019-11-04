@@ -79,6 +79,8 @@ namespace Essgee.Emulation.Configuration
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys Joypad2Button2 { get; set; }
 
+		public bool AllowMemoryControl { get; set; }
+
 		public MasterSystem()
 		{
 			BootstrapRom = string.Empty;
@@ -104,6 +106,8 @@ namespace Essgee.Emulation.Configuration
 			Joypad2Right = Keys.NumPad6;
 			Joypad2Button1 = Keys.NumPad1;
 			Joypad2Button2 = Keys.NumPad3;
+
+			AllowMemoryControl = true;
 		}
 	}
 }

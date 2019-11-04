@@ -47,6 +47,8 @@ namespace Essgee.Emulation.Configuration
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys ControlsStart { get; set; }
 
+		public bool AllowMemoryControl { get; set; }
+
 		public GameGear()
 		{
 			BootstrapRom = string.Empty;
@@ -60,6 +62,8 @@ namespace Essgee.Emulation.Configuration
 			ControlsButton1 = Keys.A;
 			ControlsButton2 = Keys.S;
 			ControlsStart = Keys.Return;
+
+			AllowMemoryControl = true;
 		}
 	}
 }

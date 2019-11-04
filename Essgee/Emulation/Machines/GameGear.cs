@@ -448,7 +448,11 @@ namespace Essgee.Emulation.Machines
 						default:
 							/* System stuff */
 							if ((maskedPort & 0x01) == 0)
-								portMemoryControl = value;  /* Memory control */
+							{
+								/* Memory control */
+								if (configuration.AllowMemoryControl)
+									portMemoryControl = value;
+							}
 							else
 							{
 								/* I/O control */

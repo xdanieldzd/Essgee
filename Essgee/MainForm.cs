@@ -401,6 +401,7 @@ namespace Essgee
 			var forcePowerOnWithoutCart = false;
 			var hasTVStandardOverride = false;
 			var hasRegionOverride = false;
+			var hasDisallowMemoryControlOverride = false;
 
 			var overrideConfig = Program.Configuration.Machines[machineType.Name].CloneObject();
 
@@ -434,6 +435,16 @@ namespace Essgee
 				}
 			}
 
+			if (lastGameMetadata != null && lastGameMetadata.AllowMemoryControl != true)
+			{
+				var property = overrideConfig.GetType().GetProperty("AllowMemoryControl");
+				if (property != null)
+				{
+					property.SetValue(overrideConfig, lastGameMetadata.AllowMemoryControl);
+					hasDisallowMemoryControlOverride = true;
+				}
+			}
+
 			if (forcePowerOnWithoutCart)
 				onScreenDisplayHandler.EnqueueMessageWarning("Bootstrap ROM is disabled in settings; enabling it for this startup.");
 
@@ -443,7 +454,10 @@ namespace Essgee
 			if (hasRegionOverride)
 				onScreenDisplayHandler.EnqueueMessageWarning($"Overriding region setting; running game as {lastGameMetadata?.PreferredRegion}.");
 
-			if (forcePowerOnWithoutCart || hasTVStandardOverride || hasRegionOverride)
+			if (hasDisallowMemoryControlOverride)
+				onScreenDisplayHandler.EnqueueMessageWarning("Game-specific hack: Preventing software from reconfiguring memory control.");
+
+			if (forcePowerOnWithoutCart || hasTVStandardOverride || hasRegionOverride || hasDisallowMemoryControlOverride)
 				emulatorHandler.SetConfiguration(overrideConfig);
 		}
 

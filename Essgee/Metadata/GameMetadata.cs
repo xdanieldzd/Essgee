@@ -15,5 +15,6 @@ namespace Essgee.Metadata
 		public bool HasNonVolatileRam { get; set; } = false;
 		public TVStandard PreferredTVStandard { get; set; } = TVStandard.Auto;
 		public Region PreferredRegion { get; set; } = Region.Auto;
+		public bool AllowMemoryControl { get; set; } = true;
 	}
 }

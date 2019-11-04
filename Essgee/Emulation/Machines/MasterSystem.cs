@@ -561,7 +561,13 @@ namespace Essgee.Emulation.Machines
 				case 0x00:
 					/* System stuff */
 					if ((port & 0x01) == 0)
-						portMemoryControl = value;      /* Memory control */
+					{
+						/* Memory control */
+
+						// NOTE: Sonic Chaos June 30 prototype writes 0xFF to port 0x06; mirroring causes write to memory control, which causes the game to disable all memory access
+						if (configuration.AllowMemoryControl)
+							portMemoryControl = value;
+					}
 					else
 					{
 						/* I/O control */

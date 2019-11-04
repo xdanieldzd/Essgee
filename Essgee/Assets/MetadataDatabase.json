@@ -179,6 +179,12 @@
     "Mapper": "CodemastersCartridge"
   },
   {
+    /* Sonic Chaos (SMS, Prototype [Jun 30 1993]), disallow memory control */
+    "Crc32": "0xD3AD67FA",
+    "RomSize": 524288,
+    "AllowMemoryControl": false
+  },
+  {
     /* 94 Super World Cup Soccer (SMS), Korean mapper */
     "Crc32": "0x060D6A7C",
     "RomSize": 262144,
