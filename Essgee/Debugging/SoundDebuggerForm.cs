@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using Essgee.EventArguments;
+using Essgee.Extensions;
 
 namespace Essgee.Debugging
 {

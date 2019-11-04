@@ -25,6 +25,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -34,6 +35,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>EssgeeIcon.ico</ApplicationIcon>
@@ -107,6 +109,10 @@
     <Compile Include="Exceptions\GraphicsException.cs" />
     <Compile Include="Exceptions\EmulationException.cs" />
     <Compile Include="Exceptions\HandlerException.cs" />
+    <Compile Include="Extensions\AssemblyExtensionMethods.cs" />
+    <Compile Include="Extensions\FormExtensionMethods.cs" />
+    <Compile Include="Extensions\GeneralExtensionMethods.cs" />
+    <Compile Include="Extensions\SerializationExtensionMethods.cs" />
     <Compile Include="Sound\WaveformControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -178,7 +184,6 @@
     <Compile Include="Emulation\Machines\SG1000.cs" />
     <Compile Include="Emulation\PSG\SN76489.cs" />
     <Compile Include="Emulation\VDP\TMS99xxA.cs" />
-    <Compile Include="ExtensionMethods.cs" />
     <Compile Include="EventArguments\EnqueueSamplesEventArgs.cs" />
     <Compile Include="EventArguments\PollInputEventArgs.cs" />
     <Compile Include="MainForm.cs">

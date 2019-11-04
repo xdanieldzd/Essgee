@@ -9,6 +9,8 @@ using System.Windows.Forms;
 
 using OpenTK;
 
+using Essgee.Extensions;
+
 namespace Essgee.Graphics.Shaders
 {
 	public class ShaderBundle : IDisposable

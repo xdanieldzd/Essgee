@@ -22,6 +22,7 @@ using Essgee.Emulation;
 using Essgee.Emulation.Machines;
 using Essgee.EventArguments;
 using Essgee.Exceptions;
+using Essgee.Extensions;
 using Essgee.Metadata;
 using Essgee.Utilities;
 

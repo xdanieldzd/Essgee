@@ -9,6 +9,7 @@ using System.Drawing;
 
 using Essgee.Debugging;
 using Essgee.Emulation.Configuration;
+using Essgee.Extensions;
 
 namespace Essgee
 {

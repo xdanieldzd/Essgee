@@ -12,6 +12,7 @@ using Newtonsoft.Json.Converters;
 
 using Essgee.Emulation;
 using Essgee.Exceptions;
+using Essgee.Extensions;
 using Essgee.Graphics;
 using Essgee.Utilities;
 

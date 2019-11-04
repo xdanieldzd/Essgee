@@ -12,6 +12,7 @@ using System.IO;
 
 using Essgee.Emulation.Configuration;
 using Essgee.Emulation.Machines;
+using Essgee.Extensions;
 
 namespace Essgee
 {
