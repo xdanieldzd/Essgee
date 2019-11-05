@@ -74,13 +74,17 @@ namespace Essgee.Metadata
 			var gameMetadata = new GameMetadata()
 			{
 				FileName = Path.GetFileName(romFilename),
-				KnownName = (gameInfo?.Name ?? "unrecognized game"),
+				KnownName = gameInfo?.Name,
 				RomCrc32 = romCrc32,
 				RomSize = romSize
 			};
 
 			if (cartridgeInfo != null)
 			{
+				if (gameMetadata.KnownName == null)
+					gameMetadata.KnownName = cartridgeInfo.Name;
+
+				gameMetadata.Notes = cartridgeInfo.Notes;
 				gameMetadata.RamSize = cartridgeInfo.RamSize;
 				gameMetadata.MapperType = cartridgeInfo.Mapper;
 				gameMetadata.HasNonVolatileRam = cartridgeInfo.HasNonVolatileRam;
@@ -89,11 +93,20 @@ namespace Essgee.Metadata
 				gameMetadata.AllowMemoryControl = cartridgeInfo.AllowMemoryControl;
 			}
 
+			if (gameMetadata.KnownName == null)
+				gameMetadata.KnownName = "unrecognized game";
+
 			return gameMetadata;
 		}
 
 		public class CartridgeJSON
 		{
+			[JsonProperty(Required = Required.Always)]
+			public string Name { get; set; } = string.Empty;
+
+			[JsonProperty(Required = Required.Always)]
+			public string Notes { get; set; } = string.Empty;
+
 			[JsonProperty(Required = Required.Always), JsonConverter(typeof(HexadecimalJsonConverter))]
 			public uint Crc32 { get; set; } = 0xFFFFFFFF;
 

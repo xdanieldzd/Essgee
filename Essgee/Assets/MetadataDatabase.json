@@ -1,251 +1,292 @@
 [
   {
-    /* The Castle (SG-1000), 8k volatile RAM */
+    "Name": "The Castle (SG-1000)",
+    "Notes": "8k volatile RAM",
     "Crc32": "0x092F29D6",
     "RomSize": 32768,
     "RamSize": 8192
   },
   {
-    /* Othello (SG-1000), 2k volatile RAM */
+    "Name": "Othello (SG-1000)",
+    "Notes": "2k volatile RAM",
     "Crc32": "0xAF4F14BC",
     "RomSize": 32768,
     "RamSize": 2048
   },
   {
-    /* Sega Basic Level II (SC-3000), 2k volatile RAM (for Level IIb) */
+    "Name": "Sega Basic Level II (SC-3000)",
+    "Notes": "2k volatile RAM (for Level IIb)",
     "Crc32": "0xF691F9C7",
     "RomSize": 32768,
     "RamSize": 2048
   },
   {
-    /* Sega Basic Level III (SC-3000), 32k volatile RAM (for Level IIIb) */
+    "Name": "Sega Basic Level III (SC-3000)",
+    "Notes": "32k volatile RAM (for Level IIIb)",
     "Crc32": "0x5D9F11CA",
     "RomSize": 32768,
     "RamSize": 32768
   },
   {
-    /* Back to the Future 2 (SMS), PAL only */
+    "Name": "Back to the Future 2 (SMS)",
+    "Notes": "PAL only",
     "Crc32": "0xE5FF50D8",
     "RomSize": 262144,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Back to the Future 3 (SMS), PAL only */
+    "Name": "Back to the Future 3 (SMS)",
+    "Notes": "PAL only",
     "Crc32": "0x2D48C1D3",
     "RomSize": 262144,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* California Games 2 (SMS, Europe), PAL only */
+    "Name": "California Games 2 (SMS, Europe)",
+    "Notes": "PAL only",
     "Crc32": "0xC0E25D62",
     "RomSize": 262144,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Chase HQ (SMS), PAL only */
+    "Name": "Chase HQ (SMS)",
+    "Notes": "PAL only",
     "Crc32": "0x85CFC9C9",
     "RomSize": 262144,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Cosmic Spacehead (SMS), Codemasters mapper & PAL only */
+    "Name": "Cosmic Spacehead (SMS)",
+    "Notes": "Codemasters mapper & PAL only",
     "Crc32": "0x29822980",
     "RomSize": 262144,
     "Mapper": "CodemastersCartridge",
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Dinobasher (SMS), Codemasters mapper */
+    "Name": "Dinobasher (SMS)",
+    "Notes": "Codemasters mapper",
     "Crc32": "0xEA5C3A6F",
     "RomSize": 262144,
     "Mapper": "CodemastersCartridge"
   },
   {
-    /* Excellent Dizzy Collection (SMS), Codemasters mapper & PAL only */
+    "Name": "Excellent Dizzy Collection (SMS)",
+    "Notes": "Codemasters mapper & PAL only",
     "Crc32": "0x8813514B",
     "RomSize": 262144,
     "Mapper": "CodemastersCartridge",
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Fantastic Dizzy (SMS), Codemasters mapper & PAL only */
+    "Name": "Fantastic Dizzy (SMS)",
+    "Notes": "Codemasters mapper & PAL only",
     "Crc32": "0xB9664AE1",
     "RomSize": 262144,
     "Mapper": "CodemastersCartridge",
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Home Alone (SMS), PAL only */
+    "Name": "Home Alone (SMS)",
+    "Notes": "PAL only",
     "Crc32": "0xC9DBF936",
     "RomSize": 262144,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Micro Machines (SMS), Codemasters mapper & PAL only */
+    "Name": "Micro Machines (SMS)",
+    "Notes": "Codemasters mapper & PAL only",
     "Crc32": "0xA577CE46",
     "RomSize": 262144,
     "Mapper": "CodemastersCartridge",
     "PreferredTVStandard": "PAL"
   },
   {
-    /* NewZealand Story (SMS), PAL only */
+    "Name": "NewZealand Story (SMS)",
+    "Notes": "PAL only",
     "Crc32": "0xC660FF34",
     "RomSize": 262144,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Power Strike 2 (SMS), PAL only */
+    "Name": "Power Strike 2 (SMS)",
+    "Notes": "PAL only",
     "Crc32": "0xA109A6FE",
     "RomSize": 524288,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Predator 2 (SMS, Europe), PAL only */
+    "Name": "Predator 2 (SMS, Europe)",
+    "Notes": "PAL only",
     "Crc32": "0x0047B615",
     "RomSize": 262144,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Sonic the Hedgehog 2 (SMS), PAL only */
+    "Name": "Sonic the Hedgehog 2 (SMS)",
+    "Notes": "PAL only",
     "Crc32": "0x5B3B922C",
     "RomSize": 524288,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Sonic the Hedgehog 2 (SMS, Revision 1), PAL only */
+    "Name": "Sonic the Hedgehog 2 (SMS, Revision 1)",
+    "Notes": "PAL only",
     "Crc32": "0xD6F2BFCA",
     "RomSize": 524288,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Space Harrier (SMS, Europe), PAL only */
+    "Name": "Space Harrier (SMS, Europe)",
+    "Notes": "PAL only",
     "Crc32": "0xCA1D3752",
     "RomSize": 262144,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* CJ Elephant Fugitive (GG), Codemasters mapper */
+    "Name": "CJ Elephant Fugitive (GG)",
+    "Notes": "Codemasters mapper",
     "Crc32": "0x72981057",
     "RomSize": 262144,
     "Mapper": "CodemastersCartridge"
   },
   {
-    /* Cosmic Spacehead (GG), Codemasters mapper */
+    "Name": "Cosmic Spacehead (GG)",
+    "Notes": "Codemasters mapper",
     "Crc32": "0x6CAA625B",
     "RomSize": 262144,
     "Mapper": "CodemastersCartridge"
   },
   {
-    /* Dropzone (GG), Codemasters mapper */
+    "Name": "Dropzone (GG)",
+    "Notes": "Codemasters mapper",
     "Crc32": "0x152F0DCC",
     "RomSize": 131072,
     "Mapper": "CodemastersCartridge"
   },
   {
-    /* Ernie Els Golf (GG), Codemasters mapper & 8k volatile RAM */
+    "Name": "Ernie Els Golf (GG)",
+    "Notes": "Codemasters mapper & 8k volatile RAM",
     "Crc32": "0x5E53C7F7",
     "RomSize": 262144,
     "RamSize": 8192,
     "Mapper": "CodemastersCartridge"
   },
   {
-    /* Micro Machines (GG), Codemasters mapper */
+    "Name": "Micro Machines (GG)",
+    "Notes": "Codemasters mapper",
     "Crc32": "0xF7C524F6",
     "RomSize": 262144,
     "Mapper": "CodemastersCartridge"
   },
   {
-    /* Micro Machines 2: Turbo Tournament (GG), Codemasters mapper */
+    "Name": "Micro Machines 2: Turbo Tournament (GG)",
+    "Notes": "Codemasters mapper",
     "Crc32": "0xDBE8895C",
     "RomSize": 524288,
     "Mapper": "CodemastersCartridge"
   },
   {
-    /* Pete Sampras Tennis (GG), Codemasters mapper */
+    "Name": "Pete Sampras Tennis (GG)",
+    "Notes": "Codemasters mapper",
     "Crc32": "0xC1756BEE",
     "RomSize": 262144,
     "Mapper": "CodemastersCartridge"
   },
   {
-    /* Pop Breaker (GG, Japan), Domestic/Japan only */
+    "Name": "Pop Breaker (GG, Japan)",
+    "Notes": "Domestic/Japan only",
     "Crc32": "0x71DEBA5A",
     "RomSize": 131072,
     "PreferredRegion": "Domestic"
   },
   {
-    /* S.S. Lucifer: Man Overboard (GG), Codemasters mapper */
+    "Name": "S.S. Lucifer: Man Overboard (GG)",
+    "Notes": "Codemasters mapper",
     "Crc32": "0xD9A7F170",
     "RomSize": 262144,
     "Mapper": "CodemastersCartridge"
   },
   {
-    /* Sonic Chaos (SMS, Prototype [Jun 30 1993]), disallow memory control */
+    "Name": "Sonic Chaos (SMS, Jun 30 1993 Prototype)",
+    "Notes": "Disallow memory control",
     "Crc32": "0xD3AD67FA",
     "RomSize": 524288,
     "AllowMemoryControl": false
   },
   {
-    /* 94 Super World Cup Soccer (SMS), Korean mapper */
+    "Name": "94 Super World Cup Soccer (SMS)",
+    "Notes": "Korean mapper",
     "Crc32": "0x060D6A7C",
     "RomSize": 262144,
     "Mapper": "KoreanMapperCartridge"
   },
   {
-    /* Jang Pung II (SMS), Korean mapper */
+    "Name": "Jang Pung II (SMS)",
+    "Notes": "Korean mapper",
     "Crc32": "0x929222C4",
     "RomSize": 524288,
     "Mapper": "KoreanMapperCartridge"
   },
   {
-    /* Jang Pung 3 (SMS), Korean mapper */
+    "Name": "Jang Pung 3 (SMS)",
+    "Notes": "Korean mapper",
     "Crc32": "0x18FB98A3",
     "RomSize": 1048576,
     "Mapper": "KoreanMapperCartridge"
   },
   {
-    /* Janggun-ui Adeul (SMS) Korean sprite-flip mapper */
+    "Name": "Janggun-ui Adeul (SMS)",
+    "Notes": "Korean sprite-flip mapper",
     "Crc32": "0x192949D5",
     "RomSize": 524288,
     "Mapper": "KoreanSpriteMapperCartridge"
   },
   {
-    /* Sangokushi 3 (SMS), Korean mapper */
+    "Name": "Sangokushi 3 (SMS)",
+    "Notes": "Korean mapper",
     "Crc32": "0x97D03541",
     "RomSize": 1048576,
     "Mapper": "KoreanMapperCartridge"
   },
   {
-    /* 4 Pak All Action (SMS), 4 Pak mapper */
+    "Name": "4 Pak All Action (SMS)",
+    "Notes": "4 Pak mapper",
     "Crc32": "0xA67F2A5C",
     "RomSize": 1048576,
     "Mapper": "Multicart4PakAllActionCartridge"
   },
   {
-    /* Cyborg Z (SMS), Korean MSX 8k mapper */
+    "Name": "Cyborg Z (SMS)",
+    "Notes": "Korean MSX 8k mapper",
     "Crc32": "0x77EFE84A",
     "RomSize": 131072,
     "Mapper": "KoreanMSX8kMapperCartridge"
   },
   {
-    /* Street Master (SMS), Korean MSX 8k mapper */
+    "Name": "Street Master (SMS)",
+    "Notes": "Korean MSX 8k mapper",
     "Crc32": "0x83F0EEDE",
     "RomSize": 131072,
     "Mapper": "KoreanMSX8kMapperCartridge"
   },
   {
-    /* Wonsiin (SMS), Korean MSX 8k mapper */
+    "Name": "Wonsiin (SMS)",
+    "Notes": "Korean MSX 8k mapper",
     "Crc32": "0xA05258F5",
     "RomSize": 131072,
     "Mapper": "KoreanMSX8kMapperCartridge"
   },
   {
-    /* SMS Bad Apple 1.00 (SMS), PAL only */
+    "Name": "SMS Bad Apple 1.00 (SMS)",
+    "Notes": "PAL only",
     "Crc32": "0x38434560",
     "RomSize": 4194304,
     "PreferredTVStandard": "PAL"
   },
   {
-    /* Be No Sqr 1.01 (SMS), PAL only */
+    "Name": "Be No Sqr 1.01 (SMS)",
+    "Notes": "PAL only",
     "Crc32": "0xEE701BE6",
     "RomSize": 524288,
     "PreferredTVStandard": "PAL"
