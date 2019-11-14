@@ -40,6 +40,8 @@ namespace Essgee.Emulation.Cartridges
 			pagingRegisters[2] = 0x01;  /* Page 1 ROM bank */
 			pagingRegisters[3] = 0x02;  /* Page 2 ROM bank */
 
+			romSize = Math.Max(romSize, 0xC000);
+
 			romData = new byte[romSize];
 			ramData = new byte[ramSize];
 

@@ -27,10 +27,10 @@ namespace Essgee.Emulation
 		volatile bool emulationThreadPaused;
 
 		volatile bool configChangeRequested = false;
-		IConfiguration newConfiguration = null;
+		volatile IConfiguration newConfiguration = null;
 
 		volatile bool stateLoadRequested = false, stateSaveRequested = false;
-		int stateNumber = -1;
+		volatile int stateNumber = -1;
 
 		volatile Queue<bool> pauseStateChangesRequested = new Queue<bool>();
 

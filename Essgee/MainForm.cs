@@ -437,11 +437,17 @@ namespace Essgee
 
 			if (lastGameMetadata != null && lastGameMetadata.AllowMemoryControl != true)
 			{
-				var property = overrideConfig.GetType().GetProperty("AllowMemoryControl");
-				if (property != null)
+				var propertyMem = overrideConfig.GetType().GetProperty("AllowMemoryControl");
+				if (propertyMem != null)
 				{
-					property.SetValue(overrideConfig, lastGameMetadata.AllowMemoryControl);
+					propertyMem.SetValue(overrideConfig, lastGameMetadata.AllowMemoryControl);
 					hasDisallowMemoryControlOverride = true;
+
+					var propertyBoot = overrideConfig.GetType().GetProperty("UseBootstrap");
+					if (propertyBoot != null)
+					{
+						propertyBoot.SetValue(overrideConfig, false);
+					}
 				}
 			}
 
@@ -455,7 +461,11 @@ namespace Essgee
 				onScreenDisplayHandler.EnqueueMessageWarning($"Overriding region setting; running game as {lastGameMetadata?.PreferredRegion}.");
 
 			if (hasDisallowMemoryControlOverride)
+			{
 				onScreenDisplayHandler.EnqueueMessageWarning("Game-specific hack: Preventing software from reconfiguring memory control.");
+				System.Threading.Thread.Sleep(5);   // TODO: ugly hack otherwise the messages *might* get swapped
+				onScreenDisplayHandler.EnqueueMessageWarning("Bootstrap ROM has been disabled for this startup due to memory control hack.");
+			}
 
 			if (forcePowerOnWithoutCart || hasTVStandardOverride || hasRegionOverride || hasDisallowMemoryControlOverride)
 				emulatorHandler.SetConfiguration(overrideConfig);
@@ -653,7 +663,7 @@ namespace Essgee
 							emulatorHandler.SaveState(stateNumber);
 							SetTemporaryPause(false);
 
-							while (emulatorHandler.IsHandlingSaveState) { }
+							while (emulatorHandler.IsHandlingSaveState) { Application.DoEvents(); }
 							CreateLoadSaveStateMenus();
 
 							onScreenDisplayHandler.EnqueueMessage($"State {stateNumber} saved.");
