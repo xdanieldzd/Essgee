@@ -204,15 +204,19 @@ namespace Essgee.Graphics
 
 		public void EnqueueMessage(string str, Color4 color)
 		{
-			stringList.Add(new OnScreenDisplayMessage()
+			var split = str.Split(new string[] { Environment.NewLine, "\n" }, StringSplitOptions.RemoveEmptyEntries);
+			for (var i = 0; i < split.Length; i++)
 			{
-				X = 0,
-				Y = 0,
-				Color = color,
-				Text = str,
-				ShowUntil = DateTime.Now + TimeSpan.FromSeconds(messageDefaultSeconds),
-				IsLogEntry = true
-			});
+				stringList.Add(new OnScreenDisplayMessage()
+				{
+					X = 0,
+					Y = 0,
+					Color = color,
+					Text = split[i],
+					ShowUntil = DateTime.Now + TimeSpan.FromTicks(i) + TimeSpan.FromSeconds(messageDefaultSeconds),
+					IsLogEntry = true
+				});
+			}
 		}
 
 		public void EnqueueMessageSuccess(string str)

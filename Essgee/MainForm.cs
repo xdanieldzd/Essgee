@@ -263,6 +263,8 @@ namespace Essgee
 			var osdFontText = Assembly.GetExecutingAssembly().ReadEmbeddedImageFile($"{Application.ProductName}.Assets.OsdFont.png");
 			onScreenDisplayHandler = new OnScreenDisplayHandler(osdFontText);
 
+			onScreenDisplayHandler?.EnqueueMessageDebug($"Hello from {GetProductNameAndVersionString(true)}, this is a debug build!\nOSD handler initialized; font bitmap is {osdFontText.Width}x{osdFontText.Height}.");
+
 			if (onScreenDisplayHandler == null) throw new HandlerException("Failed to initialize OSD handler");
 		}
 
@@ -461,11 +463,7 @@ namespace Essgee
 				onScreenDisplayHandler.EnqueueMessageWarning($"Overriding region setting; running game as {lastGameMetadata?.PreferredRegion}.");
 
 			if (hasDisallowMemoryControlOverride)
-			{
-				onScreenDisplayHandler.EnqueueMessageWarning("Game-specific hack: Preventing software from reconfiguring memory control.");
-				System.Threading.Thread.Sleep(5);   // TODO: ugly hack otherwise the messages *might* get swapped
-				onScreenDisplayHandler.EnqueueMessageWarning("Bootstrap ROM has been disabled for this startup due to memory control hack.");
-			}
+				onScreenDisplayHandler.EnqueueMessageWarning("Game-specific hack: Preventing software from reconfiguring memory control.\nBootstrap ROM has been disabled for this startup due to memory control hack.");
 
 			if (forcePowerOnWithoutCart || hasTVStandardOverride || hasRegionOverride || hasDisallowMemoryControlOverride)
 				emulatorHandler.SetConfiguration(overrideConfig);
@@ -884,7 +882,7 @@ namespace Essgee
 			}
 		}
 
-		private void SetWindowTitleAndStatus()
+		private string GetProductNameAndVersionString(bool appendBuildName)
 		{
 			var titleStringBuilder = new StringBuilder();
 
@@ -892,8 +890,17 @@ namespace Essgee
 			var versionMinor = (version.Minor != 0 ? $".{version.Minor}" : string.Empty);
 			titleStringBuilder.Append($"{Application.ProductName} v{version.Major:D3}{versionMinor}");
 
-			if (Program.AppEnvironment.DebugMode)
+			if (appendBuildName)
 				titleStringBuilder.Append($" ({Program.BuildName})");
+
+			return titleStringBuilder.ToString();
+		}
+
+		private void SetWindowTitleAndStatus()
+		{
+			var titleStringBuilder = new StringBuilder();
+
+			titleStringBuilder.Append(GetProductNameAndVersionString(Program.AppEnvironment.DebugMode));
 
 			if (emulatorHandler != null)
 			{
@@ -1228,10 +1235,10 @@ namespace Essgee
 
 		private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
 		{
+			var productNameAndVersion = GetProductNameAndVersionString(true);
+
 			var description = Assembly.GetExecutingAssembly().GetAttribute<AssemblyDescriptionAttribute>().Description;
 			var copyright = Assembly.GetExecutingAssembly().GetAttribute<AssemblyCopyrightAttribute>().Copyright;
-			var version = new Version(Application.ProductVersion);
-			var versionMinor = (version.Minor != 0 ? $".{version.Minor}" : string.Empty);
 
 			var buildTimeZone = (TimeZoneInfo)BuildInformation.Properties["BuildTimeZone"];
 			var buildDateTime = TimeZoneInfo.ConvertTimeFromUtc((DateTime)BuildInformation.Properties["BuildDate"], buildTimeZone);
@@ -1239,7 +1246,7 @@ namespace Essgee
 			var buildDateTimeString = $"{buildDateTime} (UTC{(buildTimeOffset >= TimeSpan.Zero ? "+" : "-")}{Math.Abs(buildTimeOffset.Hours):D2}:{Math.Abs(buildTimeOffset.Minutes):D2})";
 
 			var aboutBuilder = new StringBuilder();
-			aboutBuilder.AppendLine($"{Application.ProductName} v{version.Major:D3}{versionMinor} ({Program.BuildName}) - {CultureInfo.CurrentCulture.TextInfo.ToTitleCase(description)}");
+			aboutBuilder.AppendLine($"{productNameAndVersion} - {CultureInfo.CurrentCulture.TextInfo.ToTitleCase(description)}");
 			aboutBuilder.AppendLine();
 			aboutBuilder.AppendLine($"{copyright}");
 			aboutBuilder.AppendLine();
