@@ -41,7 +41,7 @@ The SC-3000 keyboard is (currently) not configurable; the current layout can be 
   * __Sega 315-5378__: Game Gear PSG (integrated into VDP) based on Master System II PSG, with stereo output extension; same issues as other PSGs
 
 ### Support Chips
-* __Intel 8255__: Peripheral interface chip used in SG-1000 and SC-3000; not fully tested nor accurate, enough for controller and keyboard support where applicable
+* __Intel 8255__: Peripheral interface chip used in the SC-3000; not fully tested nor accurate, enough for controller and keyboard support where applicable
 
 ### Media
 * Support for various cartridge types, ex. standard Sega mapper, Codemasters mapper and various Korean mappers
