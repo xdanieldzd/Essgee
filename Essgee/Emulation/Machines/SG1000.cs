@@ -9,7 +9,6 @@ using Essgee.Emulation.CPU;
 using Essgee.Emulation.VDP;
 using Essgee.Emulation.PSG;
 using Essgee.Emulation.Cartridges;
-using Essgee.Emulation.Peripherals;
 using Essgee.EventArguments;
 using Essgee.Exceptions;
 using Essgee.Utilities;
@@ -19,6 +18,8 @@ namespace Essgee.Emulation.Machines
 	[MachineIndex(0)]
 	public class SG1000 : IMachine
 	{
+		// TODO: verify port 0xC0-0xFF behavior wrt the lack of a PPI and the SG-1000 Test Cartridge Extension Port test?
+
 		const double masterClockNtsc = 10738635;
 		const double masterClockPal = 10640684;
 		const double refreshRateNtsc = 59.922743;
@@ -83,32 +84,37 @@ namespace Essgee.Emulation.Machines
 		ICPU cpu;
 		IVDP vdp;
 		IPSG psg;
-		Intel8255 ppi;
 
 		[Flags]
-		enum PortAInputs : byte
+		enum PortIoABValues : byte
 		{
-			P1Up = (1 << 0),
-			P1Down = (1 << 1),
-			P1Left = (1 << 2),
-			P1Right = (1 << 3),
-			P1Button1 = (1 << 4),
-			P1Button2 = (1 << 5),
-			P2Up = (1 << 6),
-			P2Down = (1 << 7),
+			P1Up = 0b00000001,
+			P1Down = 0b00000010,
+			P1Left = 0b00000100,
+			P1Right = 0b00001000,
+			P1Button1 = 0b00010000,
+			P1Button2 = 0b00100000,
+			P2Up = 0b01000000,
+			P2Down = 0b10000000,
+			Mask = 0b11111111
 		}
 
 		[Flags]
-		enum PortBInputs : byte
+		enum PortIoBMiscValues : byte
 		{
-			P2Left = (1 << 0),
-			P2Right = (1 << 1),
-			P2Button1 = (1 << 2),
-			P2Button2 = (1 << 3),
+			P2Left = 0b00000001,
+			P2Right = 0b00000010,
+			P2Button1 = 0b00000100,
+			P2Button2 = 0b00001000,
+			CON = 0b00010000,
+			IC21Pin6 = 0b00100000,
+			IC21Pin10 = 0b01000000,
+			IC21Pin13 = 0b10000000,
+			Mask = 0b11111111
 		}
 
-		PortAInputs portAInputsPressed;
-		PortBInputs portBInputsPressed;
+		PortIoABValues portIoABPressed;
+		PortIoBMiscValues portIoBMiscPressed;
 
 		bool pauseButtonPressed, pauseButtonToggle;
 
@@ -125,7 +131,6 @@ namespace Essgee.Emulation.Machines
 			cpu = new Z80A(ReadMemory, WriteMemory, ReadPort, WritePort);
 			vdp = new TMS99xxA();
 			psg = new SN76489();
-			ppi = new Intel8255();
 
 			vdp.EndOfScanline += (s, e) =>
 			{
@@ -185,10 +190,10 @@ namespace Essgee.Emulation.Machines
 			cpu.SetStackPointer(0xDFF0);
 			vdp.Reset();
 			psg.Reset();
-			ppi.Reset();
 
-			portAInputsPressed = 0;
-			portBInputsPressed = 0;
+			portIoABPressed = 0;
+			portIoBMiscPressed = 0;
+
 			pauseButtonPressed = pauseButtonToggle = false;
 
 			OnEmulationReset(EventArgs.Empty);
@@ -210,7 +215,6 @@ namespace Essgee.Emulation.Machines
 			SaveStateHandler.PerformSetState(cpu, state[nameof(cpu)]);
 			SaveStateHandler.PerformSetState(vdp, state[nameof(vdp)]);
 			SaveStateHandler.PerformSetState(psg, state[nameof(psg)]);
-			SaveStateHandler.PerformSetState(ppi, state[nameof(ppi)]);
 
 			ReconfigureSystem();
 		}
@@ -225,8 +229,7 @@ namespace Essgee.Emulation.Machines
 				[nameof(wram)] = wram,
 				[nameof(cpu)] = SaveStateHandler.PerformGetState(cpu),
 				[nameof(vdp)] = SaveStateHandler.PerformGetState(vdp),
-				[nameof(psg)] = SaveStateHandler.PerformGetState(psg),
-				[nameof(ppi)] = SaveStateHandler.PerformGetState(ppi)
+				[nameof(psg)] = SaveStateHandler.PerformGetState(psg)
 			};
 		}
 
@@ -307,34 +310,24 @@ namespace Essgee.Emulation.Machines
 				pauseButtonToggle = false;
 
 			/* Handle controllers */
-			portAInputsPressed = 0;
-			portBInputsPressed = 0;
+			portIoABPressed = 0;
+			portIoBMiscPressed = 0;
 
-			if (keysDown.Contains(configuration.Joypad1Up)) portAInputsPressed |= PortAInputs.P1Up;
-			if (keysDown.Contains(configuration.Joypad1Down)) portAInputsPressed |= PortAInputs.P1Down;
-			if (keysDown.Contains(configuration.Joypad1Left)) portAInputsPressed |= PortAInputs.P1Left;
-			if (keysDown.Contains(configuration.Joypad1Right)) portAInputsPressed |= PortAInputs.P1Right;
-			if (keysDown.Contains(configuration.Joypad1Button1)) portAInputsPressed |= PortAInputs.P1Button1;
-			if (keysDown.Contains(configuration.Joypad1Button2)) portAInputsPressed |= PortAInputs.P1Button2;
+			if (keysDown.Contains(configuration.Joypad1Up)) portIoABPressed |= PortIoABValues.P1Up;
+			if (keysDown.Contains(configuration.Joypad1Down)) portIoABPressed |= PortIoABValues.P1Down;
+			if (keysDown.Contains(configuration.Joypad1Left)) portIoABPressed |= PortIoABValues.P1Left;
+			if (keysDown.Contains(configuration.Joypad1Right)) portIoABPressed |= PortIoABValues.P1Right;
+			if (keysDown.Contains(configuration.Joypad1Button1)) portIoABPressed |= PortIoABValues.P1Button1;
+			if (keysDown.Contains(configuration.Joypad1Button2)) portIoABPressed |= PortIoABValues.P1Button2;
 
-			if (keysDown.Contains(configuration.Joypad2Up)) portAInputsPressed |= PortAInputs.P2Up;
-			if (keysDown.Contains(configuration.Joypad2Down)) portAInputsPressed |= PortAInputs.P2Down;
-			if (keysDown.Contains(configuration.Joypad2Left)) portBInputsPressed |= PortBInputs.P2Left;
-			if (keysDown.Contains(configuration.Joypad2Right)) portBInputsPressed |= PortBInputs.P2Right;
-			if (keysDown.Contains(configuration.Joypad2Button1)) portBInputsPressed |= PortBInputs.P2Button1;
-			if (keysDown.Contains(configuration.Joypad2Button2)) portBInputsPressed |= PortBInputs.P2Button2;
-		}
+			if (keysDown.Contains(configuration.Joypad2Up)) portIoABPressed |= PortIoABValues.P2Up;
+			if (keysDown.Contains(configuration.Joypad2Down)) portIoABPressed |= PortIoABValues.P2Down;
+			if (keysDown.Contains(configuration.Joypad2Left)) portIoBMiscPressed |= PortIoBMiscValues.P2Left;
+			if (keysDown.Contains(configuration.Joypad2Right)) portIoBMiscPressed |= PortIoBMiscValues.P2Right;
+			if (keysDown.Contains(configuration.Joypad2Button1)) portIoBMiscPressed |= PortIoBMiscValues.P2Button1;
+			if (keysDown.Contains(configuration.Joypad2Button2)) portIoBMiscPressed |= PortIoBMiscValues.P2Button2;
 
-		private void UpdateInput()
-		{
-			byte portA = 0xFF, portB = 0xFF;
-			if ((ppi.PortCOutput & 0x07) == 0x07)
-			{
-				portA &= (byte)~portAInputsPressed;
-				portB &= (byte)~portBInputsPressed;
-			}
-			ppi.PortAInput = portA;
-			ppi.PortBInput = (byte)((ppi.PortBInput & 0xF0) | (portB & 0x0F));
+			portIoBMiscPressed |= (PortIoBMiscValues.IC21Pin6 | PortIoBMiscValues.IC21Pin10 | PortIoBMiscValues.IC21Pin13);       /* Unused, always 1 */
 		}
 
 		private byte ReadMemory(ushort address)
@@ -372,8 +365,10 @@ namespace Essgee.Emulation.Machines
 					return vdp.ReadPort(port);
 
 				case 0xC0:
-					UpdateInput();
-					return ppi.ReadPort(port);
+					if ((port & 0x01) == 0)
+						return (byte)(PortIoABValues.Mask & ~portIoABPressed);
+					else
+						return (byte)(PortIoBMiscValues.Mask & ~portIoBMiscPressed);
 
 				default:
 					// TODO: handle properly
@@ -387,7 +382,6 @@ namespace Essgee.Emulation.Machines
 			{
 				case 0x40: psg.WritePort(port, value); break;
 				case 0x80: vdp.WritePort(port, value); break;
-				case 0xC0: ppi.WritePort(port, value); break;
 				default: break; // TODO: handle properly
 			}
 		}
