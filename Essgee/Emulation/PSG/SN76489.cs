@@ -8,6 +8,8 @@ using Essgee.Exceptions;
 using Essgee.EventArguments;
 using Essgee.Utilities;
 
+using static Essgee.Emulation.Utilities;
+
 namespace Essgee.Emulation.PSG
 {
 	public class SN76489 : IPSG
@@ -293,7 +295,7 @@ namespace Essgee.Emulation.PSG
 
 		public virtual void WritePort(byte port, byte data)
 		{
-			if (Utilities.IsBitSet(data, 7))
+			if (IsBitSet(data, 7))
 			{
 				/* LATCH/DATA byte; get channel (0-3) and type (0 is tone/noise, 1 is volume) */
 				latchedChannel = (byte)((data >> 5) & 0x03);

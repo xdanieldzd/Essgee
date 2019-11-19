@@ -55,7 +55,7 @@ namespace Essgee.Emulation.PSG
 
 		public override void WritePort(byte port, byte data)
 		{
-			if (port == 0x06)
+			if (port == PortStereoControl)
 			{
 				/* Stereo control */
 				channel0Enable[0] = ((data & 0x10) != 0);   /* Ch1 Left */

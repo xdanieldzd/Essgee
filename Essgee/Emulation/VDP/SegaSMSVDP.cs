@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Essgee.EventArguments;
 using Essgee.Utilities;
 
+using static Essgee.Emulation.Utilities;
+
 namespace Essgee.Emulation.VDP
 {
 	/* Sega 315-5124 (Mark III, SMS) and 315-5246 (SMS 2); we're actually implementing a mixture of the two right now... */
@@ -36,15 +38,15 @@ namespace Essgee.Emulation.VDP
 		protected int lineInterruptCounter;
 		protected int screenHeight;
 
-		bool isLineInterruptEnabled => Utilities.IsBitSet(registers[0x00], 4);
+		bool isLineInterruptEnabled => IsBitSet(registers[0x00], 4);
 		[StateRequired]
 		bool isLineInterruptPending;
 
-		bool isColumn0MaskEnabled => Utilities.IsBitSet(registers[0x00], 5);
-		bool isVScrollPartiallyDisabled => Utilities.IsBitSet(registers[0x00], 7);       /* Columns 24-31, i.e. pixels 192-255 */
-		bool isHScrollPartiallyDisabled => Utilities.IsBitSet(registers[0x00], 6);       /* Rows 0-1, i.e. pixels 0-15 */
+		bool isColumn0MaskEnabled => IsBitSet(registers[0x00], 5);
+		bool isVScrollPartiallyDisabled => IsBitSet(registers[0x00], 7);                /* Columns 24-31, i.e. pixels 192-255 */
+		bool isHScrollPartiallyDisabled => IsBitSet(registers[0x00], 6);                /* Rows 0-1, i.e. pixels 0-15 */
 
-		bool isBitM4Set => Utilities.IsBitSet(registers[0x00], 2);
+		bool isBitM4Set => IsBitSet(registers[0x00], 2);
 
 		protected override bool isModeGraphics1 => !(isBitM1Set || isBitM2Set || isBitM3Set || isBitM4Set);
 		protected override bool isModeText => (isBitM1Set && !(isBitM2Set || isBitM3Set || isBitM4Set));
@@ -54,7 +56,7 @@ namespace Essgee.Emulation.VDP
 		protected bool isSMS240LineMode => (!isBitM1Set && isBitM2Set && isBitM3Set && isBitM4Set);
 		protected bool isSMS224LineMode => (isBitM1Set && isBitM2Set && !isBitM3Set && isBitM4Set);
 
-		bool isSpriteShiftLeft8 => Utilities.IsBitSet(registers[0x00], 3);
+		bool isSpriteShiftLeft8 => IsBitSet(registers[0x00], 3);
 
 		protected override ushort nametableBaseAddress
 		{
@@ -893,7 +895,7 @@ namespace Essgee.Emulation.VDP
 			if (!isBitM4Set)
 				colorValue = (legacyColorMap[colorValue & 0x000F]);
 
-			Utilities.RGB222toBGRA8888(colorValue, ref outputFramebuffer, address);
+			RGB222toBGRA8888(colorValue, ref outputFramebuffer, address);
 		}
 
 		protected override void WriteDataPort(byte value)

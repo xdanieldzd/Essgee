@@ -13,6 +13,8 @@ using Essgee.EventArguments;
 using Essgee.Exceptions;
 using Essgee.Utilities;
 
+using static Essgee.Emulation.Utilities;
+
 namespace Essgee.Emulation.Machines
 {
 	[MachineIndex(3)]
@@ -119,8 +121,8 @@ namespace Essgee.Emulation.Machines
 		byte portMemoryControl, portIoControl, hCounterLatched, portIoAB, portIoBMisc;
 		byte portIoC, portParallelData, portDataDirNMI, portTxBuffer, portRxBuffer, portSerialControl;
 
-		bool isWorkRamEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 4); } }
-		bool isBootstrapRomEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 3); } }
+		bool isWorkRamEnabled { get { return !IsBitSet(portMemoryControl, 4); } }
+		bool isBootstrapRomEnabled { get { return !IsBitSet(portMemoryControl, 3); } }
 
 		int currentMasterClockCyclesInFrame, totalMasterClockCyclesInFrame;
 

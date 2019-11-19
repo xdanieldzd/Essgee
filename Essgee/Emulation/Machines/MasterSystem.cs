@@ -14,6 +14,8 @@ using Essgee.EventArguments;
 using Essgee.Exceptions;
 using Essgee.Utilities;
 
+using static Essgee.Emulation.Utilities;
+
 namespace Essgee.Emulation.Machines
 {
 	[MachineIndex(2)]
@@ -106,12 +108,12 @@ namespace Essgee.Emulation.Machines
 
 		byte portMemoryControl, portIoControl, hCounterLatched;
 
-		bool isExpansionSlotEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 7); } }
-		bool isCartridgeSlotEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 6); } }
-		bool isCardSlotEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 5); } }
-		bool isWorkRamEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 4); } }
-		bool isBootstrapRomEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 3); } }
-		bool isIoChipEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 2); } }
+		bool isExpansionSlotEnabled { get { return !IsBitSet(portMemoryControl, 7); } }
+		bool isCartridgeSlotEnabled { get { return !IsBitSet(portMemoryControl, 6); } }
+		bool isCardSlotEnabled { get { return !IsBitSet(portMemoryControl, 5); } }
+		bool isWorkRamEnabled { get { return !IsBitSet(portMemoryControl, 4); } }
+		bool isBootstrapRomEnabled { get { return !IsBitSet(portMemoryControl, 3); } }
+		bool isIoChipEnabled { get { return !IsBitSet(portMemoryControl, 2); } }
 
 		enum IOControlDirection { Output = 0, Input = 1 }
 		enum IOControlOutputLevel { Low = 0, High = 1 }

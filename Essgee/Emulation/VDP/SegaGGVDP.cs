@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 using Essgee.Utilities;
 
+using static Essgee.Emulation.Utilities;
+
 namespace Essgee.Emulation.VDP
 {
 	/* Sega 315-5378, Game Gear */
@@ -39,7 +41,7 @@ namespace Essgee.Emulation.VDP
 
 		protected override void WriteColorToFramebuffer(ushort colorValue, int address)
 		{
-			Utilities.RGB444toBGRA8888(colorValue, ref outputFramebuffer, address);
+			RGB444toBGRA8888(colorValue, ref outputFramebuffer, address);
 		}
 
 		protected override void WriteDataPort(byte value)
