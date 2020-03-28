@@ -21,11 +21,11 @@ namespace Essgee.Emulation.Configuration
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys InputReset { get; set; }
 
-		[DropDownControl("General", "Change Input Mode", typeof(Keys), Keys.F11)]
+		[DropDownControl("General", "Change Input Mode", typeof(Keys), Keys.F11, Tooltip = "Selects which PC keyboard key is used to switch between SC-3000 keyboard and controller input.")]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys InputChangeMode { get; set; }
 
-		[DropDownControl("General", "Play Tape", typeof(Keys), Keys.F11)]
+		[DropDownControl("General", "Play Tape", typeof(Keys), Keys.F11, Tooltip = "Note that tape emulation is currently non-functional.")]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys InputPlayTape { get; set; }
 

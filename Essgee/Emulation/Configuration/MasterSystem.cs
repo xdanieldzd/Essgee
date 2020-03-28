@@ -21,6 +21,9 @@ namespace Essgee.Emulation.Configuration
 		[DropDownControl("General", "Region", typeof(Region))]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Region Region { get; set; }
+		[DropDownControl("General", "Model", typeof(VDPTypes), Tooltip = "Selects which type of VDP chip is emulated. This is used by some software to detect which console model it is running on.")]
+		[JsonConverter(typeof(StringEnumConverter))]
+		public VDPTypes VDPType { get; set; }
 
 		[CheckBoxControl("General", "Use Bootstrap ROM")]
 		public bool UseBootstrap { get; set; }
@@ -87,6 +90,7 @@ namespace Essgee.Emulation.Configuration
 
 			TVStandard = TVStandard.NTSC;
 			Region = Region.Export;
+			VDPType = VDPTypes.SMS2GG;
 
 			InputPause = Keys.Space;
 			InputReset = Keys.Back;

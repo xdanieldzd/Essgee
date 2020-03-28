@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 using Essgee.EventArguments;
 using Essgee.Utilities;
@@ -11,12 +12,11 @@ using static Essgee.Emulation.Utilities;
 
 namespace Essgee.Emulation.VDP
 {
-	/* Sega 315-5124 (Mark III, SMS) and 315-5246 (SMS 2); we're actually implementing a mixture of the two right now... */
+	/* Sega 315-5124 (Mark III, SMS) and 315-5246 (SMS 2); differences see 'VDPDIFF' comments */
 	public class SegaSMSVDP : TMS99xxA
 	{
-		/* VDPDIFF: switch for Mk3/SMS1 vs SMS2/GG behavior; split into separate classes? */
-		protected enum VDPTypes { Mk3SMS1, SMS2GG }
-		protected const VDPTypes VDPType = VDPTypes.Mk3SMS1;
+		/* VDPDIFF: switch for Mk3/SMS1 vs SMS2/GG behavior; configurable via SetRevision, maybe still split into separate classes instead? */
+		protected VDPTypes vdpType = VDPTypes.Mk3SMS1;
 
 		public const int NumActiveScanlinesLow = 192;
 		public const int NumActiveScanlinesMed = 224;
@@ -370,6 +370,13 @@ namespace Essgee.Emulation.VDP
 			UpdateResolution();
 		}
 
+		public override void SetRevision(int rev)
+		{
+			VDPTypes type = (VDPTypes)rev;
+			Debug.Assert(Enum.IsDefined(typeof(VDPTypes), type), "Invalid revision", "{0} revision is invalid; only rev 0 (MK3/SMS1) or 1 (SMS2/GG) is valid", GetType().FullName);
+			vdpType = type;
+		}
+
 		protected override void ReconfigureTimings()
 		{
 			/* Calculate cycles/line */
@@ -562,7 +569,7 @@ namespace Essgee.Emulation.VDP
 				/* VDPDIFF: Mk3/SMS1 VDP only, adjust current row according to mask bit; http://www.smspower.org/Development/TilemapMirroring
 				 * NOTE: Emulating this breaks 224/240-line mode games (ex. Fantastic Dizzy, Cosmic Spacehead, Micro Machines)?
 				 */
-				if (VDPType == VDPTypes.Mk3SMS1)
+				if (vdpType == VDPTypes.Mk3SMS1)
 					currentRow &= (((registers[0x02] & 0x01) << 4) | 0x0F);
 
 				/* Fetch data from nametable & extract properties */
@@ -706,7 +713,7 @@ namespace Essgee.Emulation.VDP
 				/* VDPDIFF: Mk3/SMS1 VDP zoomed sprites bug, only first four sprites (same as max sprites/line on TMS99xxA) can be zoomed horizontally
 				 * Zoom works normally on SMS2/GG */
 				int spriteWidth = (8 << zoomShift);
-				if (VDPType == VDPTypes.Mk3SMS1 && s >= NumSpritesPerLine) spriteWidth = 8;
+				if (vdpType == VDPTypes.Mk3SMS1 && s >= NumSpritesPerLine) spriteWidth = 8;
 
 				if (!isDisplayBlanked)
 				{
@@ -755,7 +762,13 @@ namespace Essgee.Emulation.VDP
 						}
 
 						/* Note that there is a sprite here regardless */
-						SetScreenUsageFlag(y, x, screenUsageSprite);
+
+						/* VDPDIFF: Mk3 / SMS1 VDP zoomed sprites bug, horizontally zoomed area of sprite (i.e. pixels 9-16) is ignored by collision; do not mark location as containing a sprite
+						 * https://www.smspower.org/forums/post109677#109677 
+						 * TODO: verify behavior somehow?
+						 */
+						if ((vdpType == VDPTypes.Mk3SMS1 && isZoomedSprites && pixel < 8) || (vdpType == VDPTypes.Mk3SMS1 && !isZoomedSprites) || vdpType == VDPTypes.SMS2GG)
+							SetScreenUsageFlag(y, x, screenUsageSprite);
 					}
 				}
 			}

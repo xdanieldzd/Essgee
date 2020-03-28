@@ -32,6 +32,7 @@ namespace Essgee.Emulation.VDP
 
 		void SetClockRate(double clock);
 		void SetRefreshRate(double refresh);
+		void SetRevision(int rev);
 
 		byte ReadPort(byte port);
 		void WritePort(byte port, byte value);

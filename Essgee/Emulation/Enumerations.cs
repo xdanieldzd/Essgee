@@ -36,6 +36,14 @@ namespace Essgee.Emulation
 		Lightgun
 	}
 
+	public enum VDPTypes
+	{
+		[Description("Mark III / Master System")]
+		Mk3SMS1 = 0,
+		[Description("Master System II / Game Gear")]
+		SMS2GG = 1
+	}
+
 	public enum InterruptType
 	{
 		Maskable,

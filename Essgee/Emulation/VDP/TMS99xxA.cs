@@ -231,6 +231,11 @@ namespace Essgee.Emulation.VDP
 			ReconfigureTimings();
 		}
 
+		public virtual void SetRevision(int rev)
+		{
+			Debug.Assert(rev == 0, "Invalid revision", "{0} revision is invalid; only rev 0 is valid", GetType().FullName);
+		}
+
 		protected virtual void ReconfigureTimings()
 		{
 			/* Calculate cycles/line */

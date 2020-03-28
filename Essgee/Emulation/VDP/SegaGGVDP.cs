@@ -33,6 +33,12 @@ namespace Essgee.Emulation.VDP
 			cramLatch = 0x0000;
 		}
 
+		public override void SetRevision(int rev)
+		{
+			// TODO: can GG VDP be detected by software? if so, implement diffs as revision
+			base.SetRevision(rev);
+		}
+
 		protected override void WriteColorToFramebuffer(int palette, int color, int address)
 		{
 			int cramAddress = ((palette * 32) + (color * 2));

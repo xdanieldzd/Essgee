@@ -165,6 +165,7 @@ namespace Essgee.Emulation.Machines
 
 			vdp?.SetClockRate(vdpClock);
 			vdp?.SetRefreshRate(RefreshRate);
+			vdp?.SetRevision(0);
 
 			psg?.SetSampleRate(Program.Configuration.SampleRate);
 			psg?.SetOutputChannels(2);

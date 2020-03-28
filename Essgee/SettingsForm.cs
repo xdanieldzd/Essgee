@@ -18,6 +18,10 @@ namespace Essgee
 {
 	public partial class SettingsForm : Form
 	{
+		const int maxLayoutHeight = 275;
+
+		static ToolTip toolTipHelp = new ToolTip();
+
 		readonly static Dictionary<Type, Func<IConfiguration, PropertyInfo, ControlAttribute, (Control[], int[])>> generatorFunctions = new Dictionary<Type, Func<IConfiguration, PropertyInfo, ControlAttribute, (Control[], int[])>>()
 		{
 			{ typeof(ControlAttribute), GenerateControl },
@@ -114,7 +118,8 @@ namespace Essgee
 					AutoSize = true,
 					AutoSizeMode = AutoSizeMode.GrowAndShrink,
 					ColumnCount = 3,
-					RowCount = categoryData.Count
+					RowCount = categoryData.Count,
+					AutoScroll = true
 				};
 
 				for (int c = 0; c < tableLayout.ColumnCount; c++)
@@ -154,7 +159,7 @@ namespace Essgee
 			}
 
 			machineTabPage.Padding = new Padding(3);
-			machineTabPage.Height = CalculateMinimumHeight(machineTabPage.Height, machineConfigTabControl);
+			machineTabPage.Height = Math.Min(maxLayoutHeight, CalculateMinimumHeight(machineTabPage.Height, machineConfigTabControl));
 
 			return machineTabPage;
 		}
@@ -202,6 +207,8 @@ namespace Essgee
 			};
 			comboBoxControl.DataBindings.Add(nameof(comboBoxControl.SelectedValue), configuration, property.Name, false, DataSourceUpdateMode.OnPropertyChanged);
 
+			toolTipHelp.SetToolTip(comboBoxControl, attribute.Tooltip);
+
 			return (new Control[] { labelControl, comboBoxControl }, new int[] { 1, 2 });
 		}
 
@@ -210,6 +217,8 @@ namespace Essgee
 			var labelControl = GenerateBasicLabelControl(attribute);
 			var textBoxControl = new TextBox() { Dock = DockStyle.Fill };
 			textBoxControl.DataBindings.Add(nameof(textBoxControl.Text), configuration, property.Name, false, DataSourceUpdateMode.OnPropertyChanged);
+
+			toolTipHelp.SetToolTip(textBoxControl, attribute.Tooltip);
 
 			return (new Control[] { labelControl, textBoxControl }, new int[] { 1, 2 });
 		}
@@ -253,15 +262,17 @@ namespace Essgee
 				}
 			};
 			browseButtonControl.MouseUp += (s, e) =>
+			{
+				if (e.Button == MouseButtons.Middle || e.Button == MouseButtons.Right)
 				{
-					if (e.Button == MouseButtons.Middle || e.Button == MouseButtons.Right)
-					{
-						var (textBox, config, prop) = (ValueTuple<TextBox, IConfiguration, PropertyInfo>)(s as Control).Tag;
+					var (textBox, config, prop) = (ValueTuple<TextBox, IConfiguration, PropertyInfo>)(s as Control).Tag;
 
-						prop.SetValue(config, string.Empty);
-						textBox.DataBindings[nameof(textBox.Text)].ReadValue();
-					}
-				};
+					prop.SetValue(config, string.Empty);
+					textBox.DataBindings[nameof(textBox.Text)].ReadValue();
+				}
+			};
+
+			toolTipHelp.SetToolTip(textBoxControl, attribute.Tooltip);
 
 			return (new Control[] { labelControl, textBoxControl, browseButtonControl }, new int[] { 1, 1, 1 });
 		}
@@ -277,6 +288,8 @@ namespace Essgee
 				Text = checkBoxAttrib.Label
 			};
 			checkBoxControl.DataBindings.Add(nameof(checkBoxControl.Checked), configuration, property.Name, false, DataSourceUpdateMode.OnPropertyChanged);
+
+			toolTipHelp.SetToolTip(checkBoxControl, attribute.Tooltip);
 
 			return (new Control[] { checkBoxControl }, new int[] { 3 });
 		}
@@ -309,11 +322,13 @@ namespace Essgee
 	{
 		public string Category { get; set; }
 		public string Label { get; set; }
+		public string Tooltip { get; set; }
 
 		public ControlAttribute(string category, string label)
 		{
 			Category = category;
 			Label = label;
+			Tooltip = string.Empty;
 		}
 	}
 

@@ -67,7 +67,7 @@
 			this.tcConfigs.Size = new System.Drawing.Size(383, 65);
 			this.tcConfigs.TabIndex = 3;
 			// 
-			// ConfigForm
+			// SettingsForm
 			// 
 			this.AcceptButton = this.btnOkay;
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -80,7 +80,7 @@
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
 			this.MaximizeBox = false;
 			this.MinimizeBox = false;
-			this.Name = "ConfigForm";
+			this.Name = "SettingsForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "Settings";
 			this.ResumeLayout(false);
