@@ -237,6 +237,11 @@ namespace Essgee.Emulation.CPU
 			sp = value;
 		}
 
+		public void SetProgramCounter(ushort value)
+		{
+			pc = value;
+		}
+
 		private void IncrementRefresh()
 		{
 			r = (byte)(((r + 1) & 0x7F) | (r & 0x80));
