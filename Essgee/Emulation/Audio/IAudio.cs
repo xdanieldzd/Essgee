@@ -6,14 +6,12 @@ using System.Threading.Tasks;
 
 using Essgee.EventArguments;
 
-namespace Essgee.Emulation.PSG
+namespace Essgee.Emulation.Audio
 {
-	interface IPSG
+	interface IAudio
 	{
 		event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples;
 		void OnEnqueueSamples(EnqueueSamplesEventArgs e);
-
-		SoundEnableState SoundEnableStates { get; set; }
 
 		void Startup();
 		void Shutdown();
@@ -24,8 +22,5 @@ namespace Essgee.Emulation.PSG
 		void SetOutputChannels(int channels);
 		void SetClockRate(double clock);
 		void SetRefreshRate(double refresh);
-
-		byte ReadPort(byte port);
-		void WritePort(byte port, byte value);
 	}
 }

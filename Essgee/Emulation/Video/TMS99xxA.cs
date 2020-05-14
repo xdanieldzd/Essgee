@@ -10,10 +10,10 @@ using Essgee.Utilities;
 
 using static Essgee.Emulation.Utilities;
 
-namespace Essgee.Emulation.VDP
+namespace Essgee.Emulation.Video
 {
 	/* Texas Instruments TMS99xxA family */
-	public class TMS99xxA : IVDP
+	public class TMS99xxA : IVideo
 	{
 		public const int NumTotalScanlinesPal = 313;
 		public const int NumTotalScanlinesNtsc = 262;

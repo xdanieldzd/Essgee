@@ -8,7 +8,7 @@ using Essgee.Utilities;
 
 using static Essgee.Emulation.Utilities;
 
-namespace Essgee.Emulation.VDP
+namespace Essgee.Emulation.Video
 {
 	/* Sega 315-5378, Game Gear */
 	public class SegaGGVDP : SegaSMSVDP

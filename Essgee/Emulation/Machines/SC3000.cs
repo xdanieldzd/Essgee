@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 using Essgee.Emulation.Configuration;
 using Essgee.Emulation.CPU;
-using Essgee.Emulation.VDP;
-using Essgee.Emulation.PSG;
+using Essgee.Emulation.Video;
+using Essgee.Emulation.Audio;
 using Essgee.Emulation.Cartridges;
+using Essgee.Emulation.Cartridges.Sega;
 using Essgee.Emulation.Peripherals;
 using Essgee.EventArguments;
 using Essgee.Exceptions;
@@ -71,23 +72,11 @@ namespace Essgee.Emulation.Machines
 		public bool HasBootstrap => false;
 		public double RefreshRate { get; private set; }
 
-		public GraphicsEnableState GraphicsEnableStates
-		{
-			get { return vdp.GraphicsEnableStates; }
-			set { vdp.GraphicsEnableStates = value; }
-		}
-
-		public SoundEnableState SoundEnableStates
-		{
-			get { return psg.SoundEnableStates; }
-			set { psg.SoundEnableStates = value; }
-		}
-
 		ICartridge cartridge;
 		byte[] wram;
-		ICPU cpu;
-		IVDP vdp;
-		IPSG psg;
+		Z80A cpu;
+		TMS99xxA vdp;
+		SN76489 psg;
 		Intel8255 ppi;
 		bool[,] keyboard;
 
@@ -159,6 +148,20 @@ namespace Essgee.Emulation.Machines
 			configuration = (Configuration.SC3000)config;
 
 			ReconfigureSystem();
+		}
+
+		public void SetRuntimeOption(string name, object value)
+		{
+			switch (name)
+			{
+				case nameof(GraphicsEnableState):
+					vdp.GraphicsEnableStates = (GraphicsEnableState)value;
+					break;
+
+				case nameof(SoundEnableState):
+					psg.SoundEnableStates = (SoundEnableState)value;
+					break;
+			}
 		}
 
 		private void ReconfigureSystem()

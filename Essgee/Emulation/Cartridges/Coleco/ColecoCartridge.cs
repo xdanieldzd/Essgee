@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using Essgee.Exceptions;
 
-namespace Essgee.Emulation.Cartridges
+namespace Essgee.Emulation.Cartridges.Coleco
 {
 	public class ColecoCartridge : ICartridge
 	{

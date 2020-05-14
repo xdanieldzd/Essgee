@@ -10,9 +10,9 @@ using Essgee.Utilities;
 
 using static Essgee.Emulation.Utilities;
 
-namespace Essgee.Emulation.PSG
+namespace Essgee.Emulation.Audio
 {
-	public class SN76489 : IPSG
+	public class SN76489 : IAudio
 	{
 		/* http://www.smspower.org/Development/SN76489 */
 		/* Differences in various system's PSGs: http://forums.nesdev.com/viewtopic.php?p=190216#p190216 */

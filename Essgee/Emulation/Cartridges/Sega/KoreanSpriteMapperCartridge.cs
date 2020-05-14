@@ -3,16 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
 
 using Essgee.Exceptions;
 using Essgee.Utilities;
 
 using static Essgee.Emulation.Utilities;
 
-namespace Essgee.Emulation.Cartridges
+namespace Essgee.Emulation.Cartridges.Sega
 {
-	public class SegaMapperCartridge : ICartridge
+	/* Mostly standard Sega mapper, but with bit-reversing functionality to flip sprites
+	 * 
+	 * Mapper writes: https://github.com/ocornut/meka/blob/0f1bf8f876a99cb23c440043d2aadfd683c5c812/meka/srcs/mappers.cpp#L571
+	 * Bit-reversing logic: https://stackoverflow.com/a/3590938 */
+
+	public class KoreanSpriteMapperCartridge : ICartridge
 	{
 		byte[] romData;
 
@@ -34,7 +38,10 @@ namespace Essgee.Emulation.Cartridges
 		int romBank1 { get { return pagingRegisters[2]; } }
 		int romBank2 { get { return pagingRegisters[3]; } }
 
-		public SegaMapperCartridge(int romSize, int ramSize)
+		[StateRequired]
+		bool isBitReverseBank1, isBitReverseBank2;
+
+		public KoreanSpriteMapperCartridge(int romSize, int ramSize)
 		{
 			pagingRegisters = new byte[0x04];
 			pagingRegisters[0] = 0x00;  /* Mapper control */
@@ -42,13 +49,13 @@ namespace Essgee.Emulation.Cartridges
 			pagingRegisters[2] = 0x01;  /* Page 1 ROM bank */
 			pagingRegisters[3] = 0x02;  /* Page 2 ROM bank */
 
-			romSize = Math.Max(romSize, 0xC000);
-
 			romData = new byte[romSize];
 			ramData = new byte[ramSize];
 
 			romBankMask = 0xFF;
 			hasCartRam = false;
+
+			isBitReverseBank1 = isBitReverseBank2 = false;
 		}
 
 		public void LoadRom(byte[] data)
@@ -108,16 +115,30 @@ namespace Essgee.Emulation.Cartridges
 						return romData[((romBank0 << 14) | (address & 0x3FFF))];
 
 				case 0x4000:
-					return romData[((romBank1 << 14) | (address & 0x3FFF))];
+					{
+						/* If requested, reverse bits before return */
+						var romAddress = ((romBank1 << 14) | (address & 0x3FFF));
+						if (!isBitReverseBank1)
+							return romData[romAddress];
+						else
+							return (byte)(((romData[romAddress] * 0x80200802ul) & 0x0884422110ul) * 0x0101010101ul >> 32);
+					}
 
 				case 0x8000:
 					if (isRamEnabled)
 						return ramData[((ramBank << 14) | (address & 0x3FFF))];
 					else
-						return romData[((romBank2 << 14) | (address & 0x3FFF))];
+					{
+						/* If requested, reverse bits before return */
+						var romAddress = ((romBank2 << 14) | (address & 0x3FFF));
+						if (!isBitReverseBank2)
+							return romData[romAddress];
+						else
+							return (byte)(((romData[romAddress] * 0x80200802ul) & 0x0884422110ul) * 0x0101010101ul >> 32);
+					}
 
 				default:
-					throw new EmulationException(string.Format("Sega mapper: Cannot read from cartridge address 0x{0:X4}", address));
+					throw new EmulationException(string.Format("Korean sprite-flip mapper: Cannot read from cartridge address 0x{0:X4}", address));
 			}
 		}
 
@@ -125,6 +146,12 @@ namespace Essgee.Emulation.Cartridges
 		{
 			if (address >= 0xFFFC && address <= 0xFFFF)
 			{
+				/* Check for bit-reverse flags */
+				if ((address & 0x0003) == 0x02)
+					isBitReverseBank1 = ((value & 0x40) == 0x40);
+				else if ((address & 0x0003) == 0x03)
+					isBitReverseBank2 = ((value & 0x40) == 0x40);
+
 				/* Write to paging register */
 				if ((address & 0x0003) != 0x00) value &= romBankMask;
 				pagingRegisters[address & 0x0003] = value;

@@ -10,9 +10,9 @@ using Essgee.Utilities;
 
 using static Essgee.Emulation.Utilities;
 
-namespace Essgee.Emulation.PSG
+namespace Essgee.Emulation.Audio
 {
-	public class GameBoyPSG : IPSG
+	public class DMGAudio : IAudio
 	{
 		protected const int numChannels = 4;
 
@@ -33,7 +33,7 @@ namespace Essgee.Emulation.PSG
 
 		public SoundEnableState SoundEnableStates { get; set; }
 
-		public GameBoyPSG()
+		public DMGAudio()
 		{
 			sampleBuffer = new List<short>();
 
@@ -79,9 +79,9 @@ namespace Essgee.Emulation.PSG
 		{
 			Reset();
 
-			if (samplesPerFrame == -1) throw new EmulationException("SN76489: Timings not configured, invalid samples per frame");
-			if (cyclesPerFrame == -1) throw new EmulationException("SN76489: Timings not configured, invalid cycles per frame");
-			if (cyclesPerSample == -1) throw new EmulationException("SN76489: Timings not configured, invalid cycles per sample");
+			if (samplesPerFrame == -1) throw new EmulationException("GB PSG: Timings not configured, invalid samples per frame");
+			if (cyclesPerFrame == -1) throw new EmulationException("GB PSG: Timings not configured, invalid cycles per frame");
+			if (cyclesPerSample == -1) throw new EmulationException("GB PSG: Timings not configured, invalid cycles per sample");
 		}
 
 		public virtual void Shutdown()

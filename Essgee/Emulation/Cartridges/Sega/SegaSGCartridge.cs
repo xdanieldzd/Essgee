@@ -7,7 +7,7 @@ using System.IO;
 
 using Essgee.Utilities;
 
-namespace Essgee.Emulation.Cartridges
+namespace Essgee.Emulation.Cartridges.Sega
 {
 	public class SegaSGCartridge : ICartridge
 	{

@@ -2,7 +2,7 @@
 
 using Essgee.EventArguments;
 
-namespace Essgee.Emulation.PSG
+namespace Essgee.Emulation.Audio
 {
 	public class SegaSMSPSG : SN76489
 	{

@@ -10,7 +10,7 @@ using Essgee.Utilities;
 
 using static Essgee.Emulation.Utilities;
 
-namespace Essgee.Emulation.VDP
+namespace Essgee.Emulation.Video
 {
 	/* Sega 315-5124 (Mark III, SMS) and 315-5246 (SMS 2); differences see 'VDPDIFF' comments */
 	public class SegaSMSVDP : TMS99xxA

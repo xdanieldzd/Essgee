@@ -2,7 +2,7 @@
 
 using Essgee.Utilities;
 
-namespace Essgee.Emulation.PSG
+namespace Essgee.Emulation.Audio
 {
 	public class SegaGGPSG : SegaSMSPSG
 	{

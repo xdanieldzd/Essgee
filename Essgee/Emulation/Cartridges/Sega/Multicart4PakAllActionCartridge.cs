@@ -8,7 +8,7 @@ using System.IO;
 using Essgee.Exceptions;
 using Essgee.Utilities;
 
-namespace Essgee.Emulation.Cartridges
+namespace Essgee.Emulation.Cartridges.Sega
 {
 	/* http://www.smspower.org/forums/post69724#69724 */
 

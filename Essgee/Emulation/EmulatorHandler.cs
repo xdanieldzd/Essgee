@@ -206,12 +206,12 @@ namespace Essgee.Emulation
 
 		public void SetGraphicsEnableStates(GraphicsEnableState state)
 		{
-			emulator.GraphicsEnableStates = state;
+			emulator.SetRuntimeOption(nameof(GraphicsEnableState), state);
 		}
 
 		public void SetSoundEnableStates(SoundEnableState state)
 		{
-			emulator.SoundEnableStates = state;
+			emulator.SetRuntimeOption(nameof(SoundEnableState), state);
 		}
 
 		public int FramesPerSecond { get; private set; }

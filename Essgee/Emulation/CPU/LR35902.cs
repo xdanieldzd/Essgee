@@ -26,16 +26,6 @@ namespace Essgee.Emulation.CPU
 			Zero = (1 << 7)                 /* Z */
 		}
 
-		[Flags]
-		enum InterruptTypes : byte
-		{
-			VBlank = (1 << 0),
-			LCDCStatus = (1 << 1),
-			TimerOverflow = (1 << 2),
-			SerialIO = (1 << 3),
-			Keypad = (1 << 4)
-		}
-
 		public delegate byte MemoryReadDelegate(ushort address);
 		public delegate void MemoryWriteDelegate(ushort address, byte value);
 
@@ -56,7 +46,9 @@ namespace Essgee.Emulation.CPU
 		protected byte op;
 
 		[StateRequired]
-		InterruptState intState;
+		bool interruptRequested;
+		[StateRequired]
+		ushort interruptRestartAddress;
 
 		[StateRequired]
 		int currentCycles;
@@ -90,7 +82,8 @@ namespace Essgee.Emulation.CPU
 
 			ime = eiDelay = halt = false;
 
-			intState = InterruptState.Clear;
+			interruptRequested = false;
+			interruptRestartAddress = 0;
 
 			currentCycles = 0;
 		}
@@ -107,11 +100,9 @@ namespace Essgee.Emulation.CPU
 			}
 			else
 			{
-				/* Check interrupt line */
-				if (intState == InterruptState.Assert)
-				{
+				/* Check interrupts */
+				if (interruptRequested)
 					ServiceInterrupt();
-				}
 			}
 
 			if (Program.AppEnvironment.EnableSuperSlowCPULogger)
@@ -160,6 +151,26 @@ namespace Essgee.Emulation.CPU
 			pc = value;
 		}
 
+		public void SetRegisterAF(ushort value)
+		{
+			af.Word = value;
+		}
+
+		public void SetRegisterBC(ushort value)
+		{
+			bc.Word = value;
+		}
+
+		public void SetRegisterDE(ushort value)
+		{
+			de.Word = value;
+		}
+
+		public void SetRegisterHL(ushort value)
+		{
+			hl.Word = value;
+		}
+
 		private void SetFlag(Flags flags)
 		{
 			af.Low |= (byte)flags;
@@ -187,16 +198,10 @@ namespace Essgee.Emulation.CPU
 
 		#region Interrupt, Halt and Stop State Handling
 
-		public void SetInterruptLine(InterruptType type, InterruptState state)
+		public void RequestInterrupt(ushort restartAddress)
 		{
-			switch (type)
-			{
-				case InterruptType.Maskable:
-					intState = state;
-					break;
-
-				default: throw new EmulationException("LR35902: Unknown interrupt type");
-			}
+			interruptRequested = true;
+			interruptRestartAddress = restartAddress;
 		}
 
 		private void ServiceInterrupt()
@@ -206,40 +211,7 @@ namespace Essgee.Emulation.CPU
 			LeaveHaltState();
 			ime = false;
 
-			InterruptTypes regIE = (InterruptTypes)ReadMemory8(0xFFFF);
-			InterruptTypes regIF = (InterruptTypes)ReadMemory8(0xFF0F);
-
-			// TODO make more elegant?
-			if (((regIE & InterruptTypes.VBlank) == InterruptTypes.VBlank) && ((regIF & InterruptTypes.VBlank) == InterruptTypes.VBlank))
-			{
-				intState = InterruptState.Clear;
-				Restart(0x0040);
-				WriteMemory8(0xFF0F, (byte)(regIF & ~InterruptTypes.VBlank));
-			}
-			else if (((regIE & InterruptTypes.LCDCStatus) == InterruptTypes.LCDCStatus) && ((regIF & InterruptTypes.LCDCStatus) == InterruptTypes.LCDCStatus))
-			{
-				intState = InterruptState.Clear;
-				Restart(0x0048);
-				WriteMemory8(0xFF0F, (byte)(regIF & ~InterruptTypes.LCDCStatus));
-			}
-			else if (((regIE & InterruptTypes.TimerOverflow) == InterruptTypes.TimerOverflow) && ((regIF & InterruptTypes.TimerOverflow) == InterruptTypes.TimerOverflow))
-			{
-				intState = InterruptState.Clear;
-				Restart(0x0050);
-				WriteMemory8(0xFF0F, (byte)(regIF & ~InterruptTypes.TimerOverflow));
-			}
-			else if (((regIE & InterruptTypes.SerialIO) == InterruptTypes.SerialIO) && ((regIF & InterruptTypes.SerialIO) == InterruptTypes.SerialIO))
-			{
-				intState = InterruptState.Clear;
-				Restart(0x0058);
-				WriteMemory8(0xFF0F, (byte)(regIF & ~InterruptTypes.SerialIO));
-			}
-			else if (((regIE & InterruptTypes.Keypad) == InterruptTypes.Keypad) && ((regIF & InterruptTypes.Keypad) == InterruptTypes.Keypad))
-			{
-				intState = InterruptState.Clear;
-				Restart(0x0060);
-				WriteMemory8(0xFF0F, (byte)(regIF & ~InterruptTypes.Keypad));
-			}
+			Restart(interruptRestartAddress);
 
 			currentCycles += 20;
 		}

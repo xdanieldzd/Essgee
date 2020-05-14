@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Essgee.Exceptions;
 using Essgee.Utilities;
 
-namespace Essgee.Emulation.Cartridges
+namespace Essgee.Emulation.Cartridges.Sega
 {
 	public class CodemastersCartridge : ICartridge
 	{

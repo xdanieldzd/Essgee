@@ -93,11 +93,12 @@
       <DependentUpon>SoundDebuggerForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Emulation\CartridgeLoader.cs" />
-    <Compile Include="Emulation\Cartridges\ColecoCartridge.cs" />
-    <Compile Include="Emulation\Cartridges\KoreanMapperCartridge.cs" />
-    <Compile Include="Emulation\Cartridges\KoreanMSX8kMapperCartridge.cs" />
-    <Compile Include="Emulation\Cartridges\KoreanSpriteMapperCartridge.cs" />
-    <Compile Include="Emulation\Cartridges\Multicart4PakAllActionCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Coleco\ColecoCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Nintendo\ROMOnlyCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Sega\KoreanMapperCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Sega\KoreanMSX8kMapperCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Sega\KoreanSpriteMapperCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Sega\Multicart4PakAllActionCartridge.cs" />
     <Compile Include="Emulation\Configuration\GameBoy.cs" />
     <Compile Include="Emulation\Configuration\ColecoVision.cs" />
     <Compile Include="Emulation\Configuration\SC3000.cs" />
@@ -111,11 +112,11 @@
     <Compile Include="Emulation\Machines\GameBoy.cs" />
     <Compile Include="Emulation\Machines\SC3000.cs" />
     <Compile Include="Emulation\Peripherals\IPeripheral.cs" />
-    <Compile Include="Emulation\PSG\GameBoyPSG.cs" />
-    <Compile Include="Emulation\PSG\IPSG.cs" />
+    <Compile Include="Emulation\Audio\DMGAudio.cs" />
+    <Compile Include="Emulation\Audio\IAudio.cs" />
     <Compile Include="Emulation\SaveStateHandler.cs" />
-    <Compile Include="Emulation\VDP\GameBoyVDP.cs" />
-    <Compile Include="Emulation\VDP\IVDP.cs" />
+    <Compile Include="Emulation\Video\DMGVideo.cs" />
+    <Compile Include="Emulation\Video\IVideo.cs" />
     <Compile Include="EventArguments\SendLogMessageEventArgs.cs" />
     <Compile Include="Exceptions\CartridgeLoaderException.cs" />
     <Compile Include="Exceptions\GraphicsException.cs" />
@@ -137,8 +138,8 @@
     </Compile>
     <Compile Include="Emulation\Configuration\GameGear.cs" />
     <Compile Include="Emulation\Machines\GameGear.cs" />
-    <Compile Include="Emulation\PSG\SegaGGPSG.cs" />
-    <Compile Include="Emulation\VDP\SegaGGVDP.cs" />
+    <Compile Include="Emulation\Audio\SegaGGPSG.cs" />
+    <Compile Include="Emulation\Video\SegaGGVDP.cs" />
     <Compile Include="SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -149,7 +150,7 @@
     <Compile Include="Utilities\HexadecimalJsonConverter.cs" />
     <Compile Include="Utilities\InterfaceDictionaryConverter.cs" />
     <Compile Include="Utilities\Crc32.cs" />
-    <Compile Include="Emulation\Cartridges\CodemastersCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Sega\CodemastersCartridge.cs" />
     <Compile Include="Emulation\Cartridges\ICartridge.cs" />
     <Compile Include="Emulation\Configuration\IConfiguration.cs" />
     <Compile Include="Emulation\Configuration\MasterSystem.cs" />
@@ -157,9 +158,9 @@
     <Compile Include="Emulation\EmulatorHandler.cs" />
     <Compile Include="Emulation\Machines\IMachine.cs" />
     <Compile Include="Emulation\Machines\MasterSystem.cs" />
-    <Compile Include="Emulation\Cartridges\SegaMapperCartridge.cs" />
-    <Compile Include="Emulation\PSG\SegaSMSPSG.cs" />
-    <Compile Include="Emulation\VDP\SegaSMSVDP.cs" />
+    <Compile Include="Emulation\Cartridges\Sega\SegaMapperCartridge.cs" />
+    <Compile Include="Emulation\Audio\SegaSMSPSG.cs" />
+    <Compile Include="Emulation\Video\SegaSMSVDP.cs" />
     <Compile Include="Enumerations.cs" />
     <Compile Include="EventArguments\ChangeViewportEventArgs.cs" />
     <Compile Include="EventArguments\SizeScreenEventArgs.cs" />
@@ -181,7 +182,7 @@
     <Compile Include="Sound\SoundHandler.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="Emulation\Peripherals\Intel8255.cs" />
-    <Compile Include="Emulation\Cartridges\SegaSGCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Sega\SegaSGCartridge.cs" />
     <Compile Include="Emulation\Enumerations.cs" />
     <Compile Include="Emulation\CPU\Z80A.cs" />
     <Compile Include="Emulation\CPU\Z80A.CycleCounts.cs" />
@@ -194,8 +195,8 @@
     <Compile Include="Emulation\CPU\Z80A.Register.cs" />
     <Compile Include="Emulation\Utilities.cs" />
     <Compile Include="Emulation\Machines\SG1000.cs" />
-    <Compile Include="Emulation\PSG\SN76489.cs" />
-    <Compile Include="Emulation\VDP\TMS99xxA.cs" />
+    <Compile Include="Emulation\Audio\SN76489.cs" />
+    <Compile Include="Emulation\Video\TMS99xxA.cs" />
     <Compile Include="EventArguments\EnqueueSamplesEventArgs.cs" />
     <Compile Include="EventArguments\PollInputEventArgs.cs" />
     <Compile Include="MainForm.cs">
@@ -280,6 +281,7 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions />
   <Import Project="..\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets" Condition="Exists('..\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets')" />
