@@ -25,6 +25,8 @@ namespace Essgee.Emulation.Machines
 		const int wramSize = 8 * 1024;
 		const int hramSize = 0x7F;
 
+		readonly int[] timerValues = { 1024, 16, 64, 256 };
+
 		//
 
 		public event EventHandler<SendLogMessageEventArgs> SendLogMessage;
@@ -84,10 +86,26 @@ namespace Essgee.Emulation.Machines
 
 		public delegate void RequestInterruptDelegate(InterruptSource source);
 
+		// FF00
+		byte joypadRegister;
+
 		// FF01
 		byte serialData;
 		// FF02
 		bool serialShiftClock, serialClockSpeed, serialTransferStartFlag;
+
+		// FF04
+		byte divider;
+
+		// FF05
+		byte timerCounter;
+
+		// FF06
+		byte timerModulo;
+
+		// FF07
+		bool timerRunning;
+		byte timerInputClock;
 
 		// FF0F
 		bool irqVBlank, irqLCDCStatus, irqTimerOverflow, irqSerialIO, irqKeypad;
@@ -95,6 +113,22 @@ namespace Essgee.Emulation.Machines
 		// FF50
 		bool bootstrapDisabled;
 
+		[Flags]
+		enum JoypadInputs : byte
+		{
+			Right = (1 << 0),
+			Left = (1 << 1),
+			Up = (1 << 2),
+			Down = (1 << 3),
+			A = (1 << 4),
+			B = (1 << 5),
+			Select = (1 << 6),
+			Start = (1 << 7)
+		}
+
+		JoypadInputs inputsPressed;
+
+		int dividerCycles, timerCycles;
 		int currentMasterClockCyclesInFrame, totalMasterClockCyclesInFrame;
 
 		Configuration.GameBoy configuration;
@@ -143,6 +177,10 @@ namespace Essgee.Emulation.Machines
 			audio?.SetClockRate(masterClock);
 			audio?.SetRefreshRate(refreshRate);
 
+			inputsPressed = 0;
+
+			dividerCycles = timerCycles = 0;
+
 			currentMasterClockCyclesInFrame = 0;
 			totalMasterClockCyclesInFrame = (int)Math.Round(masterClock / refreshRate);
 
@@ -189,6 +227,24 @@ namespace Essgee.Emulation.Machines
 				cpu.SetRegisterHL(0x014D);
 			}
 
+			joypadRegister = 0x0F;
+
+			serialData = 0;
+			serialShiftClock = serialClockSpeed = serialTransferStartFlag = false;
+
+			divider = 0;
+
+			timerCounter = 0;
+
+			timerModulo = 0;
+
+			timerRunning = false;
+			timerInputClock = 0;
+
+			irqVBlank = irqLCDCStatus = irqTimerOverflow = irqSerialIO = irqKeypad = false;
+
+			bootstrapDisabled = !configuration.UseBootstrap;
+
 			OnEmulationReset(EventArgs.Empty);
 		}
 
@@ -223,12 +279,58 @@ namespace Essgee.Emulation.Machines
 		{
 			if (mapperType == null)
 			{
-				// TODO autodetect mbcs
-				mapperType = typeof(ROMOnlyCartridge);
+				switch (romData[0x0147])
+				{
+					case 0x00:
+						mapperType = typeof(ROMOnlyCartridge);
+						break;
+
+					case 0x01:
+					case 0x02:
+					case 0x03:
+						mapperType = typeof(MBC1Cartridge);
+						break;
+
+					// TODO more mbcs and stuffs
+
+					default:
+						mapperType = typeof(ROMOnlyCartridge);
+						break;
+				}
 			}
 
-			cartridge = (ICartridge)Activator.CreateInstance(mapperType, new object[] { romData.Length, 0 });
+			var romSize = -1;
+			switch (romData[0x0148])
+			{
+				case 0x00: romSize = 32 * 1024; break;
+				case 0x01: romSize = 64 * 1024; break;
+				case 0x02: romSize = 128 * 1024; break;
+				case 0x03: romSize = 256 * 1024; break;
+				case 0x04: romSize = 512 * 1024; break;
+				case 0x05: romSize = 1024 * 1024; break;
+				case 0x06: romSize = 2048 * 1024; break;
+				case 0x07: romSize = 4096 * 1024; break;
+				case 0x52: romSize = 1152 * 1024; break;
+				case 0x53: romSize = 1280 * 1024; break;
+				case 0x54: romSize = 1536 * 1024; break;
+
+				default: romSize = romData.Length; break;
+			}
+
+			var ramSize = -1;
+			switch (romData[0x0149])
+			{
+				case 0x00: ramSize = 0 * 1024; break;
+				case 0x01: ramSize = 2 * 1024; break;
+				case 0x02: ramSize = 8 * 1024; break;
+				case 0x03: ramSize = 32 * 1024; break;
+
+				default: ramSize = 0; break;
+			}
+
+			cartridge = (ICartridge)Activator.CreateInstance(mapperType, new object[] { romSize, ramSize });
 			cartridge.LoadRom(romData);
+			cartridge.LoadRam(ramData);
 		}
 
 		public byte[] GetCartridgeRam()
@@ -255,13 +357,18 @@ namespace Essgee.Emulation.Machines
 			double currentCpuClockCycles = 0.0;
 			currentCpuClockCycles += cpu.Step();
 
-			video.Step((int)Math.Round(currentCpuClockCycles));
+			var cyclesRounded = (int)Math.Round(currentCpuClockCycles);
+
+			video.Step(cyclesRounded);
+
+			HandleTimer(cyclesRounded);
+			HandleDivider(cyclesRounded);
 
 			HandleInterrupts();
 
-			audio.Step((int)Math.Round(currentCpuClockCycles));
+			audio.Step(cyclesRounded);
 
-			currentMasterClockCyclesInFrame += (int)Math.Round(currentCpuClockCycles);
+			currentMasterClockCyclesInFrame += cyclesRounded;
 		}
 
 		private void RequestInterrupt(InterruptSource source)
@@ -290,16 +397,54 @@ namespace Essgee.Emulation.Machines
 			{
 				cpu.RequestInterrupt((ushort)(0x0040 + (8 * (int)source)));
 				WriteMemory(0xFF0F, (byte)(intFlag & ~sourceBit));
+
+				//Program.Logger?.WriteLine($"--- Interrupt {source}");
 			}
 
 			return execute;
 		}
 
+		private void HandleTimer(int clockCyclesInStep)
+		{
+			if (!timerRunning) return;
+
+			timerCycles += clockCyclesInStep;
+			if (timerCycles >= timerValues[timerInputClock])
+			{
+				timerCounter++;
+				if (timerCounter == 0)
+				{
+					timerCounter = timerModulo;
+					RequestInterrupt(InterruptSource.TimerOverflow);
+				}
+				timerCycles = 0;
+			}
+		}
+
+		private void HandleDivider(int clockCyclesInStep)
+		{
+			dividerCycles += clockCyclesInStep;
+			if (dividerCycles >= 256)
+			{
+				dividerCycles = 0;
+				divider++;
+			}
+		}
+
 		private void ParseInput(PollInputEventArgs eventArgs)
 		{
-			var keysDown = eventArgs.Keyboard;
+			var keysDown = eventArgs.Keyboard/*.Append(System.Windows.Forms.Keys.Space)*/;
 
-			//
+			inputsPressed = 0;
+
+			if (keysDown.Contains(configuration.ControlsRight)) inputsPressed |= JoypadInputs.Right;
+			if (keysDown.Contains(configuration.ControlsLeft)) inputsPressed |= JoypadInputs.Left;
+			if (keysDown.Contains(configuration.ControlsUp)) inputsPressed |= JoypadInputs.Up;
+			if (keysDown.Contains(configuration.ControlsDown)) inputsPressed |= JoypadInputs.Down;
+			if (keysDown.Contains(configuration.ControlsA)) inputsPressed |= JoypadInputs.A;
+			if (keysDown.Contains(configuration.ControlsB)) inputsPressed |= JoypadInputs.B;
+			if (keysDown.Contains(configuration.ControlsSelect)) inputsPressed |= JoypadInputs.Select;
+			if (keysDown.Contains(configuration.ControlsStart)) inputsPressed |= JoypadInputs.Start;
 		}
 
 		private byte ReadMemory(ushort address)
@@ -348,26 +493,48 @@ namespace Essgee.Emulation.Machines
 		{
 			if ((address & 0xFFF0) == 0xFF40)
 				return video.ReadPort((byte)(address & 0xFF));
+			else if ((address & 0xFFF0) == 0xFF10 || (address & 0xFFF0) == 0xFF20 || (address & 0xFFF0) == 0xFF30)
+				return audio.ReadPort((byte)(address & 0xFF));
 			else
 			{
 				switch (address)
 				{
+					case 0xFF00:
+						if ((joypadRegister & 0x30) == 0x20)
+							return (byte)((joypadRegister & 0x00) | (((byte)inputsPressed & 0x0F) ^ 0x0F));
+						else if ((joypadRegister & 0x30) == 0x10)
+							return (byte)((joypadRegister & 0x00) | ((((byte)inputsPressed & 0xF0) >> 4) ^ 0x0F));
+						else
+							return joypadRegister;
+
 					case 0xFF01:
 						return serialData;
 
 					case 0xFF02:
 						return (byte)(
-							(serialShiftClock ? 0b00000001 : 0) |
-							(serialClockSpeed ? 0b00000010 : 0) |
-							(serialTransferStartFlag ? 0b10000000 : 0));
+							(serialShiftClock ? (1 << 0) : 0) |
+							(serialClockSpeed ? (1 << 1) : 0) |
+							(serialTransferStartFlag ? (1 << 7) : 0));
+
+					case 0xFF04:
+						return divider;
+
+					case 0xFF05:
+						return timerCounter;
+
+					case 0xFF06:
+						return timerModulo;
+
+					case 0xFF07:
+						return (byte)((timerRunning ? (1 << 2) : 0) | (timerInputClock & 0b11));
 
 					case 0xFF0F:
 						return (byte)(
-							(irqVBlank ? 0b00000001 : 0) |
-							(irqLCDCStatus ? 0b00000010 : 0) |
-							(irqTimerOverflow ? 0b00000100 : 0) |
-							(irqSerialIO ? 0b00001000 : 0) |
-							(irqKeypad ? 0b00010000 : 0));
+							(irqVBlank ? (1 << 0) : 0) |
+							(irqLCDCStatus ? (1 << 1) : 0) |
+							(irqTimerOverflow ? (1 << 2) : 0) |
+							(irqSerialIO ? (1 << 3) : 0) |
+							(irqKeypad ? (1 << 4) : 0));
 
 					case 0xFF50:
 						return (byte)(bootstrapDisabled ? 0x01 : 0x00);
@@ -418,35 +585,54 @@ namespace Essgee.Emulation.Machines
 		{
 			if ((address & 0xFFF0) == 0xFF40)
 				video.WritePort((byte)(address & 0xFF), value);
-
+			else if ((address & 0xFFF0) == 0xFF10 || (address & 0xFFF0) == 0xFF20 || (address & 0xFFF0) == 0xFF30)
+				audio.WritePort((byte)(address & 0xFF), value);
 			else
 			{
 				switch (address)
 				{
+					case 0xFF00:
+						joypadRegister = (byte)((joypadRegister & 0xCF) | (value & 0x30));
+						break;
+
 					case 0xFF01:
 						serialData = value;
 						break;
 
+					case 0xFF04:
+						divider = value;
+						break;
+
+					case 0xFF05:
+						timerCounter = value;
+						break;
+
+					case 0xFF06:
+						timerModulo = value;
+						break;
+
+					case 0xFF07:
+						timerRunning = (value & (1 << 2)) != 0;
+						timerInputClock = (byte)(value & 0b11);
+						break;
+
 					case 0xFF02:
-						serialShiftClock = (value & 0b00000001) != 0;
-						serialClockSpeed = (value & 0b00000010) != 0;
-						serialTransferStartFlag = (value & 0b10000000) != 0;
+						serialShiftClock = (value & (1 << 0)) != 0;
+						serialClockSpeed = (value & (1 << 1)) != 0;
+						serialTransferStartFlag = (value & (1 << 7)) != 0;
 						break;
 
 					case 0xFF0F:
-						irqVBlank = (value & 0b00000001) != 0;
-						irqLCDCStatus = (value & 0b00000010) != 0;
-						irqTimerOverflow = (value & 0b00000100) != 0;
-						irqSerialIO = (value & 0b00001000) != 0;
-						irqKeypad = (value & 0b00010000) != 0;
+						irqVBlank = (value & (1 << 0)) != 0;
+						irqLCDCStatus = (value & (1 << 1)) != 0;
+						irqTimerOverflow = (value & (1 << 2)) != 0;
+						irqSerialIO = (value & (1 << 3)) != 0;
+						irqKeypad = (value & (1 << 4)) != 0;
 						break;
 
 					case 0xFF50:
 						bootstrapDisabled = (value != 0x00 ? true : false);
 						break;
-
-					default:
-						throw new NotImplementedException();
 				}
 			}
 		}

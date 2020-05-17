@@ -210,8 +210,12 @@ namespace Essgee.Emulation.CPU
 
 			LeaveHaltState();
 			ime = false;
+			eiDelay = false;
 
 			Restart(interruptRestartAddress);
+
+			interruptRequested = false;
+			interruptRestartAddress = 0;
 
 			currentCycles += 20;
 		}
@@ -293,11 +297,6 @@ namespace Essgee.Emulation.CPU
 		protected void LoadRegister16(ref ushort register, ushort value)
 		{
 			register = value;
-		}
-
-		protected void LoadMemory16(ushort address, ushort value)
-		{
-			WriteMemory16(address, value);
 		}
 
 		protected void Push(Register register)
@@ -432,55 +431,33 @@ namespace Essgee.Emulation.CPU
 
 		protected void DecimalAdjustAccumulator()
 		{
-			/* "The Undocumented Z80 Documented" by Sean Young, chapter 4.7, http://www.z80.info/zip/z80-documented.pdf */
+			int value = af.High;
 
-			byte before = af.High, diff = 0x00, result;
-			bool carry = IsFlagSet(Flags.Carry), halfCarry = IsFlagSet(Flags.HalfCarry);
-			byte highNibble = (byte)((before & 0xF0) >> 4), lowNibble = (byte)(before & 0x0F);
-
-			if (carry)
+			if (!IsFlagSet(Flags.Subtract))
 			{
-				diff |= 0x60;
-				if ((halfCarry && lowNibble <= 0x09) || lowNibble >= 0x0A)
-					diff |= 0x06;
+				if (IsFlagSet(Flags.HalfCarry) || ((value & 0x0F) > 9))
+					value += 0x06;
+				if (IsFlagSet(Flags.Carry) || (value > 0x9F))
+					value += 0x60;
 			}
 			else
 			{
-				if (lowNibble >= 0x0A && lowNibble <= 0x0F)
-				{
-					diff |= 0x06;
-					if (highNibble >= 0x09 && highNibble <= 0x0F)
-						diff |= 0x60;
-				}
-				else
-				{
-					if (highNibble >= 0x0A && highNibble <= 0x0F)
-						diff |= 0x60;
-					if (halfCarry)
-						diff |= 0x06;
-				}
-
-				SetClearFlagConditional(Flags.Carry, (
-					((highNibble >= 0x09 && highNibble <= 0x0F) && (lowNibble >= 0x0A && lowNibble <= 0x0F)) ||
-					((highNibble >= 0x0A && highNibble <= 0x0F) && (lowNibble >= 0x00 && lowNibble <= 0x09))));
+				if (IsFlagSet(Flags.HalfCarry))
+					value = (value - 0x06) & 0xFF;
+				if (IsFlagSet(Flags.Carry))
+					value -= 0x60;
 			}
 
-			if (!IsFlagSet(Flags.Subtract))
-				SetClearFlagConditional(Flags.HalfCarry, (lowNibble >= 0x0A && lowNibble <= 0x0F));
-			else
-				SetClearFlagConditional(Flags.HalfCarry, (halfCarry && (lowNibble >= 0x00 && lowNibble <= 0x05)));
+			ClearFlag(Flags.HalfCarry);
+			ClearFlag(Flags.Zero);
 
-			if (!IsFlagSet(Flags.Subtract))
-				result = (byte)(before + diff);
-			else
-				result = (byte)(before - diff);
+			if ((value & 0x100) != 0) SetFlag(Flags.Carry);
 
-			SetClearFlagConditional(Flags.Zero, (result == 0x00));
-			// N
-			// H (set above)
-			// C (set above)
+			value &= 0xFF;
 
-			af.High = result;
+			if (value == 0) SetFlag(Flags.Zero);
+
+			af.High = (byte)value;
 		}
 
 		protected void Negate()
@@ -499,30 +476,15 @@ namespace Essgee.Emulation.CPU
 
 		#region Opcodes: 16-Bit Arithmetic Group
 
-		protected void Add16(ref Register dest, ushort operand, bool withCarry)
+		protected void Add16(ref Register dest, ushort operand)
 		{
-			int operandWithCarry = ((short)operand + (withCarry && IsFlagSet(Flags.Carry) ? 1 : 0));
+			int operandWithCarry = (short)operand;
 			int result = (dest.Word + operandWithCarry);
 
 			// Z
 			ClearFlag(Flags.Subtract);
 			SetClearFlagConditional(Flags.HalfCarry, (((dest.Word & 0x0FFF) + (operandWithCarry & 0x0FFF)) > 0x0FFF));
 			SetClearFlagConditional(Flags.Carry, (((dest.Word & 0xFFFF) + (operandWithCarry & 0xFFFF)) > 0xFFFF));
-
-			if (withCarry)
-				SetClearFlagConditional(Flags.Zero, ((result & 0xFFFF) == 0x0000));
-
-			dest.Word = (ushort)result;
-		}
-
-		protected void Subtract16(ref Register dest, ushort operand, bool withCarry)
-		{
-			int result = (dest.Word - operand - (withCarry && IsFlagSet(Flags.Carry) ? 1 : 0));
-
-			SetClearFlagConditional(Flags.Zero, ((result & 0xFFFF) == 0x0000));
-			SetFlag(Flags.Subtract);
-			SetClearFlagConditional(Flags.HalfCarry, ((((dest.Word ^ result ^ operand) >> 8) & 0x10) != 0));
-			SetClearFlagConditional(Flags.Carry, ((result & 0x10000) != 0));
 
 			dest.Word = (ushort)result;
 		}
@@ -630,7 +592,7 @@ namespace Essgee.Emulation.CPU
 			af.High <<= 1;
 			if (isCarrySet) SetBit(ref af.High, 0);
 
-			// Z
+			ClearFlag(Flags.Zero);
 			ClearFlag(Flags.Subtract);
 			ClearFlag(Flags.HalfCarry);
 			SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -642,7 +604,7 @@ namespace Essgee.Emulation.CPU
 			af.High <<= 1;
 			if (isMsbSet) SetBit(ref af.High, 0);
 
-			// Z
+			ClearFlag(Flags.Zero);
 			ClearFlag(Flags.Subtract);
 			ClearFlag(Flags.HalfCarry);
 			SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -655,7 +617,7 @@ namespace Essgee.Emulation.CPU
 			af.High >>= 1;
 			if (isCarrySet) SetBit(ref af.High, 7);
 
-			// Z
+			ClearFlag(Flags.Zero);
 			ClearFlag(Flags.Subtract);
 			ClearFlag(Flags.HalfCarry);
 			SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -667,54 +629,10 @@ namespace Essgee.Emulation.CPU
 			af.High >>= 1;
 			if (isLsbSet) SetBit(ref af.High, 7);
 
-			// Z
+			ClearFlag(Flags.Zero);
 			ClearFlag(Flags.Subtract);
 			ClearFlag(Flags.HalfCarry);
 			SetClearFlagConditional(Flags.Carry, isLsbSet);
-		}
-
-		protected void RotateRight4B()
-		{
-			byte hlValue = ReadMemory8(hl.Word);
-
-			// A=WX  (HL)=YZ
-			// A=WZ  (HL)=XY
-			byte a1 = (byte)(af.High >> 4);     //W
-			byte a2 = (byte)(af.High & 0xF);    //X
-			byte hl1 = (byte)(hlValue >> 4);    //Y
-			byte hl2 = (byte)(hlValue & 0xF);   //Z
-
-			af.High = (byte)((a1 << 4) | hl2);
-			hlValue = (byte)((a2 << 4) | hl1);
-
-			WriteMemory8(hl.Word, hlValue);
-
-			SetClearFlagConditional(Flags.Zero, (af.High == 0x00));
-			ClearFlag(Flags.Subtract);
-			ClearFlag(Flags.HalfCarry);
-			// C
-		}
-
-		protected void RotateLeft4B()
-		{
-			byte hlValue = ReadMemory8(hl.Word);
-
-			// A=WX  (HL)=YZ
-			// A=WY  (HL)=ZX
-			byte a1 = (byte)(af.High >> 4);     //W
-			byte a2 = (byte)(af.High & 0xF);    //X
-			byte hl1 = (byte)(hlValue >> 4);    //Y
-			byte hl2 = (byte)(hlValue & 0xF);   //Z
-
-			af.High = (byte)((a1 << 4) | hl1);
-			hlValue = (byte)((hl2 << 4) | a2);
-
-			WriteMemory8(hl.Word, hlValue);
-
-			SetClearFlagConditional(Flags.Zero, (af.High == 0x00));
-			ClearFlag(Flags.Subtract);
-			ClearFlag(Flags.HalfCarry);
-			// C
 		}
 
 		protected byte ShiftLeftArithmetic(ushort address)
@@ -899,6 +817,12 @@ namespace Essgee.Emulation.CPU
 
 		#region Opcodes: LR35902-specific Opcodes
 
+		protected void PopAF()
+		{
+			af.Low = (byte)(ReadMemory8(sp++) & 0xF0);
+			af.High = ReadMemory8(sp++);
+		}
+
 		protected void Swap(ushort address)
 		{
 			byte value = ReadMemory8(address);
@@ -918,7 +842,7 @@ namespace Essgee.Emulation.CPU
 
 		protected void Stop()
 		{
-			// TODO
+			pc++;
 		}
 
 		private void AddSPNN()

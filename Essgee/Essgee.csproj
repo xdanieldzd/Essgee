@@ -94,6 +94,7 @@
     </Compile>
     <Compile Include="Emulation\CartridgeLoader.cs" />
     <Compile Include="Emulation\Cartridges\Coleco\ColecoCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Nintendo\MBC1Cartridge.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\ROMOnlyCartridge.cs" />
     <Compile Include="Emulation\Cartridges\Sega\KoreanMapperCartridge.cs" />
     <Compile Include="Emulation\Cartridges\Sega\KoreanMSX8kMapperCartridge.cs" />

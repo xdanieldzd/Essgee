@@ -28,6 +28,7 @@ namespace Essgee
 			public static readonly bool EnableCustomUnhandledExceptionHandler = true;
 			public static readonly bool TemporaryDisableCustomExceptionForm = false;
 
+			public static readonly bool EnableLogger = false;
 			public static readonly bool EnableSuperSlowCPULogger = false;
 
 			public static readonly bool EnableOpenGLDebug = false;
@@ -48,9 +49,16 @@ namespace Essgee
 		public static string ScreenshotPath = Path.Combine(programDataDirectory, screenshotDirectoryName);
 		public static string SaveStatePath = Path.Combine(programDataDirectory, saveStateDirectoryName);
 
+		public static TextWriter Logger { get; private set; }
+
 		[STAThread]
 		static void Main()
 		{
+			if (AppEnvironment.EnableLogger)
+			{
+				Logger = new StreamWriter(@"D:\Temp\Essgee\slowlog.txt", false);
+			}
+
 			System.Threading.Thread.CurrentThread.CurrentCulture = System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
 
 			Application.SetUnhandledExceptionMode(AppEnvironment.EnableCustomUnhandledExceptionHandler ? UnhandledExceptionMode.ThrowException : UnhandledExceptionMode.CatchException);
@@ -69,6 +77,12 @@ namespace Essgee
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 			Application.Run(new MainForm());
+
+			if (AppEnvironment.EnableLogger)
+			{
+				Logger.Flush();
+				Logger.Close();
+			}
 		}
 
 		private static void LoadConfiguration()
