@@ -62,7 +62,7 @@ namespace Essgee.Emulation.Machines
 		public string ManufacturerName => "Nintendo";
 		public string ModelName => "Game Boy";
 		public string DatFilename => "Nintendo - Game Boy.dat";
-		public (string Extension, string Description) FileFilter => (".gb", "Game Boy ROMs");
+		public (string Extension, string Description) FileFilter => (".gb;.gbc", "Game Boy ROMs");
 		public bool HasBootstrap => true;
 		public double RefreshRate => refreshRate;
 		public double AspectRatio => 10.0 / 9.0;
@@ -290,6 +290,14 @@ namespace Essgee.Emulation.Machines
 					case 0x02:
 					case 0x03:
 						mapperType = typeof(MBC1Cartridge);
+						break;
+
+					case 0x0F:
+					case 0x10:
+					case 0x11:
+					case 0x12:
+					case 0x13:
+						mapperType = typeof(MBC3Cartridge);
 						break;
 
 					// TODO more mbcs and stuffs
@@ -535,7 +543,7 @@ namespace Essgee.Emulation.Machines
 						return (byte)(bootstrapDisabled ? 0x01 : 0x00);
 
 					default:
-						throw new NotImplementedException();
+						return 0;// throw new NotImplementedException();
 				}
 			}
 		}

@@ -9,7 +9,7 @@ using Essgee.Utilities;
 
 namespace Essgee.Emulation.Cartridges.Nintendo
 {
-	public class MBC1Cartridge : ICartridge
+	public class MBC3Cartridge : ICartridge
 	{
 		byte[] romData, ramData;
 		bool hasCartRam;
@@ -17,9 +17,11 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 		byte romBank, ramBank;
 		bool ramEnable;
 
-		byte bankingMode;
+		byte[] rtcRegisters;
+		bool rtcSelected;
+		byte rtcRegSelected;
 
-		public MBC1Cartridge(int romSize, int ramSize)
+		public MBC3Cartridge(int romSize, int ramSize)
 		{
 			romData = new byte[romSize];
 			ramData = new byte[ramSize];
@@ -29,7 +31,9 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 			ramEnable = false;
 
-			bankingMode = 0;
+			rtcRegisters = new byte[0x05];
+			rtcSelected = false;
+			rtcRegSelected = 0;
 
 			hasCartRam = false;
 		}
@@ -82,7 +86,17 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			else if (address >= 0xA000 && address <= 0xBFFF)
 			{
 				if (ramEnable)
-					return ramData[(ramBank << 13) | (address & 0x1FFF)];
+				{
+					if (!rtcSelected)
+					{
+						return ramData[(ramBank << 13) | (address & 0x1FFF)];
+					}
+					else
+					{
+						//TODO rtc registers
+						return 0;
+					}
+				}
 				else
 					return 0;
 			}
@@ -98,33 +112,40 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			}
 			else if (address >= 0x2000 && address <= 0x3FFF)
 			{
-				romBank = (byte)((romBank & 0xE0) | (value & 0x1F));
+				romBank = (byte)((romBank & 0x80) | (value & 0x7F));
 				romBank &= (byte)((romData.Length >> 14) - 1);
-				if ((romBank & 0x1F) == 0x00) romBank |= 0x01;
+				if (romBank == 0x00) romBank = 0x01;
 			}
 			else if (address >= 0x4000 && address <= 0x5FFF)
 			{
-				if (bankingMode == 0)
+				if (value >= 0x00 && value <= 0x07)
 				{
-					romBank = (byte)((romBank & 0x9F) | ((value & 0x03) << 5));
-					romBank &= (byte)((romData.Length >> 14) - 1);
-					if ((romBank & 0x1F) == 0x00) romBank |= 0x01;
-				}
-				else
-				{
+					rtcSelected = false;
 					ramBank = (byte)(value & 0x03);
+				}
+				else if (value >= 0x08 && value <= 0x0C)
+				{
+					rtcSelected = true;
+					rtcRegSelected = (byte)(value >> 3);
 				}
 			}
 			else if (address >= 0x6000 && address <= 0x7FFF)
 			{
-				bankingMode = (byte)(value & 0b1);
+				//TODO latch clock data
 			}
 			else if (address >= 0xA000 && address <= 0xBFFF)
 			{
 				if (ramEnable)
 				{
-					ramData[(ramBank << 13) | (address & 0x1FFF)] = value;
-					hasCartRam = true;
+					if (!rtcSelected)
+					{
+						ramData[(ramBank << 13) | (address & 0x1FFF)] = value;
+						hasCartRam = true;
+					}
+					else
+					{
+						//TODO rtc registers
+					}
 				}
 			}
 		}

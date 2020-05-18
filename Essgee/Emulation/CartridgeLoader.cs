@@ -25,7 +25,8 @@ namespace Essgee.Emulation
 				if (machineType == null) continue;
 
 				var instance = (IMachine)Activator.CreateInstance(machineType);
-				fileExtensionSystemDictionary.Add(instance.FileFilter.Extension, machineType);
+				foreach (var extension in instance.FileFilter.Extension.Split(';'))
+					fileExtensionSystemDictionary.Add(extension, machineType);
 			}
 		}
 
