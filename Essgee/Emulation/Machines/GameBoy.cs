@@ -71,7 +71,7 @@ namespace Essgee.Emulation.Machines
 		ICartridge cartridge;
 		byte[] wram, hram;
 		byte ie;
-		LR35902 cpu;
+		SM83 cpu;
 		DMGVideo video;
 		DMGAudio audio;
 
@@ -143,7 +143,7 @@ namespace Essgee.Emulation.Machines
 
 			wram = new byte[wramSize];
 			hram = new byte[hramSize];
-			cpu = new LR35902(ReadMemory, WriteMemory);
+			cpu = new SM83(ReadMemory, WriteMemory);
 			video = new DMGVideo(ReadMemory, RequestInterrupt);
 			audio = new DMGAudio();
 

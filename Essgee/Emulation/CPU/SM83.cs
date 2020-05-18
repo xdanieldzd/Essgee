@@ -11,7 +11,7 @@ using static Essgee.Emulation.Utilities;
 
 namespace Essgee.Emulation.CPU
 {
-	public partial class LR35902 : ICPU
+	public partial class SM83 : ICPU
 	{
 		[Flags]
 		enum Flags : byte
@@ -29,7 +29,7 @@ namespace Essgee.Emulation.CPU
 		public delegate byte MemoryReadDelegate(ushort address);
 		public delegate void MemoryWriteDelegate(ushort address, byte value);
 
-		delegate void SimpleOpcodeDelegate(LR35902 c);
+		delegate void SimpleOpcodeDelegate(SM83 c);
 
 		MemoryReadDelegate memoryReadDelegate;
 		MemoryWriteDelegate memoryWriteDelegate;
@@ -53,7 +53,7 @@ namespace Essgee.Emulation.CPU
 		[StateRequired]
 		int currentCycles;
 
-		public LR35902(MemoryReadDelegate memoryRead, MemoryWriteDelegate memoryWrite)
+		public SM83(MemoryReadDelegate memoryRead, MemoryWriteDelegate memoryWrite)
 		{
 			af = bc = de = hl = new Register();
 
@@ -65,8 +65,8 @@ namespace Essgee.Emulation.CPU
 		{
 			Reset();
 
-			if (memoryReadDelegate == null) throw new EmulationException("LR35902: Memory read method is null");
-			if (memoryWriteDelegate == null) throw new EmulationException("LR35902: Memory write method is null");
+			if (memoryReadDelegate == null) throw new EmulationException("SM83: Memory read method is null");
+			if (memoryWriteDelegate == null) throw new EmulationException("SM83: Memory write method is null");
 		}
 
 		public virtual void Shutdown()
@@ -815,7 +815,7 @@ namespace Essgee.Emulation.CPU
 
 		#endregion
 
-		#region Opcodes: LR35902-specific Opcodes
+		#region Opcodes: SM83-specific Opcodes
 
 		protected void PopAF()
 		{

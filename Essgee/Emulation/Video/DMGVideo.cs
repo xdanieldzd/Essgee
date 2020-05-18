@@ -11,12 +11,13 @@ using Essgee.EventArguments;
 using Essgee.Utilities;
 
 using static Essgee.Emulation.Machines.GameBoy;
+using static Essgee.Emulation.CPU.SM83;
 
 namespace Essgee.Emulation.Video
 {
 	public class DMGVideo : IVideo
 	{
-		readonly LR35902.MemoryReadDelegate memoryReadDelegate;
+		readonly MemoryReadDelegate memoryReadDelegate;
 		readonly RequestInterruptDelegate requestInterruptDelegate;
 
 		public virtual (int X, int Y, int Width, int Height) Viewport => (0, 0, 160, 144);
@@ -102,7 +103,7 @@ namespace Essgee.Emulation.Video
 
 		//
 
-		public DMGVideo(LR35902.MemoryReadDelegate memoryRead, RequestInterruptDelegate requestInterrupt)
+		public DMGVideo(MemoryReadDelegate memoryRead, RequestInterruptDelegate requestInterrupt)
 		{
 			vram = new byte[0x2000];
 			oam = new byte[0xA0];

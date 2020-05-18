@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Essgee.Emulation.CPU
 {
-	public partial class LR35902
+	public partial class SM83
 	{
 		static SimpleOpcodeDelegate[] opcodesPrefixCB = new SimpleOpcodeDelegate[]
 		{

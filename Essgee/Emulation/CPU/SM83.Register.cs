@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Essgee.Emulation.CPU
 {
-	public partial class LR35902
+	public partial class SM83
 	{
 		[DebuggerDisplay("{Word}")]
 		[StructLayout(LayoutKind.Explicit)]

@@ -105,11 +105,11 @@
     <Compile Include="Emulation\Configuration\ColecoVision.cs" />
     <Compile Include="Emulation\Configuration\SC3000.cs" />
     <Compile Include="Emulation\CPU\ICPU.cs" />
-    <Compile Include="Emulation\CPU\LR35902.cs" />
-    <Compile Include="Emulation\CPU\LR35902.OpcodesNoPrefix.cs" />
-    <Compile Include="Emulation\CPU\LR35902.Register.cs" />
-    <Compile Include="Emulation\CPU\LR35902.CycleCounts.cs" />
-    <Compile Include="Emulation\CPU\LR35902.OpcodesPrefixCB.cs" />
+    <Compile Include="Emulation\CPU\SM83.cs" />
+    <Compile Include="Emulation\CPU\SM83.OpcodesNoPrefix.cs" />
+    <Compile Include="Emulation\CPU\SM83.Register.cs" />
+    <Compile Include="Emulation\CPU\SM83.CycleCounts.cs" />
+    <Compile Include="Emulation\CPU\SM83.OpcodesPrefixCB.cs" />
     <Compile Include="Emulation\Machines\ColecoVision.cs" />
     <Compile Include="Emulation\Machines\GameBoy.cs" />
     <Compile Include="Emulation\Machines\SC3000.cs" />
