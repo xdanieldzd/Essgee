@@ -31,7 +31,7 @@ namespace Essgee
 	public partial class MainForm : Form
 	{
 		readonly static double baseScreenSize = 240.0;
-		readonly static double aspectRatio = (4.0 / 3.0);
+		readonly static double aspectRatio = (160.0 / 144.0);// (4.0 / 3.0);		// TODO: per machine aspect ratio; GB needs 1,1111..., other systems need 1,3333....
 		readonly static int baseSampleRate = 11025;
 
 		readonly static int maxScreenSizeFactor = 3;

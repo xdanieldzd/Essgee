@@ -92,12 +92,14 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			else if (address >= 0x2000 && address <= 0x3FFF)
 			{
 				romBank = (byte)((romBank & 0xE0) | (value & 0x1F));
+				romBank &= (byte)((romData.Length >> 14) - 1);
 			}
 			else if (address >= 0x4000 && address <= 0x5FFF)
 			{
 				if (bankingMode == 0)
 				{
 					romBank = (byte)((romBank & 0x9F) | ((value & 0x03) << 5));
+					romBank &= (byte)((romData.Length >> 14) - 1);
 				}
 				else
 				{

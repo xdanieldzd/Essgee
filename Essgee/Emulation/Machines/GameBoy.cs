@@ -143,7 +143,7 @@ namespace Essgee.Emulation.Machines
 			wram = new byte[wramSize];
 			hram = new byte[hramSize];
 			cpu = new LR35902(ReadMemory, WriteMemory);
-			video = new DMGVideo(RequestInterrupt);
+			video = new DMGVideo(ReadMemory, RequestInterrupt);
 			audio = new DMGAudio();
 
 			video.EndOfScanline += (s, e) =>
@@ -378,25 +378,24 @@ namespace Essgee.Emulation.Machines
 
 		private void HandleInterrupts()
 		{
-			var intEnable = ReadMemory(0xFFFF);
-			var intFlag = ReadMemory(0xFF0F);
+			var intFlag = ReadIo(0xFF0F);
 
-			if (HandleInterrupt(InterruptSource.VBlank, intEnable, intFlag)) return;
-			if (HandleInterrupt(InterruptSource.LCDCStatus, intEnable, intFlag)) return;
-			if (HandleInterrupt(InterruptSource.TimerOverflow, intEnable, intFlag)) return;
-			if (HandleInterrupt(InterruptSource.SerialIO, intEnable, intFlag)) return;
-			if (HandleInterrupt(InterruptSource.Keypad, intEnable, intFlag)) return;
+			if (HandleInterrupt(InterruptSource.VBlank, intFlag)) return;
+			if (HandleInterrupt(InterruptSource.LCDCStatus, intFlag)) return;
+			if (HandleInterrupt(InterruptSource.TimerOverflow, intFlag)) return;
+			if (HandleInterrupt(InterruptSource.SerialIO, intFlag)) return;
+			if (HandleInterrupt(InterruptSource.Keypad, intFlag)) return;
 		}
 
-		private bool HandleInterrupt(InterruptSource source, byte intEnable, byte intFlag)
+		private bool HandleInterrupt(InterruptSource source, byte intFlag)
 		{
 			var sourceBit = (byte)(1 << (byte)source);
 
-			var execute = ((intEnable & sourceBit) == sourceBit) && ((intFlag & sourceBit) == sourceBit);
+			var execute = ((ie & sourceBit) == sourceBit) && ((intFlag & sourceBit) == sourceBit);
 			if (execute)
 			{
 				cpu.RequestInterrupt((ushort)(0x0040 + (8 * (int)source)));
-				WriteMemory(0xFF0F, (byte)(intFlag & ~sourceBit));
+				WriteIo(0xFF0F, (byte)(intFlag & ~sourceBit));
 
 				//Program.Logger?.WriteLine($"--- Interrupt {source}");
 			}
@@ -500,12 +499,7 @@ namespace Essgee.Emulation.Machines
 				switch (address)
 				{
 					case 0xFF00:
-						if ((joypadRegister & 0x30) == 0x20)
-							return (byte)((joypadRegister & 0x00) | (((byte)inputsPressed & 0x0F) ^ 0x0F));
-						else if ((joypadRegister & 0x30) == 0x10)
-							return (byte)((joypadRegister & 0x00) | ((((byte)inputsPressed & 0xF0) >> 4) ^ 0x0F));
-						else
-							return joypadRegister;
+						return joypadRegister;
 
 					case 0xFF01:
 						return serialData;
@@ -592,7 +586,13 @@ namespace Essgee.Emulation.Machines
 				switch (address)
 				{
 					case 0xFF00:
-						joypadRegister = (byte)((joypadRegister & 0xCF) | (value & 0x30));
+						joypadRegister = (byte)((joypadRegister & 0xC0) | (value & 0x30));
+						if ((joypadRegister & 0x30) == 0x20)
+							joypadRegister |= (byte)(((byte)inputsPressed & 0x0F) ^ 0x0F);
+						else if ((joypadRegister & 0x30) == 0x10)
+							joypadRegister |= (byte)((((byte)inputsPressed & 0xF0) >> 4) ^ 0x0F);
+						else
+							joypadRegister = 0xFF;
 						break;
 
 					case 0xFF01:

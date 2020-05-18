@@ -5,17 +5,18 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
+using Essgee.Emulation.CPU;
 using Essgee.Exceptions;
 using Essgee.EventArguments;
 using Essgee.Utilities;
 
-using static Essgee.Emulation.Utilities;
 using static Essgee.Emulation.Machines.GameBoy;
 
 namespace Essgee.Emulation.Video
 {
 	public class DMGVideo : IVideo
 	{
+		readonly LR35902.MemoryReadDelegate memoryReadDelegate;
 		readonly RequestInterruptDelegate requestInterruptDelegate;
 
 		public virtual (int X, int Y, int Width, int Height) Viewport => (0, 0, 160, 144);
@@ -29,7 +30,7 @@ namespace Essgee.Emulation.Video
 		public virtual event EventHandler<EventArgs> EndOfScanline;
 		public virtual void OnEndOfScanline(EventArgs e) { EndOfScanline?.Invoke(this, e); }
 
-		readonly int[] cyclesPerMode = new int[] { 375, 456, 82, 172 };
+		readonly int[] cyclesPerMode = new int[] { 204, 456, 80, 172 };
 
 		//
 
@@ -74,6 +75,8 @@ namespace Essgee.Emulation.Video
 
 		//
 
+		int oamDmaCurrentSource, oamDmaBytesLeft;
+
 		readonly byte[][] colorValuesBgr = new byte[][]
 		{
 			/*              B     G     R */
@@ -83,6 +86,15 @@ namespace Essgee.Emulation.Video
 			new byte[] { 0x1F, 0x1F, 0x1F },	/* Black */
 		};
 
+		protected const byte screenUsageEmpty = 0;
+		protected const byte screenUsageBackground = (1 << 0);
+		protected const byte screenUsageSprite = (1 << 1);
+
+		// 0000 -- empty
+		// 0001 -- background
+		// nn02 -- sprite (nn==sprite number)
+		protected ushort[] screenUsage;
+
 		protected int cycleCount;
 		protected byte[] outputFramebuffer;
 
@@ -90,13 +102,14 @@ namespace Essgee.Emulation.Video
 
 		//
 
-		public DMGVideo(RequestInterruptDelegate requestInterrupt)
+		public DMGVideo(LR35902.MemoryReadDelegate memoryRead, RequestInterruptDelegate requestInterrupt)
 		{
 			vram = new byte[0x2000];
 			oam = new byte[0xA0];
 
 			//
 
+			memoryReadDelegate = memoryRead;
 			requestInterruptDelegate = requestInterrupt;
 		}
 
@@ -104,6 +117,7 @@ namespace Essgee.Emulation.Video
 		{
 			Reset();
 
+			if (memoryReadDelegate == null) throw new EmulationException("DMGVideo: Memory read delegate is null");
 			if (requestInterruptDelegate == null) throw new EmulationException("DMGVideo: Request interrupt delegate is null");
 
 			Debug.Assert(clockRate != 0.0, "Clock rate is zero", "{0} clock rate is not configured", GetType().FullName);
@@ -118,6 +132,8 @@ namespace Essgee.Emulation.Video
 		public virtual void Reset()
 		{
 			//
+
+			ClearScreenUsage();
 
 			cycleCount = 0;
 		}
@@ -147,6 +163,7 @@ namespace Essgee.Emulation.Video
 			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / 153);
 
 			/* Create arrays */
+			screenUsage = new ushort[160 * 144];
 			outputFramebuffer = new byte[(160 * 144) * 4];
 		}
 
@@ -154,9 +171,20 @@ namespace Essgee.Emulation.Video
 		{
 			// http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
 
-			// TODO verify and stuff, oam dma, etc etc etc......
+			// TODO verify and stuff, etc etc etc......
 
 			cycleCount += clockCyclesInStep;
+
+			if (oamDmaBytesLeft > 0)
+			{
+				for (var i = 0; i < clockCyclesInStep / 4; i++)
+				{
+					oam[0xA0 - oamDmaBytesLeft] = memoryReadDelegate((ushort)oamDmaCurrentSource++);
+					oamDmaBytesLeft--;
+					if (oamDmaBytesLeft <= 0) break;
+				}
+				return;
+			}
 
 			switch (modeNumber)
 			{
@@ -238,6 +266,8 @@ namespace Essgee.Emulation.Video
 						{
 							modeNumber = 2;
 							currentScanline = 0;
+
+							ClearScreenUsage();
 						}
 					}
 					break;
@@ -281,7 +311,7 @@ namespace Essgee.Emulation.Video
 
 			for (var x = (isWindow ? (windowX - 7) : 0); x < 160; x++)
 			{
-				var xTransformed = (byte)(scrollX + x);
+				var xTransformed = (byte)(isWindow ? x : (scrollX + x));
 
 				var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
 				var tileNumber = vram[mapAddress];
@@ -295,13 +325,67 @@ namespace Essgee.Emulation.Video
 				var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
 				var c = (byte)((bb << 1) | ba);
 
+				if (c != 0)
+					SetScreenUsageFlag(y, x, screenUsageBackground);
+
 				SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
 			}
 		}
 
 		protected virtual void RenderSprites(int y)
 		{
-			//
+			var objHeight = (objSize ? 16 : 8);
+			var numObjDisplayed = 0;
+
+			// TODO more stuffs, priority, etc
+
+			for (var i = 0; i < 40 * 4; i += 4)
+			{
+				var objY = oam[i + 0] - 16;
+
+				if ((y < objY) || y >= (objY + objHeight)) continue;
+
+				var objX = oam[i + 1] - 8;
+				var objTileNumber = oam[i + 2];
+				var objAttributes = oam[i + 3];
+
+				var objPrioAboveBg = ((objAttributes >> 7) & 0b1) != 0b1;
+				var objFlipY = ((objAttributes >> 6) & 0b1) == 0b1;
+				var objFlipX = ((objAttributes >> 5) & 0b1) == 0b1;
+				var objPalNumber = ((objAttributes >> 4) & 0b1);
+
+				if (objHeight == 16)
+				{
+					if (y < (objY + 8)) objTileNumber &= 0xFE;
+					else objTileNumber |= 0x01;
+				}
+
+				for (var x = 0; x < 8; x++)
+				{
+					if ((objX + x) < 0 || (objX + x) >= 160) continue;
+					if (!objPrioAboveBg && IsScreenUsageFlagSet(y, (objX + x), screenUsageBackground)) continue;
+
+					var xShift = objFlipX ? (x % 8) : (7 - (x % 8));
+					var yShift = objFlipY ? (7 - ((y - objY) % 8)) : ((y - objY) % 8);
+
+					var tileAddress = (objTileNumber << 4) + (yShift << 1);
+
+					var pal = (objPalNumber == 0 ? obPalette0 : obPalette1);
+					var ba = (vram[tileAddress + 0] >> xShift) & 0b1;
+					var bb = (vram[tileAddress + 1] >> xShift) & 0b1;
+					var c = (byte)((bb << 1) | ba);
+
+					if (c != 0)
+					{
+						SetScreenUsageFlag(y, (objX + x), (ushort)(screenUsageSprite | ((i / 4) << 8)));
+						SetPixel(y, (objX + x), (byte)((pal >> (c << 1)) & 0x03));
+						//SetPixel(y, (objX + x), 0, 0, objTileNumber);
+					}
+				}
+
+				numObjDisplayed++;
+				if (numObjDisplayed >= 10) break;
+			}
 		}
 
 		protected void SetLine(int y, byte c)
@@ -340,6 +424,32 @@ namespace Essgee.Emulation.Video
 			outputFramebuffer[address + 1] = colorValuesBgr[c & 0x03][1];
 			outputFramebuffer[address + 2] = colorValuesBgr[c & 0x03][2];
 			outputFramebuffer[address + 3] = 0xFF;
+		}
+
+		protected virtual void ClearScreenUsage()
+		{
+			for (int i = 0; i < screenUsage.Length; i++)
+				screenUsage[i] = screenUsageEmpty;
+		}
+
+		protected ushort GetScreenUsageFlag(int y, int x)
+		{
+			return screenUsage[(y * 160) + (x % 160)];
+		}
+
+		protected bool IsScreenUsageFlagSet(int y, int x, ushort flag)
+		{
+			return ((GetScreenUsageFlag(y, x) & (flag & 0x00FF)) == (flag & 0x00FF));
+		}
+
+		protected void SetScreenUsageFlag(int y, int x, ushort flag)
+		{
+			screenUsage[(y * 160) + (x % 160)] |= flag;
+		}
+
+		protected void ClearScreenUsageFlag(int y, int x, ushort flag)
+		{
+			screenUsage[(y * 160) + (x % 160)] &= (ushort)~flag;
 		}
 
 		//
@@ -455,6 +565,8 @@ namespace Essgee.Emulation.Video
 
 				case 0x46:
 					oamDmaStart = value;
+					oamDmaCurrentSource = oamDmaStart << 8;
+					oamDmaBytesLeft = 0xA0;
 					break;
 
 				case 0x47:
