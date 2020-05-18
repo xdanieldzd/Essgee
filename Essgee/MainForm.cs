@@ -31,7 +31,7 @@ namespace Essgee
 	public partial class MainForm : Form
 	{
 		readonly static double baseScreenSize = 240.0;
-		readonly static double aspectRatio = (160.0 / 144.0);// (4.0 / 3.0);		// TODO: per machine aspect ratio; GB needs 1,1111..., other systems need 1,3333....
+		readonly static double defaultAspectRatio = (4.0 / 3.0);
 		readonly static int baseSampleRate = 11025;
 
 		readonly static int maxScreenSizeFactor = 3;
@@ -53,6 +53,8 @@ namespace Essgee
 				cursorShown = value;
 			}
 		}
+
+		double currentAspectRatio;
 
 		OnScreenDisplayHandler onScreenDisplayHandler;
 
@@ -95,6 +97,8 @@ namespace Essgee
 					ExceptionHandler(ex);
 				};
 			}
+
+			currentAspectRatio = defaultAspectRatio;
 
 			SizeAndPositionWindow();
 			SetWindowTitleAndStatus();
@@ -322,6 +326,8 @@ namespace Essgee
 			emulatorHandler.SetSoundEnableStates(soundEnableStates);
 
 			emulatorHandler.SetConfiguration(Program.Configuration.Machines[machineType.Name]);
+
+			currentAspectRatio = emulatorHandler.Information.AspectRatio;
 
 			pauseToolStripMenuItem.DataBindings.Clear();
 			pauseToolStripMenuItem.CheckedChanged += (s, e) =>
@@ -746,7 +752,7 @@ namespace Essgee
 					if ((s as ToolStripMenuItem).Tag is object screenSizeMode && Enum.IsDefined(typeof(ScreenSizeMode), screenSizeMode))
 					{
 						Program.Configuration.ScreenSizeMode = (ScreenSizeMode)screenSizeMode;
-						graphicsHandler?.Resize(renderControl.ClientRectangle, new Size((int)(baseScreenSize * aspectRatio), (int)baseScreenSize));
+						graphicsHandler?.Resize(renderControl.ClientRectangle, new Size((int)(baseScreenSize * currentAspectRatio), (int)baseScreenSize));
 
 						foreach (ToolStripMenuItem sizeModeMenuItem in sizeModeToolStripMenuItem.DropDownItems)
 							sizeModeMenuItem.Checked = (ScreenSizeMode)sizeModeMenuItem.Tag == Program.Configuration.ScreenSizeMode;
@@ -949,7 +955,7 @@ namespace Essgee
 				CursorShown = true;
 
 				ClientSize = new Size(
-					(int)((baseScreenSize * aspectRatio) * Program.Configuration.ScreenSize),
+					(int)((baseScreenSize * currentAspectRatio) * Program.Configuration.ScreenSize),
 					(int)(baseScreenSize * Program.Configuration.ScreenSize) + (menuStrip.Height + statusStrip.Height)
 					);
 
@@ -1081,7 +1087,7 @@ namespace Essgee
 
 		private void renderControl_Resize(object sender, EventArgs e)
 		{
-			graphicsHandler.Resize(renderControl.ClientRectangle, new Size((int)(baseScreenSize * aspectRatio), (int)baseScreenSize));
+			graphicsHandler.Resize(renderControl.ClientRectangle, new Size((int)(baseScreenSize * currentAspectRatio), (int)baseScreenSize));
 		}
 
 		private void EmulatorHandler_SendLogMessage(object sender, SendLogMessageEventArgs e)

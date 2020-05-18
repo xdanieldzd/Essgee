@@ -68,6 +68,7 @@ namespace Essgee.Emulation.Machines
 		public (string Extension, string Description) FileFilter => (".sms", "Master System ROMs");
 		public bool HasBootstrap => true;
 		public double RefreshRate { get; private set; }
+		public double AspectRatio => 4.0 / 3.0;
 
 		ICartridge bootstrap, cartridge;
 		byte[] wram;

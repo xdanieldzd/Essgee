@@ -71,6 +71,7 @@ namespace Essgee.Emulation.Machines
 		public (string Extension, string Description) FileFilter => (".sc", "SC-3000 ROMs");
 		public bool HasBootstrap => false;
 		public double RefreshRate { get; private set; }
+		public double AspectRatio => 4.0 / 3.0;
 
 		ICartridge cartridge;
 		byte[] wram;
