@@ -374,9 +374,9 @@ namespace Essgee.Emulation.Video
 
 			var yTransformed = (byte)(isWindow ? (y - windowY) : (scrollY + y));
 
-			for (var x = (isWindow ? (windowX - 7) : 0); x < 160; x++)
+			for (var x = 0; x < 160; x++)
 			{
-				var xTransformed = (byte)(isWindow ? x : (scrollX + x));
+				var xTransformed = (byte)(isWindow ? ((7 - windowX) + x) : (scrollX + x));
 
 				var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
 				var tileNumber = vram[mapAddress];
