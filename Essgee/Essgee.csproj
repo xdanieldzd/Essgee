@@ -78,6 +78,12 @@
     <None Include="Assets\No-Intro\Nintendo - Game Boy.dat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Assets\Shaders\Dot-Matrix\Fragment.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Shaders\Dot-Matrix\Manifest.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="BuildInformationTemplate.cs" />
     <Compile Include="Debugging\ExceptionForm.cs">
       <SubType>Form</SubType>
