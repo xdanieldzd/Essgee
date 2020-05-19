@@ -17,6 +17,8 @@ namespace Essgee.Emulation.Video
 {
 	public class DMGVideo : IVideo
 	{
+		const int numOamSlots = 40;
+
 		readonly MemoryReadDelegate memoryReadDelegate;
 		readonly RequestInterruptDelegate requestInterruptDelegate;
 
@@ -92,12 +94,10 @@ namespace Essgee.Emulation.Video
 		protected const byte screenUsageBackground = (1 << 0);
 		protected const byte screenUsageWindow = (1 << 1);
 		protected const byte screenUsageSprite = (1 << 2);
+		protected byte[] screenUsage;
 
-		// 0000 -- empty
-		// 0001 -- background
-		// 0002 -- window
-		// nn04 -- sprite (nn==sprite number)
-		protected ushort[] screenUsage;
+		protected const ushort spriteUsageEmpty = 0xFFFF;
+		protected ushort[] spriteUsage;
 
 		protected int cycleCount;
 		protected byte[] outputFramebuffer;
@@ -157,6 +157,7 @@ namespace Essgee.Emulation.Video
 			oamDmaCurrentSource = oamDmaBytesLeft = 0;
 
 			ClearScreenUsage();
+			ClearSpriteUsage();
 
 			cycleCount = 0;
 		}
@@ -186,7 +187,8 @@ namespace Essgee.Emulation.Video
 			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / 153);
 
 			/* Create arrays */
-			screenUsage = new ushort[160 * 144];
+			screenUsage = new byte[160 * 144];
+			spriteUsage = new ushort[160 * 144];
 			outputFramebuffer = new byte[(160 * 144) * 4];
 		}
 
@@ -271,6 +273,7 @@ namespace Essgee.Emulation.Video
 									RequestInterrupt(InterruptSource.LCDCStatus);
 
 								ClearScreenUsage();
+								ClearSpriteUsage();
 							}
 						}
 						break;
@@ -402,54 +405,70 @@ namespace Essgee.Emulation.Video
 			var objHeight = (objSize ? 16 : 8);
 			var numObjDisplayed = 0;
 
-			// TODO more stuffs, priority, etc
-
-			for (var i = 0; i < 40 * 4; i += 4)
+			// Iterate over sprite slots
+			for (var i = (byte)0; i < numOamSlots; i++)
 			{
-				var objY = oam[i + 0] - 16;
+				// Get sprite Y coord & if sprite is not on current scanline, continue to next slot
+				var objY = (short)(oam[(i * 4) + 0] - 16);
+				if (y < objY || y >= (objY + objHeight)) continue;
 
-				if ((y < objY) || y >= (objY + objHeight)) continue;
+				// Get sprite X coord, tile number & attributes
+				var objX = (byte)(oam[(i * 4) + 1] - 8);
+				var objTileNumber = oam[(i * 4) + 2];
+				var objAttributes = oam[(i * 4) + 3];
 
-				var objX = oam[i + 1] - 8;
-				var objTileNumber = oam[i + 2];
-				var objAttributes = oam[i + 3];
-
+				// Extract attributes
 				var objPrioAboveBg = ((objAttributes >> 7) & 0b1) != 0b1;
 				var objFlipY = ((objAttributes >> 6) & 0b1) == 0b1;
 				var objFlipX = ((objAttributes >> 5) & 0b1) == 0b1;
 				var objPalNumber = ((objAttributes >> 4) & 0b1);
 
-				if (objSize) objTileNumber &= 0xFE;
-
-				for (var x = 0; x < 8; x++)
+				// Iterate over pixels
+				for (var px = 0; px < 8; px++)
 				{
-					if ((objX + x) < 0 || (objX + x) >= 160) continue;
+					// Calc screen X coordinate
+					var x = (byte)(objX + px);
 
+					// If pixel X coord is outside screen, continue to next pixel
+					if (x < 0 || x >= 160) continue;
+
+					// If sprite of lower X coord already exists -or- sprite of same X coord BUT lower slot exists, continue to next pixel
+					var prevObjX = GetSpriteUsageCoord(y, x);
+					var prevObjSlot = GetSpriteUsageSlot(y, x);
+					if (prevObjX < objX || (prevObjX == objX && prevObjSlot < i)) continue;
+
+					// If sprite priority is not above background -and- BG/window pixel was already drawn, continue to next pixel
 					if (!objPrioAboveBg &&
-						(IsScreenUsageFlagSet(y, (objX + x), screenUsageBackground) || IsScreenUsageFlagSet(y, (objX + x), screenUsageWindow))) continue;
+						(IsScreenUsageFlagSet(y, x, screenUsageBackground) || IsScreenUsageFlagSet(y, x, screenUsageWindow))) continue;
 
-					var xShift = objFlipX ? (x % 8) : (7 - (x % 8));
+					// Calculate tile address
+					var xShift = objFlipX ? (px % 8) : (7 - (px % 8));
 					var yShift = objFlipY ? (7 - ((y - objY) % 8)) : ((y - objY) % 8);
-
-					if (objSize && ((objFlipY && y < (objY + 8)) || (!objFlipY && y >= (objY + 8))))
-						objTileNumber |= 0x01;
-
+					if (objSize)
+					{
+						objTileNumber &= 0xFE;
+						if ((objFlipY && y < (objY + 8)) || (!objFlipY && y >= (objY + 8)))
+							objTileNumber |= 0x01;
+					}
 					var tileAddress = (objTileNumber << 4) + (yShift << 1);
 
+					// Get palette & bitplanes
 					var pal = (objPalNumber == 0 ? obPalette0 : obPalette1);
 					var ba = (vram[tileAddress + 0] >> xShift) & 0b1;
 					var bb = (vram[tileAddress + 1] >> xShift) & 0b1;
-					var c = (byte)((bb << 1) | ba);
 
+					// Combine to color index, draw if color is not 0
+					var c = (byte)((bb << 1) | ba);
 					if (c != 0)
 					{
-						SetScreenUsageFlag(y, (objX + x), (ushort)(screenUsageSprite | ((i / 4) << 8)));
-						SetPixel(y, (objX + x), (byte)((pal >> (c << 1)) & 0x03));
+						SetScreenUsageFlag(y, x, screenUsageSprite);
+						SetSpriteUsage(y, x, objX, i);
+						SetPixel(y, x, (byte)((pal >> (c << 1)) & 0x03));
 					}
 				}
 
-				numObjDisplayed++;
-				if (numObjDisplayed >= 10) break;
+				// If sprites per line limit was exceeded, stop drawing sprites
+				if (numObjDisplayed++ >= 10) break;
 			}
 		}
 
@@ -493,8 +512,14 @@ namespace Essgee.Emulation.Video
 
 		protected virtual void ClearScreenUsage()
 		{
-			for (int i = 0; i < screenUsage.Length; i++)
+			for (var i = 0; i < screenUsage.Length; i++)
 				screenUsage[i] = screenUsageEmpty;
+		}
+
+		protected virtual void ClearSpriteUsage()
+		{
+			for (var i = 0; i < spriteUsage.Length; i++)
+				spriteUsage[i] = spriteUsageEmpty;
 		}
 
 		protected ushort GetScreenUsageFlag(int y, int x)
@@ -502,19 +527,34 @@ namespace Essgee.Emulation.Video
 			return screenUsage[(y * 160) + (x % 160)];
 		}
 
-		protected bool IsScreenUsageFlagSet(int y, int x, ushort flag)
+		protected bool IsScreenUsageFlagSet(int y, int x, byte flag)
 		{
-			return ((GetScreenUsageFlag(y, x) & (flag & 0x00FF)) == (flag & 0x00FF));
+			return ((GetScreenUsageFlag(y, x) & flag) == flag);
 		}
 
-		protected void SetScreenUsageFlag(int y, int x, ushort flag)
+		protected void SetScreenUsageFlag(int y, int x, byte flag)
 		{
 			screenUsage[(y * 160) + (x % 160)] |= flag;
 		}
 
-		protected void ClearScreenUsageFlag(int y, int x, ushort flag)
+		protected void ClearScreenUsageFlag(int y, int x, byte flag)
 		{
-			screenUsage[(y * 160) + (x % 160)] &= (ushort)~flag;
+			screenUsage[(y * 160) + (x % 160)] &= (byte)~flag;
+		}
+
+		protected void SetSpriteUsage(int y, int x, byte objX, byte objSlot)
+		{
+			spriteUsage[(y * 160) + (x % 160)] = (ushort)((objX << 8) | objSlot);
+		}
+
+		protected byte GetSpriteUsageCoord(int y, int x)
+		{
+			return (byte)((spriteUsage[(y * 160) + (x % 160)] >> 8) & 0xFF);
+		}
+
+		protected byte GetSpriteUsageSlot(int y, int x)
+		{
+			return (byte)((spriteUsage[(y * 160) + (x % 160)] >> 0) & 0xFF);
 		}
 
 		//

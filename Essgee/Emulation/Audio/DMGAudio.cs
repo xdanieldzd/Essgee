@@ -140,6 +140,8 @@ namespace Essgee.Emulation.Audio
 
 			//
 
+			ch1OnFlag = ch2OnFlag = ch3OnFlag = ch4OnFlag = false;
+
 			frameSequencerCounter = 8192;
 			frameSequencer = 0;
 

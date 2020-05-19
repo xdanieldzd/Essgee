@@ -445,10 +445,10 @@ namespace Essgee.Emulation.Machines
 
 			inputsPressed = 0;
 
-			if (keysDown.Contains(configuration.ControlsRight)) inputsPressed |= JoypadInputs.Right;
-			if (keysDown.Contains(configuration.ControlsLeft)) inputsPressed |= JoypadInputs.Left;
-			if (keysDown.Contains(configuration.ControlsUp)) inputsPressed |= JoypadInputs.Up;
-			if (keysDown.Contains(configuration.ControlsDown)) inputsPressed |= JoypadInputs.Down;
+			if (keysDown.Contains(configuration.ControlsRight) && !keysDown.Contains(configuration.ControlsLeft)) inputsPressed |= JoypadInputs.Right;
+			if (keysDown.Contains(configuration.ControlsLeft) && !keysDown.Contains(configuration.ControlsRight)) inputsPressed |= JoypadInputs.Left;
+			if (keysDown.Contains(configuration.ControlsUp) && !keysDown.Contains(configuration.ControlsDown)) inputsPressed |= JoypadInputs.Up;
+			if (keysDown.Contains(configuration.ControlsDown) && !keysDown.Contains(configuration.ControlsUp)) inputsPressed |= JoypadInputs.Down;
 			if (keysDown.Contains(configuration.ControlsA)) inputsPressed |= JoypadInputs.A;
 			if (keysDown.Contains(configuration.ControlsB)) inputsPressed |= JoypadInputs.B;
 			if (keysDown.Contains(configuration.ControlsSelect)) inputsPressed |= JoypadInputs.Select;
