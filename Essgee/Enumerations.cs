@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Essgee
 {
-	public enum ScreenSizeMode { Stretch, Scale }
+	public enum ScreenSizeMode { Stretch, Scale, Integer }
 
 	public enum ExceptionResult { Continue, StopEmulation, ExitApplication }
 }

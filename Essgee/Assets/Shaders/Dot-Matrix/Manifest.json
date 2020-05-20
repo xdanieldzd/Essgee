@@ -1,5 +1,5 @@
 ﻿{
-  "Filter": "Linear",
+  "Filter": "Nearest",
   "Wrap": "Border",
   "Samplers": "2"
 }
