@@ -93,7 +93,7 @@ namespace Essgee.Emulation.Machines
 		// FF01
 		byte serialData;
 		// FF02
-		bool serialShiftClock, serialClockSpeed, serialTransferStartFlag;
+		bool serialShiftClock, serialTransferStartFlag;
 
 		// FF04
 		byte divider;
@@ -129,7 +129,9 @@ namespace Essgee.Emulation.Machines
 
 		JoypadInputs inputsPressed;
 
-		int dividerCycles, timerCycles;
+		int serialBitsCounter;
+		int dividerCycles, timerCycles, serialCycles;
+
 		int currentMasterClockCyclesInFrame, totalMasterClockCyclesInFrame;
 
 		Configuration.GameBoy configuration;
@@ -177,10 +179,6 @@ namespace Essgee.Emulation.Machines
 			audio?.SetOutputChannels(2);
 			audio?.SetClockRate(masterClock);
 			audio?.SetRefreshRate(refreshRate);
-
-			inputsPressed = 0;
-
-			dividerCycles = timerCycles = 0;
 
 			currentMasterClockCyclesInFrame = 0;
 			totalMasterClockCyclesInFrame = (int)Math.Round(masterClock / refreshRate);
@@ -231,7 +229,7 @@ namespace Essgee.Emulation.Machines
 			joypadRegister = 0x0F;
 
 			serialData = 0;
-			serialShiftClock = serialClockSpeed = serialTransferStartFlag = false;
+			serialShiftClock = serialTransferStartFlag = false;
 
 			divider = 0;
 
@@ -245,6 +243,11 @@ namespace Essgee.Emulation.Machines
 			irqVBlank = irqLCDCStatus = irqTimerOverflow = irqSerialIO = irqKeypad = false;
 
 			bootstrapDisabled = !configuration.UseBootstrap;
+
+			inputsPressed = 0;
+
+			serialBitsCounter = 0;
+			dividerCycles = timerCycles = serialCycles = 0;
 
 			OnEmulationReset(EventArgs.Empty);
 		}
@@ -372,6 +375,7 @@ namespace Essgee.Emulation.Machines
 
 			HandleTimer(cyclesRounded);
 			HandleDivider(cyclesRounded);
+			HandleSerialIO(cyclesRounded);
 
 			HandleInterrupts();
 
@@ -405,8 +409,6 @@ namespace Essgee.Emulation.Machines
 			{
 				cpu.RequestInterrupt((ushort)(0x0040 + (8 * (int)source)));
 				WriteIo(0xFF0F, (byte)(intFlag & ~sourceBit));
-
-				//Program.Logger?.WriteLine($"--- Interrupt {source}");
 			}
 
 			return execute;
@@ -436,6 +438,25 @@ namespace Essgee.Emulation.Machines
 			{
 				dividerCycles = 0;
 				divider++;
+			}
+		}
+
+		private void HandleSerialIO(int clockCyclesInStep)
+		{
+			serialCycles += clockCyclesInStep;
+			if (serialCycles >= 512)
+			{
+				serialBitsCounter++;
+				if (serialBitsCounter == 8)
+				{
+					if (serialShiftClock && serialTransferStartFlag)
+						RequestInterrupt(InterruptSource.SerialIO);
+
+					serialTransferStartFlag = false;
+
+					serialBitsCounter = 0;
+				}
+				serialCycles = 0;
 			}
 		}
 
@@ -511,12 +532,12 @@ namespace Essgee.Emulation.Machines
 						return joypadRegister;
 
 					case 0xFF01:
-						return serialData;
+						// TODO proper serial emulation
+						return (byte)(serialShiftClock ? 0xFF : serialData);
 
 					case 0xFF02:
 						return (byte)(
 							(serialShiftClock ? (1 << 0) : 0) |
-							(serialClockSpeed ? (1 << 1) : 0) |
 							(serialTransferStartFlag ? (1 << 7) : 0));
 
 					case 0xFF04:
@@ -608,6 +629,11 @@ namespace Essgee.Emulation.Machines
 						serialData = value;
 						break;
 
+					case 0xFF02:
+						serialShiftClock = (value & (1 << 0)) != 0;
+						serialTransferStartFlag = (value & (1 << 7)) != 0;
+						break;
+
 					case 0xFF04:
 						divider = value;
 						break;
@@ -623,12 +649,6 @@ namespace Essgee.Emulation.Machines
 					case 0xFF07:
 						timerRunning = (value & (1 << 2)) != 0;
 						timerInputClock = (byte)(value & 0b11);
-						break;
-
-					case 0xFF02:
-						serialShiftClock = (value & (1 << 0)) != 0;
-						serialClockSpeed = (value & (1 << 1)) != 0;
-						serialTransferStartFlag = (value & (1 << 7)) != 0;
 						break;
 
 					case 0xFF0F:

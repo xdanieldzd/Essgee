@@ -346,40 +346,28 @@ namespace Essgee.Emulation.Video
 		{
 			if (lcdEnable)
 			{
-				var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
-
 				if (bgEnable)
-				{
-					var mapBase = (ushort)(bgMapSelect ? 0x1C00 : 0x1800);
-					RenderBackground(y, mapBase, tileBase, false);
-				}
+					RenderBackground(y);
 				else
 					SetLine(y, 0xFF, 0xFF, 0xFF);
 
-				if (wndEnable)
-				{
-					var mapBase = (ushort)(wndMapSelect ? 0x1C00 : 0x1800);
-					RenderBackground(y, mapBase, tileBase, true);
-				}
-
-				if (objEnable)
-				{
-					RenderSprites(y);
-				}
+				if (wndEnable) RenderWindow(y);
+				if (objEnable) RenderSprites(y);
 			}
 			else
 				SetLine(y, 0xFF, 0xFF, 0xFF);
 		}
 
-		protected virtual void RenderBackground(int y, ushort mapBase, ushort tileBase, bool isWindow)
+		protected virtual void RenderBackground(int y)
 		{
-			if (isWindow && y < windowY) return;
+			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
+			var mapBase = (ushort)(bgMapSelect ? 0x1C00 : 0x1800);
 
-			var yTransformed = (byte)(isWindow ? (y - windowY) : (scrollY + y));
+			var yTransformed = (byte)(scrollY + y);
 
 			for (var x = 0; x < 160; x++)
 			{
-				var xTransformed = (byte)(isWindow ? ((7 - windowX) + x) : (scrollX + x));
+				var xTransformed = (byte)(scrollX + x);
 
 				var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
 				var tileNumber = vram[mapAddress];
@@ -394,7 +382,39 @@ namespace Essgee.Emulation.Video
 				var c = (byte)((bb << 1) | ba);
 
 				if (c != 0)
-					SetScreenUsageFlag(y, x, (isWindow ? screenUsageWindow : screenUsageBackground));
+					SetScreenUsageFlag(y, x, screenUsageBackground);
+
+				SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
+			}
+		}
+
+		protected virtual void RenderWindow(int y)
+		{
+			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
+			var mapBase = (ushort)(wndMapSelect ? 0x1C00 : 0x1800);
+
+			if (y < windowY) return;
+
+			var yTransformed = (byte)(y - windowY);
+
+			for (var x = (windowX - 7); x < 160; x++)
+			{
+				var xTransformed = (byte)((7 - windowX) + x);
+
+				var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
+				var tileNumber = vram[mapAddress];
+
+				if (!bgWndTileSelect)
+					tileNumber = (byte)(tileNumber ^ 0x80);
+
+				var tileAddress = tileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
+
+				var ba = (vram[tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
+				var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
+				var c = (byte)((bb << 1) | ba);
+
+				if (c != 0)
+					SetScreenUsageFlag(y, x, screenUsageWindow);
 
 				SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
 			}
