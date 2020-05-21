@@ -135,23 +135,15 @@ namespace Essgee.Emulation.Video
 
 		public virtual void Reset()
 		{
-			lcdEnable = wndMapSelect = wndEnable = bgWndTileSelect = bgMapSelect = objSize = objEnable = bgEnable = false;
-
-			lycLyInterrupt = m2OamInterrupt = m1VBlankInterrupt = m0HBlankInterrupt = coincidenceFlag = false;
-			modeNumber = 0;
-
-			scrollY = scrollX = 0;
-
-			currentScanline = 0;
-			lyCompare = 0;
-
-			oamDmaStart = 0;
-
-			bgPalette = 0;
-			obPalette0 = 0;
-			obPalette1 = 0;
-
-			windowY = windowX = 0;
+			WritePort(0x40, 0x91);
+			WritePort(0x42, 0x00);
+			WritePort(0x43, 0x00);
+			WritePort(0x45, 0x00);
+			WritePort(0x47, 0xFC);
+			WritePort(0x48, 0xFF);
+			WritePort(0x49, 0xFF);
+			WritePort(0x4A, 0x00);
+			WritePort(0x4B, 0x00);
 
 			statIrqLine = -1;
 			oamDmaCurrentSource = oamDmaBytesLeft = 0;
