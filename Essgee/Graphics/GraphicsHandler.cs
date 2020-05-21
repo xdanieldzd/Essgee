@@ -183,7 +183,7 @@ namespace Essgee.Graphics
 			{
 				case ScreenSizeMode.Stretch:
 					{
-						modelviewMatrix = Matrix4.CreateScale(outputViewport.Width, outputViewport.Height, 1.0f);
+						modelviewMatrix = Matrix4.CreateScale(clientRectangle.Width, clientRectangle.Height, 1.0f);
 
 						outputViewport = (clientRectangle.X, clientRectangle.Y, clientRectangle.Width, clientRectangle.Height);
 					}

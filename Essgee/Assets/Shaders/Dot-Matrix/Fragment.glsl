@@ -4,7 +4,7 @@ void main(void)
 {
     vec4[numSamplers] output_colors;
     vec4 output_color = vec4(0);
-    vec2 grid_step = vec2((outputViewport.z / inputViewport.z), (outputViewport.w / inputViewport.w));
+    vec2 grid_step = vec2(floor(outputViewport.z / inputViewport.z), floor(outputViewport.w / inputViewport.w));
     
     output_colors[0] = texture(source[0], vertTexCoord);
     output_colors[1] = texture(source[1], vertTexCoord);

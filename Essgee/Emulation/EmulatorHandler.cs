@@ -87,7 +87,7 @@ namespace Essgee.Emulation
 
 		public bool IsHandlingSaveState => (stateLoadRequested || stateSaveRequested);
 
-		public (string Manufacturer, string Model, string DatFileName, double RefreshRate, double AspectRatio) Information => (emulator.ManufacturerName, emulator.ModelName, emulator.DatFilename, emulator.RefreshRate, emulator.AspectRatio);
+		public (string Manufacturer, string Model, string DatFileName, double RefreshRate, double PixelAspectRatio) Information => (emulator.ManufacturerName, emulator.ModelName, emulator.DatFilename, emulator.RefreshRate, emulator.PixelAspectRatio);
 
 		public EmulatorHandler(Type type, Action<Exception> exceptionHandler = null)
 		{

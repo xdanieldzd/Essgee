@@ -30,11 +30,10 @@ namespace Essgee
 {
 	public partial class MainForm : Form
 	{
-		readonly static double baseScreenSize = 240.0;
-		readonly static double defaultAspectRatio = (4.0 / 3.0);
+		readonly static double defaultPixelAspectRatio = (4.0 / 3.0);
 		readonly static int baseSampleRate = 11025;
 
-		readonly static int maxScreenSizeFactor = 3;
+		readonly static int maxScreenSizeFactor = 5;
 		readonly static int maxSampleRateFactor = 3;
 		readonly static int maxSaveStateCount = 8;
 
@@ -54,7 +53,7 @@ namespace Essgee
 			}
 		}
 
-		double currentAspectRatio;
+		double currentPixelAspectRatio;
 
 		OnScreenDisplayHandler onScreenDisplayHandler;
 
@@ -98,7 +97,8 @@ namespace Essgee
 				};
 			}
 
-			currentAspectRatio = defaultAspectRatio;
+			currentPixelAspectRatio = defaultPixelAspectRatio;
+			currentViewport = (0, 0, 256, 240);
 
 			SizeAndPositionWindow();
 			SetWindowTitleAndStatus();
@@ -327,7 +327,7 @@ namespace Essgee
 
 			emulatorHandler.SetConfiguration(Program.Configuration.Machines[machineType.Name]);
 
-			currentAspectRatio = emulatorHandler.Information.AspectRatio;
+			currentPixelAspectRatio = emulatorHandler.Information.PixelAspectRatio;
 
 			pauseToolStripMenuItem.DataBindings.Clear();
 			pauseToolStripMenuItem.CheckedChanged += (s, e) =>
@@ -713,10 +713,9 @@ namespace Essgee
 		{
 			screenSizeToolStripMenuItem.DropDownItems.Clear();
 
-			for (int i = 1; i <= maxScreenSizeFactor; i++)
+			for (int i = 2; i <= maxScreenSizeFactor; i++)
 			{
-				var screenSize = (i * baseScreenSize);
-				var menuItem = new ToolStripMenuItem($"{i}x ({screenSize}p)")
+				var menuItem = new ToolStripMenuItem($"{i}x")
 				{
 					Checked = (Program.Configuration.ScreenSize == i),
 					Tag = i
@@ -752,7 +751,7 @@ namespace Essgee
 					if ((s as ToolStripMenuItem).Tag is object screenSizeMode && Enum.IsDefined(typeof(ScreenSizeMode), screenSizeMode))
 					{
 						Program.Configuration.ScreenSizeMode = (ScreenSizeMode)screenSizeMode;
-						graphicsHandler?.Resize(renderControl.ClientRectangle, new Size((int)(baseScreenSize * currentAspectRatio), (int)baseScreenSize));
+						graphicsHandler?.Resize(renderControl.ClientRectangle, new Size((int)(currentViewport.width * currentPixelAspectRatio), currentViewport.height));
 
 						foreach (ToolStripMenuItem sizeModeMenuItem in sizeModeToolStripMenuItem.DropDownItems)
 							sizeModeMenuItem.Checked = (ScreenSizeMode)sizeModeMenuItem.Tag == Program.Configuration.ScreenSizeMode;
@@ -953,10 +952,15 @@ namespace Essgee
 				menuStrip.Enabled = statusStrip.Enabled = true;
 
 				CursorShown = true;
-
+				/*
 				ClientSize = new Size(
-					(int)((baseScreenSize * currentAspectRatio) * Program.Configuration.ScreenSize),
+					(int)((baseScreenSize * currentPixelAspectRatio) * Program.Configuration.ScreenSize),
 					(int)(baseScreenSize * Program.Configuration.ScreenSize) + (menuStrip.Height + statusStrip.Height)
+					);
+					*/
+				ClientSize = new Size(
+					(int)((currentViewport.width * currentPixelAspectRatio) * Program.Configuration.ScreenSize),
+					(int)(currentViewport.height * Program.Configuration.ScreenSize) + (menuStrip.Height + statusStrip.Height)
 					);
 
 				// https://stackoverflow.com/a/6837499
@@ -1087,7 +1091,7 @@ namespace Essgee
 
 		private void renderControl_Resize(object sender, EventArgs e)
 		{
-			graphicsHandler.Resize(renderControl.ClientRectangle, new Size((int)(baseScreenSize * currentAspectRatio), (int)baseScreenSize));
+			graphicsHandler.Resize(renderControl.ClientRectangle, new Size((int)(currentViewport.width * currentPixelAspectRatio), currentViewport.height));
 		}
 
 		private void EmulatorHandler_SendLogMessage(object sender, SendLogMessageEventArgs e)

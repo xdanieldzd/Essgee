@@ -65,7 +65,7 @@ namespace Essgee.Emulation.Machines
 		public (string Extension, string Description) FileFilter => (".gb;.gbc", "Game Boy ROMs");
 		public bool HasBootstrap => true;
 		public double RefreshRate => refreshRate;
-		public double AspectRatio => 10.0 / 9.0;
+		public double PixelAspectRatio => 1.0;
 
 		byte[] bootstrap;
 		ICartridge cartridge;

@@ -66,12 +66,8 @@ namespace Essgee.Emulation
 		[Description("Borders")]
 		Borders = (1 << 2),
 
-		[ValueIgnored(true)]                // TODO: allow rendering of full screen (i.e. blanking areas, etc) OR remove from VDPs?
-		[Description("Off-Screen")]
-		OffScreen = (1 << 3),
-
 		[ValueIgnored(true)]
-		All = (Backgrounds | Sprites | Borders | OffScreen)
+		All = (Backgrounds | Sprites | Borders)
 	}
 
 	[Flags]

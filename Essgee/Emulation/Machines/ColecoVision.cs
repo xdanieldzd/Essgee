@@ -64,7 +64,7 @@ namespace Essgee.Emulation.Machines
 		public (string Extension, string Description) FileFilter => (".col", "ColecoVision ROMs");
 		public bool HasBootstrap => true;
 		public double RefreshRate => refreshRate;
-		public double AspectRatio => 4.0 / 3.0;
+		public double PixelAspectRatio => 8.0 / 7.0;
 
 		ICartridge bios, cartridge;
 		byte[] wram;

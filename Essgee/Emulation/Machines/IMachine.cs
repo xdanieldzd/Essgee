@@ -25,7 +25,7 @@ namespace Essgee.Emulation.Machines
 		(string Extension, string Description) FileFilter { get; }
 		bool HasBootstrap { get; }
 		double RefreshRate { get; }
-		double AspectRatio { get; }
+		double PixelAspectRatio { get; }
 
 		Dictionary<string, dynamic> GetDebugInformation();
 

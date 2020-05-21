@@ -383,8 +383,8 @@ namespace Essgee.Emulation.Video
 			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / numTotalScanlines);
 
 			/* Create arrays */
-			screenUsage = new byte[numTotalPixelsPerScanline * numTotalScanlines];
-			outputFramebuffer = new byte[(numTotalPixelsPerScanline * numTotalScanlines) * 4];
+			screenUsage = new byte[numVisiblePixels * numVisibleScanlines];
+			outputFramebuffer = new byte[(numVisiblePixels * numVisibleScanlines) * 4];
 
 			/* Update resolution/display timing */
 			UpdateResolution();
@@ -434,7 +434,7 @@ namespace Essgee.Emulation.Video
 					currentScanline = 0;
 					ClearScreenUsage();
 
-					OnRenderScreen(new RenderScreenEventArgs(numTotalPixelsPerScanline, numTotalScanlines, outputFramebuffer.Clone() as byte[]));
+					OnRenderScreen(new RenderScreenEventArgs(numVisiblePixels, numVisibleScanlines, outputFramebuffer.Clone() as byte[]));
 				}
 
 				ParseSpriteTable(currentScanline);
@@ -456,8 +456,7 @@ namespace Essgee.Emulation.Video
 
 		protected override void RenderLine(int y)
 		{
-			if (EnableOffScreen && y >= scanlineTopBlanking && y < scanlineTopBorder) SetLine(y, 0x10, 0x10, 0x10);
-			else if (y >= scanlineTopBorder && y < scanlineActiveDisplay)
+			if (y >= scanlineTopBorder && y < scanlineActiveDisplay)
 			{
 				if (EnableBorders) SetLine(y, 1, backgroundColor);
 				else SetLine(y, 0x00, 0x00, 0x00);
@@ -490,51 +489,36 @@ namespace Essgee.Emulation.Video
 
 				RenderBorders(y);
 			}
-			else if (y >= scanlineBottomBorder && y < scanlineBottomBlanking)
+			else if (y >= scanlineBottomBorder && y < numVisibleScanlines)
 			{
 				if (EnableBorders) SetLine(y, 1, backgroundColor);
 				else SetLine(y, 0x00, 0x00, 0x00);
 			}
-			else if (EnableOffScreen && y >= scanlineBottomBlanking && y < scanlineVerticalSync) SetLine(y, 0x10, 0x10, 0x10);
-			else if (EnableOffScreen && y >= scanlineVerticalSync && y < numTotalScanlines) SetLine(y, 0x00, 0x00, 0x00);
 		}
 
 		protected override void RenderBorders(int y)
 		{
-			if (EnableOffScreen)
-			{
-				for (int x = pixelLeftBlanking1; x < pixelColorBurst; x++) SetPixel(y, x, 1, backgroundColor);
-				for (int x = pixelColorBurst; x < pixelLeftBlanking2; x++) SetPixel(y, x, 0x00, 0x20, 0x40);
-				for (int x = pixelLeftBlanking2; x < pixelLeftBorder; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
-			}
-
 			for (int x = pixelLeftBorder; x < pixelActiveDisplay; x++)
 			{
 				if (EnableBorders) SetPixel(y, x, 1, backgroundColor);
 				else SetPixel(y, x, 0x00, 0x00, 0x00);
 			}
-			for (int x = pixelRightBorder; x < pixelRightBlanking; x++)
+			for (int x = pixelRightBorder; x < numVisiblePixels; x++)
 			{
 				if (EnableBorders) SetPixel(y, x, 1, backgroundColor);
 				else SetPixel(y, x, 0x00, 0x00, 0x00);
-			}
-
-			if (EnableOffScreen)
-			{
-				for (int x = pixelRightBlanking; x < pixelHorizontalSync; x++) SetPixel(y, x, 0x10, 0x10, 0x10);
-				for (int x = pixelHorizontalSync; x < numTotalPixelsPerScanline; x++) SetPixel(y, x, 0x00, 0x00, 0x00);
 			}
 		}
 
 		protected void SetLine(int y, int palette, int color)
 		{
-			for (int x = 0; x < numTotalPixelsPerScanline; x++)
+			for (int x = 0; x < numVisiblePixels; x++)
 				SetPixel(y, x, palette, color);
 		}
 
 		protected void SetPixel(int y, int x, int palette, int color)
 		{
-			WriteColorToFramebuffer(palette, color, ((y * numTotalPixelsPerScanline) + (x % numTotalPixelsPerScanline)) * 4);
+			WriteColorToFramebuffer(palette, color, ((y * numVisiblePixels) + (x % numVisiblePixels)) * 4);
 		}
 
 		private void RenderLineMode4Background(int y)
@@ -803,32 +787,23 @@ namespace Essgee.Emulation.Video
 				if (screenHeight == NumActiveScanlinesHigh)
 				{
 					/* 240 active lines, invalid on NTSC (dummy values); "Line Interrupt Test #1" mode 1 will show blue screen */
-					topBlankingSize = 0;
 					topBorderSize = 0;
 					verticalActiveDisplaySize = 0;
 					bottomBorderSize = 0;
-					bottomBlankingSize = 0;
-					verticalSyncSize = 0;
 				}
 				else if (screenHeight == NumActiveScanlinesMed)
 				{
 					/* 224 active lines */
-					topBlankingSize = 13;
 					topBorderSize = 11;
 					verticalActiveDisplaySize = 224;
 					bottomBorderSize = 8;
-					bottomBlankingSize = 3;
-					verticalSyncSize = 3;
 				}
 				else
 				{
 					/* 192 active lines */
-					topBlankingSize = 13;
 					topBorderSize = 27;
 					verticalActiveDisplaySize = 192;
 					bottomBorderSize = 24;
-					bottomBlankingSize = 3;
-					verticalSyncSize = 3;
 				}
 			}
 			else
@@ -837,62 +812,40 @@ namespace Essgee.Emulation.Video
 				if (screenHeight == NumActiveScanlinesHigh)
 				{
 					/* 240 active lines */
-					topBlankingSize = 13;
 					topBorderSize = 30;
 					verticalActiveDisplaySize = 240;
 					bottomBorderSize = 24;
-					bottomBlankingSize = 3;
-					verticalSyncSize = 3;
 				}
 				else if (screenHeight == NumActiveScanlinesMed)
 				{
 					/* 224 active lines */
-					topBlankingSize = 13;
 					topBorderSize = 38;
 					verticalActiveDisplaySize = 224;
 					bottomBorderSize = 32;
-					bottomBlankingSize = 3;
-					verticalSyncSize = 3;
 				}
 				else
 				{
 					/* 192 active lines */
-					topBlankingSize = 13;
 					topBorderSize = 54;
 					verticalActiveDisplaySize = 192;
 					bottomBorderSize = 48;
-					bottomBlankingSize = 3;
-					verticalSyncSize = 3;
 				}
 			}
 
-			scanlineTopBlanking = 0;
-			scanlineTopBorder = (scanlineTopBlanking + topBlankingSize);
+			scanlineTopBorder = 0;
 			scanlineActiveDisplay = (scanlineTopBorder + topBorderSize);
 			scanlineBottomBorder = (scanlineActiveDisplay + verticalActiveDisplaySize);
-			scanlineBottomBlanking = (scanlineBottomBorder + bottomBorderSize);
-			scanlineVerticalSync = (scanlineBottomBlanking + bottomBlankingSize);
 
 			numVisibleScanlines = (topBorderSize + verticalActiveDisplaySize + bottomBorderSize);
 
 			/* Pixel parameters */
-			leftBlanking1Size = 2;
-			colorBurstSize = 14;
-			leftBlanking2Size = 8;
 			leftBorderSize = 13;
 			horizontalActiveDisplaySize = 256;
 			rightBorderSize = 15;
-			rightBlankingSize = 8;
-			horizontalSyncSize = 26;
 
-			pixelLeftBlanking1 = 0;
-			pixelColorBurst = (pixelLeftBlanking1 + leftBlanking1Size);
-			pixelLeftBlanking2 = (pixelColorBurst + colorBurstSize);
-			pixelLeftBorder = (pixelLeftBlanking2 + leftBlanking2Size);
+			pixelLeftBorder = 0;
 			pixelActiveDisplay = (pixelLeftBorder + leftBorderSize);
 			pixelRightBorder = (pixelActiveDisplay + horizontalActiveDisplaySize);
-			pixelRightBlanking = (pixelRightBorder + rightBorderSize);
-			pixelHorizontalSync = (pixelRightBlanking + rightBlankingSize);
 
 			numVisiblePixels = (leftBorderSize + horizontalActiveDisplaySize + rightBorderSize);
 		}
