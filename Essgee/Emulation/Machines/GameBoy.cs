@@ -75,18 +75,6 @@ namespace Essgee.Emulation.Machines
 		DMGVideo video;
 		DMGAudio audio;
 
-		[Flags]
-		public enum InterruptSource : byte
-		{
-			VBlank = 0,
-			LCDCStatus = 1,
-			TimerOverflow = 2,
-			SerialIO = 3,
-			Keypad = 4
-		}
-
-		public delegate void RequestInterruptDelegate(InterruptSource source);
-
 		// FF00
 		byte joypadRegister;
 
@@ -146,7 +134,7 @@ namespace Essgee.Emulation.Machines
 			wram = new byte[wramSize];
 			hram = new byte[hramSize];
 			cpu = new SM83(ReadMemory, WriteMemory);
-			video = new DMGVideo(ReadMemory, RequestInterrupt);
+			video = new DMGVideo(ReadMemory, cpu.RequestInterrupt);
 			audio = new DMGAudio();
 
 			video.EndOfScanline += (s, e) =>
@@ -377,41 +365,9 @@ namespace Essgee.Emulation.Machines
 			HandleDivider(cyclesRounded);
 			HandleSerialIO(cyclesRounded);
 
-			HandleInterrupts();
-
 			audio.Step(cyclesRounded);
 
 			currentMasterClockCyclesInFrame += cyclesRounded;
-		}
-
-		private void RequestInterrupt(InterruptSource source)
-		{
-			WriteMemory(0xFF0F, (byte)(ReadMemory(0xFF0F) | (1 << (byte)source)));
-		}
-
-		private void HandleInterrupts()
-		{
-			var intFlag = ReadIo(0xFF0F);
-
-			if (HandleInterrupt(InterruptSource.VBlank, intFlag)) return;
-			if (HandleInterrupt(InterruptSource.LCDCStatus, intFlag)) return;
-			if (HandleInterrupt(InterruptSource.TimerOverflow, intFlag)) return;
-			if (HandleInterrupt(InterruptSource.SerialIO, intFlag)) return;
-			if (HandleInterrupt(InterruptSource.Keypad, intFlag)) return;
-		}
-
-		private bool HandleInterrupt(InterruptSource source, byte intFlag)
-		{
-			var sourceBit = (byte)(1 << (byte)source);
-
-			var execute = ((ie & sourceBit) == sourceBit) && ((intFlag & sourceBit) == sourceBit);
-			if (execute)
-			{
-				cpu.RequestInterrupt((ushort)(0x0040 + (8 * (int)source)));
-				WriteIo(0xFF0F, (byte)(intFlag & ~sourceBit));
-			}
-
-			return execute;
 		}
 
 		private void HandleTimer(int clockCyclesInStep)
@@ -425,7 +381,7 @@ namespace Essgee.Emulation.Machines
 				if (timerCounter == 0)
 				{
 					timerCounter = timerModulo;
-					RequestInterrupt(InterruptSource.TimerOverflow);
+					cpu.RequestInterrupt(SM83.InterruptSource.TimerOverflow);
 				}
 				timerCycles = 0;
 			}
@@ -450,7 +406,7 @@ namespace Essgee.Emulation.Machines
 				if (serialBitsCounter == 8)
 				{
 					if (serialShiftClock && serialTransferStartFlag)
-						RequestInterrupt(InterruptSource.SerialIO);
+						cpu.RequestInterrupt(SM83.InterruptSource.SerialIO);
 
 					serialTransferStartFlag = false;
 

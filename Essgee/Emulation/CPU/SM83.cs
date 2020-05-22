@@ -26,8 +26,20 @@ namespace Essgee.Emulation.CPU
 			Zero = (1 << 7)                 /* Z */
 		}
 
+		[Flags]
+		public enum InterruptSource : byte
+		{
+			VBlank = 0,
+			LCDCStatus = 1,
+			TimerOverflow = 2,
+			SerialIO = 3,
+			Keypad = 4
+		}
+
 		public delegate byte MemoryReadDelegate(ushort address);
 		public delegate void MemoryWriteDelegate(ushort address, byte value);
+
+		public delegate void RequestInterruptDelegate(InterruptSource source);
 
 		delegate void SimpleOpcodeDelegate(SM83 c);
 
@@ -40,15 +52,10 @@ namespace Essgee.Emulation.CPU
 		protected ushort sp, pc;
 
 		[StateRequired]
-		protected bool ime, eiDelay, halt;
+		protected bool ime, eiDelay, halt, doHaltBug;
 
 		[StateRequired]
 		protected byte op;
-
-		[StateRequired]
-		bool interruptRequested;
-		[StateRequired]
-		ushort interruptRestartAddress;
 
 		[StateRequired]
 		int currentCycles;
@@ -80,10 +87,7 @@ namespace Essgee.Emulation.CPU
 			pc = 0;
 			sp = 0;
 
-			ime = eiDelay = halt = false;
-
-			interruptRequested = false;
-			interruptRestartAddress = 0;
+			ime = eiDelay = halt = doHaltBug = false;
 
 			currentCycles = 0;
 		}
@@ -91,6 +95,35 @@ namespace Essgee.Emulation.CPU
 		public int Step()
 		{
 			currentCycles = 0;
+
+			if (halt)
+			{
+				/* CPU halted */
+				currentCycles = 4;
+			}
+			else
+			{
+				if (Program.AppEnvironment.EnableSuperSlowCPULogger)
+				{
+					string disasm = string.Format($"{pc:X4} | {ReadMemory8(pc):X2} | AF:{af.Word:X4} BC:{bc.Word:X4} DE:{de.Word:X4} HL:{hl.Word:X4} SP:{sp:X4}\n");
+					System.IO.File.AppendAllText(@"D:\Temp\Essgee\log-lr35902.txt", disasm);
+				}
+
+				/* Do HALT bug */
+				if (doHaltBug)
+				{
+					pc--;
+					doHaltBug = false;
+				}
+
+				/* Fetch and execute opcode */
+				op = ReadMemory8(pc++);
+				switch (op)
+				{
+					case 0xCB: ExecuteOpCB(); break;
+					default: ExecuteOpcodeNoPrefix(op); break;
+				}
+			}
 
 			/* Handle delayed interrupt enable */
 			if (eiDelay)
@@ -101,22 +134,7 @@ namespace Essgee.Emulation.CPU
 			else
 			{
 				/* Check interrupts */
-				if (interruptRequested)
-					ServiceInterrupt();
-			}
-
-			if (Program.AppEnvironment.EnableSuperSlowCPULogger)
-			{
-				string disasm = string.Format($"{pc:X4} | {ReadMemory8(pc):X2} | AF:{af.Word:X4} BC:{bc.Word:X4} DE:{de.Word:X4} HL:{hl.Word:X4} SP:{sp:X4}\n");
-				System.IO.File.AppendAllText(@"D:\Temp\Essgee\log-lr35902.txt", disasm);
-			}
-
-			/* Fetch and execute opcode */
-			op = ReadMemory8(pc++);
-			switch (op)
-			{
-				case 0xCB: ExecuteOpCB(); break;
-				default: ExecuteOpcodeNoPrefix(op); break;
+				HandleInterrupts();
 			}
 
 			return currentCycles;
@@ -198,32 +216,66 @@ namespace Essgee.Emulation.CPU
 
 		#region Interrupt, Halt and Stop State Handling
 
-		public void RequestInterrupt(ushort restartAddress)
+		public void RequestInterrupt(InterruptSource source)
 		{
-			interruptRequested = true;
-			interruptRestartAddress = restartAddress;
+			memoryWriteDelegate(0xFF0F, (byte)(memoryReadDelegate(0xFF0F) | (byte)(1 << (byte)source)));
 		}
 
-		private void ServiceInterrupt()
+		private void HandleInterrupts()
 		{
-			if (!ime) return;
+			var intEnable = memoryReadDelegate(0xFFFF);
+			var intFlags = memoryReadDelegate(0xFF0F);
 
-			LeaveHaltState();
-			ime = false;
-			eiDelay = false;
+			if ((intEnable & intFlags) != 0)
+			{
+				LeaveHaltState();
 
-			Restart(interruptRestartAddress);
+				if (ime)
+				{
+					if (ServiceInterrupt(InterruptSource.VBlank, intEnable, intFlags)) return;
+					if (ServiceInterrupt(InterruptSource.LCDCStatus, intEnable, intFlags)) return;
+					if (ServiceInterrupt(InterruptSource.TimerOverflow, intEnable, intFlags)) return;
+					if (ServiceInterrupt(InterruptSource.SerialIO, intEnable, intFlags)) return;
+					if (ServiceInterrupt(InterruptSource.Keypad, intEnable, intFlags)) return;
+				}
+			}
+		}
 
-			interruptRequested = false;
-			interruptRestartAddress = 0;
+		private bool ServiceInterrupt(InterruptSource intSource, byte intEnable, byte intFlags)
+		{
+			var intSourceBit = (byte)(1 << (byte)intSource);
 
-			currentCycles += 20;
+			if (((intEnable & intSourceBit) == intSourceBit) && ((intFlags & intSourceBit) == intSourceBit))
+			{
+				ime = false;
+				eiDelay = false;
+
+				memoryWriteDelegate(0xFF0F, (byte)(memoryReadDelegate(0xFF0F) & (byte)~intSourceBit));
+
+				Restart((ushort)(0x0040 + (byte)((int)intSource << 3)));
+
+				currentCycles += 20;
+
+				return true;
+			}
+
+			return false;
 		}
 
 		private void EnterHaltState()
 		{
-			halt = true;
-			pc--;
+			if (ime)
+			{
+				halt = true;
+				pc--;
+			}
+			else
+			{
+				if ((memoryReadDelegate(0xFF0F) & memoryReadDelegate(0xFFFF) & 0x1F) != 0)
+					doHaltBug = true;
+				else
+					halt = true;
+			}
 		}
 
 		private void LeaveHaltState()
@@ -231,7 +283,8 @@ namespace Essgee.Emulation.CPU
 			if (halt)
 			{
 				halt = false;
-				pc++;
+				if (ime)
+					pc++;
 			}
 		}
 
