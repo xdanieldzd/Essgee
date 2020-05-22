@@ -100,6 +100,7 @@
     </Compile>
     <Compile Include="Emulation\CartridgeLoader.cs" />
     <Compile Include="Emulation\Cartridges\Coleco\ColecoCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Nintendo\MBC2Cartridge.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\MBC3Cartridge.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\MBC1Cartridge.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\ROMOnlyCartridge.cs" />

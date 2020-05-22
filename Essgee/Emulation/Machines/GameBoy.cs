@@ -81,7 +81,7 @@ namespace Essgee.Emulation.Machines
 		// FF01
 		byte serialData;
 		// FF02
-		bool serialShiftClock, serialTransferStartFlag;
+		bool serialUseInternalClock, serialTransferInProgress;
 
 		// FF04
 		byte divider;
@@ -216,8 +216,8 @@ namespace Essgee.Emulation.Machines
 
 			joypadRegister = 0x0F;
 
-			serialData = 0;
-			serialShiftClock = serialTransferStartFlag = false;
+			serialData = 0xFF;
+			serialUseInternalClock = serialTransferInProgress = false;
 
 			divider = 0;
 
@@ -269,36 +269,6 @@ namespace Essgee.Emulation.Machines
 
 		public void Load(byte[] romData, byte[] ramData, Type mapperType)
 		{
-			if (mapperType == null)
-			{
-				switch (romData[0x0147])
-				{
-					case 0x00:
-						mapperType = typeof(ROMOnlyCartridge);
-						break;
-
-					case 0x01:
-					case 0x02:
-					case 0x03:
-						mapperType = typeof(MBC1Cartridge);
-						break;
-
-					case 0x0F:
-					case 0x10:
-					case 0x11:
-					case 0x12:
-					case 0x13:
-						mapperType = typeof(MBC3Cartridge);
-						break;
-
-					// TODO more mbcs and stuffs
-
-					default:
-						mapperType = typeof(ROMOnlyCartridge);
-						break;
-				}
-			}
-
 			var romSize = -1;
 			switch (romData[0x0148])
 			{
@@ -326,6 +296,40 @@ namespace Essgee.Emulation.Machines
 				case 0x03: ramSize = 32 * 1024; break;
 
 				default: ramSize = 0; break;
+			}
+			if (mapperType == null)
+			{
+				switch (romData[0x0147])
+				{
+					case 0x00:
+						mapperType = typeof(ROMOnlyCartridge);
+						break;
+
+					case 0x01:
+					case 0x02:
+					case 0x03:
+						mapperType = typeof(MBC1Cartridge);
+						break;
+
+					case 0x05:
+					case 0x06:
+						mapperType = typeof(MBC2Cartridge);
+						ramSize = 0x100;    /* MBC2 internal RAM, 512*4b == 256 bytes */
+						break;
+
+					case 0x0F:
+					case 0x10:
+					case 0x11:
+					case 0x12:
+					case 0x13:
+						mapperType = typeof(MBC3Cartridge);
+						break;
+
+					// TODO more mbcs and stuffs
+
+					default:
+						throw new EmulationException($"Unimplemented cartridge type 0x{romData[0x0147]:X2}");
+				}
 			}
 
 			cartridge = (ICartridge)Activator.CreateInstance(mapperType, new object[] { romSize, ramSize });
@@ -399,20 +403,35 @@ namespace Essgee.Emulation.Machines
 
 		private void HandleSerialIO(int clockCyclesInStep)
 		{
-			serialCycles += clockCyclesInStep;
-			if (serialCycles >= 512)
+			if (serialTransferInProgress)
 			{
-				serialBitsCounter++;
-				if (serialBitsCounter == 8)
+				/* If using internal clock... */
+				if (serialUseInternalClock)
 				{
-					if (serialShiftClock && serialTransferStartFlag)
-						cpu.RequestInterrupt(SM83.InterruptSource.SerialIO);
+					serialCycles += clockCyclesInStep;
+					if (serialCycles >= 512)
+					{
+						serialBitsCounter++;
+						if (serialBitsCounter == 8)
+						{
+							// TODO proper serial emulation
+							serialData = 0xFF;
 
-					serialTransferStartFlag = false;
+							cpu.RequestInterrupt(SM83.InterruptSource.SerialIO);
 
-					serialBitsCounter = 0;
+							serialTransferInProgress = false;
+
+							serialBitsCounter = 0;
+						}
+						serialCycles = 0;
+					}
 				}
-				serialCycles = 0;
+
+				/* If not using internal clock -AND- other device provides clock... */
+				else if (false)
+				{
+					//TODO
+				}
 			}
 		}
 
@@ -488,13 +507,12 @@ namespace Essgee.Emulation.Machines
 						return joypadRegister;
 
 					case 0xFF01:
-						// TODO proper serial emulation
-						return (byte)(serialShiftClock ? 0xFF : serialData);
+						return serialData;
 
 					case 0xFF02:
 						return (byte)(
-							(serialShiftClock ? (1 << 0) : 0) |
-							(serialTransferStartFlag ? (1 << 7) : 0));
+							(serialUseInternalClock ? (1 << 0) : 0) |
+							(serialTransferInProgress ? (1 << 7) : 0));
 
 					case 0xFF04:
 						return divider;
@@ -586,8 +604,11 @@ namespace Essgee.Emulation.Machines
 						break;
 
 					case 0xFF02:
-						serialShiftClock = (value & (1 << 0)) != 0;
-						serialTransferStartFlag = (value & (1 << 7)) != 0;
+						serialUseInternalClock = (value & (1 << 0)) != 0;
+						serialTransferInProgress = (value & (1 << 7)) != 0;
+
+						if (serialTransferInProgress) serialCycles = 0;
+						serialBitsCounter = 0;
 						break;
 
 					case 0xFF04:
