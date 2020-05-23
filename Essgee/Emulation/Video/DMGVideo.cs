@@ -394,6 +394,8 @@ namespace Essgee.Emulation.Video
 
 			for (var x = (windowX - 7); x < 160; x++)
 			{
+				if (x < 0) continue;
+
 				var xTransformed = (byte)((7 - windowX) + x);
 
 				var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
