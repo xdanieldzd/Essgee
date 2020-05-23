@@ -296,7 +296,10 @@ namespace Essgee.Emulation.Video
 			}
 			else
 			{
-				cycleCount = 0;
+				cycleCount += clockCyclesInStep;
+				if (cycleCount >= cyclesPerMode[modeNumber])
+					cycleCount = 0;
+
 				modeNumber = 0;
 				currentScanline = 0;
 
@@ -613,7 +616,7 @@ namespace Essgee.Emulation.Video
 						(m1VBlankInterrupt ? (1 << 4) : 0) |
 						(m0HBlankInterrupt ? (1 << 3) : 0) |
 						(coincidenceFlag ? (1 << 2) : 0) |
-						((modeNumber & 0b11) << 1));
+						((modeNumber & 0b11) << 0));
 
 				case 0x42:
 					return scrollY;
@@ -651,14 +654,23 @@ namespace Essgee.Emulation.Video
 			switch (port)
 			{
 				case 0x40:
-					lcdEnable = ((value >> 7) & 0b1) == 0b1;
-					wndMapSelect = ((value >> 6) & 0b1) == 0b1;
-					wndEnable = ((value >> 5) & 0b1) == 0b1;
-					bgWndTileSelect = ((value >> 4) & 0b1) == 0b1;
-					bgMapSelect = ((value >> 3) & 0b1) == 0b1;
-					objSize = ((value >> 2) & 0b1) == 0b1;
-					objEnable = ((value >> 1) & 0b1) == 0b1;
-					bgEnable = ((value >> 0) & 0b1) == 0b1;
+					{
+						var newLcdEnable = ((value >> 7) & 0b1) == 0b1;
+						if (lcdEnable != newLcdEnable)
+						{
+							modeNumber = 2;
+							currentScanline = 0;
+						}
+
+						lcdEnable = newLcdEnable;
+						wndMapSelect = ((value >> 6) & 0b1) == 0b1;
+						wndEnable = ((value >> 5) & 0b1) == 0b1;
+						bgWndTileSelect = ((value >> 4) & 0b1) == 0b1;
+						bgMapSelect = ((value >> 3) & 0b1) == 0b1;
+						objSize = ((value >> 2) & 0b1) == 0b1;
+						objEnable = ((value >> 1) & 0b1) == 0b1;
+						bgEnable = ((value >> 0) & 0b1) == 0b1;
+					}
 					break;
 
 				case 0x41:
@@ -666,6 +678,8 @@ namespace Essgee.Emulation.Video
 					m2OamInterrupt = ((value >> 5) & 0b1) == 0b1;
 					m1VBlankInterrupt = ((value >> 4) & 0b1) == 0b1;
 					m0HBlankInterrupt = ((value >> 3) & 0b1) == 0b1;
+
+					statIrqLine = -1;
 
 					if (lcdEnable && modeNumber == 1 && currentScanline != 0)
 						RequestInterrupt(InterruptSource.LCDCStatus);

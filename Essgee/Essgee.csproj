@@ -113,6 +113,7 @@
     <Compile Include="Emulation\Configuration\SC3000.cs" />
     <Compile Include="Emulation\CPU\ICPU.cs" />
     <Compile Include="Emulation\CPU\SM83.cs" />
+    <Compile Include="Emulation\CPU\SM83.Disassembly.cs" />
     <Compile Include="Emulation\CPU\SM83.OpcodesNoPrefix.cs" />
     <Compile Include="Emulation\CPU\SM83.Register.cs" />
     <Compile Include="Emulation\CPU\SM83.CycleCounts.cs" />

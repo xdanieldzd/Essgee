@@ -105,7 +105,7 @@ namespace Essgee.Emulation.CPU
 			{
 				if (Program.AppEnvironment.EnableSuperSlowCPULogger)
 				{
-					string disasm = string.Format($"{pc:X4} | {ReadMemory8(pc):X2} | AF:{af.Word:X4} BC:{bc.Word:X4} DE:{de.Word:X4} HL:{hl.Word:X4} SP:{sp:X4}\n");
+					string disasm = string.Format("{0} | {1} | {2} | {3}\n", DisassembleOpcode(this, pc).PadRight(48), PrintRegisters(this), PrintFlags(this), PrintInterrupt(this));
 					System.IO.File.AppendAllText(@"D:\Temp\Essgee\log-lr35902.txt", disasm);
 				}
 
