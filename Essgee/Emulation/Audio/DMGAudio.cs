@@ -16,49 +16,77 @@ namespace Essgee.Emulation.Audio
 	{
 		protected const int numChannels = 4;
 
-		// FF10
+		// FF10 - NR10
 		byte ch1NumSweepShift, ch1SweepTime;
 		bool ch1SweepIncDec;
 
-		// FF11
+		// FF11 - NR11
 		byte ch1WavePatternDuty, ch1SoundLengthData;
 
-		// FF12
+		// FF12 - NR12
 		byte ch1InitialEnvelopeVol, ch1NumEnvelopeSweep;
 		bool ch1EnvelopeIncDec;
 
-		// FF13
+		// FF13 - NR13
 		byte ch1FrequencyLo;
 
-		// FF14
+		// FF14 - NR14
 		byte ch1FrequencyHi;
 		bool ch1CounterConsecutiveSelection, ch1Initial;
 
-		// FF16
+		// FF16 - NR21
 		byte ch2WavePatternDuty, ch2SoundLengthData;
 
-		// FF17
+		// FF17 - NR22
 		byte ch2InitialEnvelopeVol, ch2NumEnvelopeSweep;
 		bool ch2EnvelopeIncDec;
 
-		// FF18
+		// FF18 - NR23
 		byte ch2FrequencyLo;
 
-		// FF19
+		// FF19 - NR24
 		byte ch2FrequencyHi;
 		bool ch2CounterConsecutiveSelection, ch2Initial;
 
-		//
+		// FF1A - NR30
+		bool ch3SoundOn;
 
-		// FF24
+		// FF1B - NR31
+		byte ch3SoundLengthData;
+
+		// FF1C - NR32
+		byte ch3OutputLevel;
+
+		// FF1D - NR33
+		byte ch3FrequencyLo;
+
+		// FF1E - NR34
+		byte ch3FrequencyHi;
+		bool ch3CounterConsecutiveSelection, ch3Initial;
+
+		// FF20 - NR41
+		byte ch4SoundLengthData;
+
+		// FF21 - NR42
+		byte ch4InitialEnvelopeVol, ch4NumEnvelopeSweep;
+		bool ch4EnvelopeIncDec;
+
+		// FF22 - NR43
+		byte ch4ShiftClockFreq, ch4FreqDivRatio;
+		bool ch4CounterStepSelect;
+
+		// FF23 - NR44
+		bool ch4CounterConsecutiveSelection, ch4Initial;
+
+		// FF24 - NR50
 		byte so1OutputLevel, so2OutputLevel;
 		bool outputVinToSo1, outputVinToSo2;
 
-		// FF25
+		// FF25 - NR51
 		bool outputCh1ToSo1, outputCh2ToSo1, outputCh3ToSo1, outputCh4ToSo1;
 		bool outputCh1ToSo2, outputCh2ToSo2, outputCh3ToSo2, outputCh4ToSo2;
 
-		// FF26
+		// FF26 - NR52
 		bool ch1OnFlag, ch2OnFlag, ch3OnFlag, ch4OnFlag, allSoundOn;
 
 		protected int frameSequencerCounter, frameSequencer;
@@ -275,6 +303,7 @@ namespace Essgee.Emulation.Audio
 			{
 				case 0x10:
 					return (byte)(
+						0x80 |
 						(ch1SweepTime << 4) |
 						(ch1SweepIncDec ? (1 << 3) : 0) |
 						(ch1NumSweepShift << 0));
@@ -307,7 +336,44 @@ namespace Essgee.Emulation.Audio
 					return (byte)(
 						(ch2CounterConsecutiveSelection ? (1 << 6) : 0));
 
-				//
+				case 0x1A:
+					return (byte)(
+						0x7F |
+						(ch3SoundOn ? (1 << 7) : 0));
+
+				case 0x1B:
+					return ch3SoundLengthData;
+
+				case 0x1C:
+					return (byte)(
+						0x9F |
+						(ch3OutputLevel << 5));
+
+				case 0x1E:
+					return (byte)(
+						(ch3CounterConsecutiveSelection ? (1 << 6) : 0));
+
+				case 0x20:
+					return (byte)(
+						0xC0 |
+						(ch4SoundLengthData));
+
+				case 0x21:
+					return (byte)(
+						(ch4InitialEnvelopeVol << 4) |
+						(ch4EnvelopeIncDec ? (1 << 3) : 0) |
+						(ch4NumEnvelopeSweep << 0));
+
+				case 0x22:
+					return (byte)(
+						(ch4ShiftClockFreq << 4) |
+						(ch4CounterStepSelect ? (1 << 3) : 0) |
+						(ch4FreqDivRatio << 0));
+
+				case 0x23:
+					return (byte)(
+						0x3F |
+						(ch4CounterConsecutiveSelection ? (1 << 6) : 0));
 
 				case 0x24:
 					return (byte)(
@@ -329,6 +395,7 @@ namespace Essgee.Emulation.Audio
 
 				case 0x26:
 					return (byte)(
+						0x70 |
 						(allSoundOn ? (1 << 7) : 0) |
 						(ch4OnFlag ? (1 << 3) : 0) |
 						(ch3OnFlag ? (1 << 2) : 0) |
@@ -336,10 +403,8 @@ namespace Essgee.Emulation.Audio
 						(ch1OnFlag ? (1 << 0) : 0));
 
 				default:
-					break;
+					return 0xFF;
 			}
-
-			return 0;
 		}
 
 		public virtual void WritePort(byte port, byte value)

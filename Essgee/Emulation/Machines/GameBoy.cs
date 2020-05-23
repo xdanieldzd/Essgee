@@ -75,28 +75,28 @@ namespace Essgee.Emulation.Machines
 		DMGVideo video;
 		DMGAudio audio;
 
-		// FF00
+		// FF00 - P1/JOYP
 		byte joypadRegister;
 
-		// FF01
+		// FF01 - SB
 		byte serialData;
-		// FF02
+		// FF02 - SC
 		bool serialUseInternalClock, serialTransferInProgress;
 
-		// FF04
+		// FF04 - DIV
 		byte divider;
 
-		// FF05
+		// FF05 - TIMA
 		byte timerCounter;
 
-		// FF06
+		// FF06 - TMA
 		byte timerModulo;
 
-		// FF07
+		// FF07 - TAC
 		bool timerRunning;
 		byte timerInputClock;
 
-		// FF0F
+		// FF0F - IF
 		bool irqVBlank, irqLCDCStatus, irqTimerOverflow, irqSerialIO, irqKeypad;
 
 		// FF50
@@ -387,7 +387,7 @@ namespace Essgee.Emulation.Machines
 					timerCounter = timerModulo;
 					cpu.RequestInterrupt(SM83.InterruptSource.TimerOverflow);
 				}
-				timerCycles = 0;
+				timerCycles -= timerValues[timerInputClock];
 			}
 		}
 
@@ -396,8 +396,8 @@ namespace Essgee.Emulation.Machines
 			dividerCycles += clockCyclesInStep;
 			if (dividerCycles >= 256)
 			{
-				dividerCycles = 0;
 				divider++;
+				dividerCycles -= 256;
 			}
 		}
 
@@ -423,7 +423,7 @@ namespace Essgee.Emulation.Machines
 
 							serialBitsCounter = 0;
 						}
-						serialCycles = 0;
+						serialCycles -= 512;
 					}
 				}
 
@@ -504,30 +504,43 @@ namespace Essgee.Emulation.Machines
 				switch (address)
 				{
 					case 0xFF00:
+						// P1/JOYP
 						return joypadRegister;
 
 					case 0xFF01:
+						// SB
 						return serialData;
 
 					case 0xFF02:
+						// SC
 						return (byte)(
+							0x7E |
 							(serialUseInternalClock ? (1 << 0) : 0) |
 							(serialTransferInProgress ? (1 << 7) : 0));
 
 					case 0xFF04:
+						// DIV
 						return divider;
 
 					case 0xFF05:
+						// TIMA
 						return timerCounter;
 
 					case 0xFF06:
+						// TMA
 						return timerModulo;
 
 					case 0xFF07:
-						return (byte)((timerRunning ? (1 << 2) : 0) | (timerInputClock & 0b11));
+						// TAC
+						return (byte)(
+							0xF8 |
+							(timerRunning ? (1 << 2) : 0) |
+							(timerInputClock & 0b11));
 
 					case 0xFF0F:
+						// IF
 						return (byte)(
+							0xE0 |
 							(irqVBlank ? (1 << 0) : 0) |
 							(irqLCDCStatus ? (1 << 1) : 0) |
 							(irqTimerOverflow ? (1 << 2) : 0) |
@@ -535,10 +548,13 @@ namespace Essgee.Emulation.Machines
 							(irqKeypad ? (1 << 4) : 0));
 
 					case 0xFF50:
-						return (byte)(bootstrapDisabled ? 0x01 : 0x00);
+						// Bootstrap disable
+						return (byte)(
+							0xFE |
+							(bootstrapDisabled ? (1 << 0) : 0));
 
 					default:
-						return 0;// throw new NotImplementedException();
+						return 0xFF;// throw new NotImplementedException();
 				}
 			}
 		}
@@ -637,7 +653,8 @@ namespace Essgee.Emulation.Machines
 						break;
 
 					case 0xFF50:
-						bootstrapDisabled = (value != 0x00 ? true : false);
+						if (!bootstrapDisabled)
+							bootstrapDisabled = (value & (1 << 0)) != 0;
 						break;
 				}
 			}

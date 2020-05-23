@@ -44,42 +44,41 @@ namespace Essgee.Emulation.Video
 		[StateRequired]
 		protected byte[] vram, oam;
 
-		// FF40
+		// FF40 - LCDC
 		protected bool lcdEnable, wndMapSelect, wndEnable, bgWndTileSelect, bgMapSelect, objSize, objEnable, bgEnable;
 
-		// FF41
+		// FF41 - STAT
 		protected bool lycLyInterrupt, m2OamInterrupt, m1VBlankInterrupt, m0HBlankInterrupt, coincidenceFlag;
 		protected byte modeNumber;
 
-		// FF42
+		// FF42 - SCY
 		protected byte scrollY;
-		// FF43
+		// FF43 - SCX
 		protected byte scrollX;
 
-		// FF44
+		// FF44 - LY
 		protected byte currentScanline;
-		// FF45
+		// FF45 - LYC
 		protected byte lyCompare;
 
-		// FF46
+		// FF46 - DMA
 		protected byte oamDmaStart;
 
-		// FF47
+		// FF47 - BGP
 		protected byte bgPalette;
-		// FF48
+		// FF48 - OBP0
 		protected byte obPalette0;
-		// FF49
+		// FF49 - OBP1
 		protected byte obPalette1;
 
-		// FF4A
+		// FF4A - WY
 		protected byte windowY;
-		// FF4B
+		// FF4B - WX
 		protected byte windowX;
 
 		//
 
 		int statIrqLine, statDelay;
-		int oamDmaCurrentSource, oamDmaBytesLeft;
 
 		readonly byte[][] colorValuesBgr = new byte[][]
 		{
@@ -146,7 +145,6 @@ namespace Essgee.Emulation.Video
 			WritePort(0x4B, 0x00);
 
 			statIrqLine = -1;
-			oamDmaCurrentSource = oamDmaBytesLeft = 0;
 
 			ClearScreenUsage();
 			ClearSpriteUsage();
@@ -194,26 +192,16 @@ namespace Essgee.Emulation.Video
 			{
 				cycleCount += clockCyclesInStep;
 
-				if (oamDmaBytesLeft > 0)
+				if (cycleCount >= cyclesPerMode[modeNumber])
 				{
-					for (var i = 0; i < clockCyclesInStep / 4; i++)
-					{
-						oam[0xA0 - oamDmaBytesLeft] = memoryReadDelegate((ushort)oamDmaCurrentSource++);
-						oamDmaBytesLeft--;
-						if (oamDmaBytesLeft <= 0) break;
-					}
-					return;
-				}
+					cycleCount -= cyclesPerMode[modeNumber];
 
-				switch (modeNumber)
-				{
-					// Mode 0 (H-blank)
-					case 0:
-						if (cycleCount >= cyclesPerMode[modeNumber])
-						{
+					switch (modeNumber)
+					{
+						// Mode 0 (H-blank)
+						case 0:
 							OnEndOfScanline(EventArgs.Empty);
 
-							cycleCount = 0;
 							currentScanline++;
 
 							if (SetAndCheckLYCInterrupt())
@@ -240,14 +228,10 @@ namespace Essgee.Emulation.Video
 								if (m2OamInterrupt)
 									RequestInterrupt(InterruptSource.LCDCStatus);
 							}
-						}
-						break;
+							break;
 
-					// Mode 1 (V-blank)
-					case 1:
-						if (cycleCount >= cyclesPerMode[modeNumber])
-						{
-							cycleCount = 0;
+						// Mode 1 (V-blank)
+						case 1:
 							currentScanline++;
 
 							if (SetAndCheckLYCInterrupt())
@@ -267,38 +251,29 @@ namespace Essgee.Emulation.Video
 								ClearScreenUsage();
 								ClearSpriteUsage();
 							}
-						}
-						break;
+							break;
 
-					// Mode 2 (OAM search)
-					case 2:
-						if (cycleCount >= cyclesPerMode[modeNumber])
-						{
-							cycleCount = 0;
+						// Mode 2 (OAM search)
+						case 2:
 							modeNumber = 3;
-						}
-						break;
+							break;
 
-					// Mode 3 (Data transfer to LCD)
-					case 3:
-						if (cycleCount >= cyclesPerMode[modeNumber])
-						{
-							cycleCount = 0;
-
+						// Mode 3 (Data transfer to LCD)
+						case 3:
 							modeNumber = 0;
 							if (m0HBlankInterrupt)
 								RequestInterrupt(InterruptSource.LCDCStatus);
 
 							RenderLine(currentScanline);
-						}
-						break;
+							break;
+					}
 				}
 			}
 			else
 			{
 				cycleCount += clockCyclesInStep;
 				if (cycleCount >= cyclesPerMode[modeNumber])
-					cycleCount = 0;
+					cycleCount -= cyclesPerMode[modeNumber];
 
 				modeNumber = 0;
 				currentScanline = 0;
@@ -601,6 +576,7 @@ namespace Essgee.Emulation.Video
 			switch (port)
 			{
 				case 0x40:
+					// LCDC
 					return (byte)(
 						(lcdEnable ? (1 << 7) : 0) |
 						(wndMapSelect ? (1 << 6) : 0) |
@@ -612,7 +588,9 @@ namespace Essgee.Emulation.Video
 						(bgEnable ? (1 << 0) : 0));
 
 				case 0x41:
+					// STAT
 					return (byte)(
+						0x80 |
 						(lycLyInterrupt ? (1 << 6) : 0) |
 						(m2OamInterrupt ? (1 << 5) : 0) |
 						(m1VBlankInterrupt ? (1 << 4) : 0) |
@@ -621,34 +599,48 @@ namespace Essgee.Emulation.Video
 						((modeNumber & 0b11) << 0));
 
 				case 0x42:
+					// SCY
 					return scrollY;
 
 				case 0x43:
+					// SCX
 					return scrollX;
 
 				case 0x44:
+					// LY
 					return currentScanline;
 
 				case 0x45:
+					// LYC
 					return lyCompare;
 
+				case 0x46:
+					// DMA
+					return oamDmaStart;
+
 				case 0x47:
+					// BGP
 					return bgPalette;
 
 				case 0x48:
+					// OBP0
 					return obPalette0;
 
 				case 0x49:
+					// OBP1
 					return obPalette1;
 
 				case 0x4A:
+					// WY
 					return windowY;
 
 				case 0x4B:
+					//WX
 					return windowX;
-			}
 
-			return 0;
+				default:
+					return 0xFF;
+			}
 		}
 
 		public virtual void WritePort(byte port, byte value)
@@ -656,6 +648,7 @@ namespace Essgee.Emulation.Video
 			switch (port)
 			{
 				case 0x40:
+					// LCDC
 					{
 						var newLcdEnable = ((value >> 7) & 0b1) == 0b1;
 						if (lcdEnable != newLcdEnable)
@@ -676,6 +669,7 @@ namespace Essgee.Emulation.Video
 					break;
 
 				case 0x41:
+					// STAT
 					lycLyInterrupt = ((value >> 6) & 0b1) == 0b1;
 					m2OamInterrupt = ((value >> 5) & 0b1) == 0b1;
 					m1VBlankInterrupt = ((value >> 4) & 0b1) == 0b1;
@@ -688,14 +682,17 @@ namespace Essgee.Emulation.Video
 					break;
 
 				case 0x42:
+					// SCY
 					scrollY = value;
 					break;
 
 				case 0x43:
+					// SCX
 					scrollX = value;
 					break;
 
 				case 0x45:
+					// LYC
 					lyCompare = value;
 
 					if (lcdEnable)
@@ -706,28 +703,34 @@ namespace Essgee.Emulation.Video
 					break;
 
 				case 0x46:
+					// DMA
 					oamDmaStart = value;
-					oamDmaCurrentSource = oamDmaStart << 8;
-					oamDmaBytesLeft = 0xA0;
+					for (int src = 0, dst = oamDmaStart << 8; src < 0xA0; src++, dst++)
+						oam[src] = memoryReadDelegate((ushort)dst);
 					break;
 
 				case 0x47:
+					// BGP
 					bgPalette = value;
 					break;
 
 				case 0x48:
+					// OBP0
 					obPalette0 = value;
 					break;
 
 				case 0x49:
+					// OBP1
 					obPalette1 = value;
 					break;
 
 				case 0x4A:
+					// WY
 					windowY = value;
 					break;
 
 				case 0x4B:
+					// WX
 					windowX = value;
 					break;
 			}
