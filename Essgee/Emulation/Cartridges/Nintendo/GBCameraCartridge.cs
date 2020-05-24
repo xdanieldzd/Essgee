@@ -12,7 +12,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 	public class GBCameraCartridge : ICartridge
 	{
-		float[] outputGainTable =
+		readonly float[] outputGainTable =
 		{
 			14.0f, 15.5f, 17.0f, 18.5f, 20.0f, 21.5f, 23.0f, 24.5f,
 			26.0f, 29.0f, 32.0f, 35.0f, 38.0f, 41.0f, 45.5f, 51.5f
@@ -29,8 +29,9 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 		Random random;
 		ImageSources imageSourceType;
 		Bitmap scaledImage;
-		byte[,] sourceBuffer;
-		byte[,,] tileBuffer;
+
+		readonly byte[,] sourceBuffer;
+		readonly byte[,,] tileBuffer;
 
 		byte[] romData, ramData;
 		bool hasCartRam;
@@ -38,7 +39,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 		byte romBank, ramBank;
 		bool ramEnable;
 
-		byte[] camRegisters;
+		readonly byte[] camRegisters;
 		bool camSelected;
 
 		public GBCameraCartridge(int romSize, int ramSize)
@@ -217,11 +218,6 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			if (value < min) value = min;
 			else if (value > max) value = max;
 			return value;
-		}
-
-		private int Scale(int value, int min, int max, int minScaled, int maxScaled)
-		{
-			return (int)(minScaled + (float)(value - min) / (max - min) * (maxScaled - minScaled));
 		}
 
 		private void GenerateImage()
