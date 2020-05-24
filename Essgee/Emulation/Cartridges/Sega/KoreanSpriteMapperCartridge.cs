@@ -103,6 +103,11 @@ namespace Essgee.Emulation.Cartridges.Sega
 			return 0xBFFF;
 		}
 
+		public void Step(int clockCyclesInStep)
+		{
+			/* Nothing to do */
+		}
+
 		public byte Read(ushort address)
 		{
 			switch (address & 0xC000)

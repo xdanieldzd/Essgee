@@ -54,6 +54,11 @@ namespace Essgee.Emulation.Cartridges.Coleco
 			return (ushort)(romData.Length - 1);
 		}
 
+		public void Step(int clockCyclesInStep)
+		{
+			/* Nothing to do */
+		}
+
 		public byte Read(ushort address)
 		{
 			if (address <= 0x1FFF)

@@ -69,6 +69,11 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			return 0x7FFF;
 		}
 
+		public void Step(int clockCyclesInStep)
+		{
+			/* Nothing to do */
+		}
+
 		public byte Read(ushort address)
 		{
 			if (address >= 0x0000 && address <= 0x3FFF)

@@ -413,6 +413,8 @@ namespace Essgee.Emulation.Machines
 
 			audio.Step(cyclesRounded);
 
+			cartridge.Step(cyclesRounded);
+
 			currentMasterClockCyclesInFrame += cyclesRounded;
 		}
 

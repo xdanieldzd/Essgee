@@ -66,6 +66,11 @@ namespace Essgee.Emulation.Cartridges.Sega
 			return (ushort)((romData.Length + ramData.Length) - 1);
 		}
 
+		public void Step(int clockCyclesInStep)
+		{
+			/* Nothing to do */
+		}
+
 		public byte Read(ushort address)
 		{
 			if (ramData.Length > 0)

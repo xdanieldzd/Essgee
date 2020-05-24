@@ -53,6 +53,11 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			return 0x7FFF;
 		}
 
+		public void Step(int clockCyclesInStep)
+		{
+			/* Nothing to do */
+		}
+
 		public byte Read(ushort address)
 		{
 			return romData[address & (romData.Length - 1)];

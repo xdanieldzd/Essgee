@@ -18,6 +18,8 @@ namespace Essgee.Emulation.Cartridges
 		ushort GetLowerBound();
 		ushort GetUpperBound();
 
+		void Step(int clockCyclesInStep);
+
 		byte Read(ushort address);
 		void Write(ushort address, byte value);
 	}
