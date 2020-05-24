@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using System.Drawing;
 
 namespace Essgee.Emulation.Cartridges.Nintendo
 {
@@ -11,6 +12,12 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 	public class GBCameraCartridge : ICartridge
 	{
+		float[] outputGainTable =
+		{
+			14.0f, 15.5f, 17.0f, 18.5f, 20.0f, 21.5f, 23.0f, 24.5f,
+			26.0f, 29.0f, 32.0f, 35.0f, 38.0f, 41.0f, 45.5f, 51.5f
+		};
+
 		public enum ImageSources
 		{
 			[Description("Random Noise")]
@@ -20,7 +27,10 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 		}
 
 		Random random;
-		ImageSources imageSource;
+		ImageSources imageSourceType;
+		Bitmap scaledImage;
+		byte[,] sourceBuffer;
+		byte[,,] tileBuffer;
 
 		byte[] romData, ramData;
 		bool hasCartRam;
@@ -34,6 +44,10 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 		public GBCameraCartridge(int romSize, int ramSize)
 		{
 			random = new Random();
+			imageSourceType = ImageSources.Noise;
+			scaledImage = new Bitmap(128, 112);
+			sourceBuffer = new byte[128, 112];
+			tileBuffer = new byte[14, 16, 16];
 
 			romData = new byte[romSize];
 			ramData = new byte[ramSize];
@@ -84,9 +98,29 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			return 0x7FFF;
 		}
 
-		public void SetImageSource(ImageSources source)
+		public void SetImageSource(ImageSources source, string filename)
 		{
-			imageSource = source;
+			imageSourceType = source;
+
+			if (imageSourceType == ImageSources.File)
+			{
+				using (var tempImage = new Bitmap(filename))
+				{
+					using (var g = System.Drawing.Graphics.FromImage(scaledImage))
+					{
+						var ratio = Math.Min(tempImage.Width / (float)scaledImage.Width, tempImage.Height / (float)scaledImage.Height);
+						var srcWidth = (int)(scaledImage.Width * ratio);
+						var srcHeight = (int)(scaledImage.Height * ratio);
+						var srcX = (tempImage.Width - srcWidth) / 2;
+						var srcY = (tempImage.Height - srcHeight) / 2;
+						var scaledRect = new Rectangle(0, 0, scaledImage.Width, scaledImage.Height);
+
+						g.FillRectangle(Brushes.White, scaledRect);
+						g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+						g.DrawImage(tempImage, scaledRect, new Rectangle(srcX, srcY, srcWidth, srcHeight), GraphicsUnit.Pixel);
+					}
+				}
+			}
 		}
 
 		public byte Read(ushort address)
@@ -163,17 +197,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 						case 0x00:
 							if ((value & 0b1) != 0)
 							{
-								switch (imageSource)
-								{
-									case ImageSources.Noise:
-										for (int i = 0; i < 14 * 16 * 16; i++)
-											ramData[0x0100 + i] = (byte)random.Next(255);
-										break;
-
-									case ImageSources.File:
-										//
-										break;
-								}
+								GenerateImage();
 								value &= 0xFE;
 							}
 							break;
@@ -186,6 +210,75 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 					camRegisters[reg] = value;
 				}
 			}
+		}
+
+		private int Clamp(int value, int min, int max)
+		{
+			if (value < min) value = min;
+			else if (value > max) value = max;
+			return value;
+		}
+
+		private int Scale(int value, int min, int max, int minScaled, int maxScaled)
+		{
+			return (int)(minScaled + (float)(value - min) / (max - min) * (maxScaled - minScaled));
+		}
+
+		private void GenerateImage()
+		{
+			// TODO rewrite as per above pdf, chp 4
+
+			var brightnessMultiplier = (((camRegisters[0x02] << 8 | camRegisters[0x03]) / 65535.0f) * (outputGainTable[camRegisters[0x01] & 0x1F] * 8.0f));
+
+			/* Clear tile buffer */
+			for (var x = 0; x < 14; x++)
+				for (var y = 0; y < 16; y++)
+					for (var z = 0; z < 16; z++)
+						tileBuffer[x, y, z] = 0x00;
+
+			/* Generate source data */
+			for (var x = 0; x < scaledImage.Width; x++)
+			{
+				for (var y = 0; y < scaledImage.Height; y++)
+				{
+					switch (imageSourceType)
+					{
+						case ImageSources.Noise:
+							sourceBuffer[x, y] = (byte)random.Next((int)brightnessMultiplier);
+							break;
+
+						case ImageSources.File:
+							sourceBuffer[x, y] = (byte)(Clamp((int)(scaledImage.GetPixel(x, y).GetBrightness() * brightnessMultiplier), 0, 250) + random.Next(5));
+							break;
+					}
+				}
+			}
+
+			/* Convert source data to GB tiles */
+			for (var x = 0; x < scaledImage.Width; x++)
+			{
+				for (var y = 0; y < scaledImage.Height; y++)
+				{
+					var sensorValue = sourceBuffer[x, y];
+					var matrixOffset = 0x06 + ((y % 4) * 12) + ((x % 4) * 3);
+
+					var c = (byte)0;
+					if (sensorValue < camRegisters[matrixOffset + 0]) c = 3;
+					else if (sensorValue < camRegisters[matrixOffset + 1]) c = 2;
+					else if (sensorValue < camRegisters[matrixOffset + 2]) c = 1;
+					else c = 0;
+
+					if ((c & 1) != 0) tileBuffer[y >> 3, x >> 3, ((y & 7) * 2) + 0] |= (byte)(1 << (7 - (7 & x)));
+					if ((c & 2) != 0) tileBuffer[y >> 3, x >> 3, ((y & 7) * 2) + 1] |= (byte)(1 << (7 - (7 & x)));
+				}
+			}
+
+			/* Copy tiles to cartridge RAM */
+			int outputOffset = 0x100;
+			for (var x = 0; x < 14; x++)
+				for (var y = 0; y < 16; y++)
+					for (var z = 0; z < 16; z++)
+						ramData[outputOffset++] = tileBuffer[x, y, z];
 		}
 	}
 }

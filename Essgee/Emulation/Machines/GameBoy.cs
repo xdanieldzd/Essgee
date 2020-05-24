@@ -182,6 +182,9 @@ namespace Essgee.Emulation.Machines
 			audio?.SetClockRate(masterClock);
 			audio?.SetRefreshRate(refreshRate);
 
+			if (cartridge is GBCameraCartridge camCartridge)
+				camCartridge.SetImageSource(configuration.CameraSource, configuration.CameraImageFile);
+
 			currentMasterClockCyclesInFrame = 0;
 			totalMasterClockCyclesInFrame = (int)Math.Round(masterClock / refreshRate);
 
@@ -373,7 +376,7 @@ namespace Essgee.Emulation.Machines
 			cartridge.LoadRam(ramData);
 
 			if (cartridge is GBCameraCartridge camCartridge)
-				camCartridge.SetImageSource(configuration.CameraSource);
+				camCartridge.SetImageSource(configuration.CameraSource, configuration.CameraImageFile);
 		}
 
 		public byte[] GetCartridgeRam()

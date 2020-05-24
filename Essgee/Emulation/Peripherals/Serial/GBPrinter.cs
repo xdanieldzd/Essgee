@@ -266,13 +266,6 @@ namespace Essgee.Emulation.Peripherals.Serial
 			return 0xFF;
 		}
 
-		private int Clamp(int value, int min, int max)
-		{
-			if (value < min) value = min;
-			else if (value > max) value = max;
-			return value;
-		}
-
 		private void PerformPrint()
 		{
 			if (imageHeight == 0) return;
