@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
+using System.IO;
 
 namespace Essgee.Emulation.Peripherals.Serial
 {
@@ -62,8 +63,12 @@ namespace Essgee.Emulation.Peripherals.Serial
 		int imageHeight;
 		int printDelay;
 
-		public GBPrinter()
+		readonly string baseImageFilename;
+
+		public GBPrinter(string gameFilename)
 		{
+			baseImageFilename = Path.GetFileNameWithoutExtension(gameFilename);
+
 			ResetPacket();
 
 			packetBytesReceived = 0;
@@ -275,8 +280,8 @@ namespace Essgee.Emulation.Peripherals.Serial
 			if (imageHeight == 0) return;
 
 			/* Create new palette with changed brightness (APPROXIMATION) */
-			sbyte colorModifier = (sbyte)-(exposure - 0x60);
-			for (int i = 0; i < modifiedPalette.Length; i++)
+			var colorModifier = (sbyte)-(exposure - 0x60);
+			for (var i = 0; i < modifiedPalette.Length; i++)
 			{
 				modifiedPalette[i] = Color.FromArgb(
 					defaultPalette[i].A,
@@ -289,15 +294,15 @@ namespace Essgee.Emulation.Peripherals.Serial
 			using (var image = new Bitmap(160, imageHeight))
 			{
 				/* Convert image tiles to pixels */
-				for (int y = 0; y < image.Height; y += 8)
+				for (var y = 0; y < image.Height; y += 8)
 				{
-					for (int x = 0; x < image.Width; x += 8)
+					for (var x = 0; x < image.Width; x += 8)
 					{
-						int tileAddress = ((y / 8) * 0x140) + ((x / 8) * 0x10);
+						var tileAddress = ((y / 8) * 0x140) + ((x / 8) * 0x10);
 
-						for (int py = 0; py < 8; py++)
+						for (var py = 0; py < 8; py++)
 						{
-							for (int px = 0; px < 8; px++)
+							for (var px = 0; px < 8; px++)
 							{
 								var ba = (imageData[tileAddress + 0] >> (7 - (px % 8))) & 0b1;
 								var bb = (imageData[tileAddress + 1] >> (7 - (px % 8))) & 0b1;
@@ -311,13 +316,12 @@ namespace Essgee.Emulation.Peripherals.Serial
 				}
 
 				/* Save the image */
-
-
-				// TODO don't hardcode paths??
-				var i = 0;
-				var fn = string.Empty;
-				while (System.IO.File.Exists(fn = System.IO.Path.Combine(@"D:\temp\essgee\print\", $"{i}.png"))) i++;
-				image.Save(fn);
+				var printPrefix = $"{baseImageFilename} ({DateTime.Now:yyyy-MM-dd HH-mm-ss})";
+				var newPrintPath = Path.Combine(Program.ExtraDataPath, $"{printPrefix}.png");
+				var existingPrints = Directory.EnumerateFiles(Program.ExtraDataPath, $"{printPrefix}*.png");
+				if (existingPrints.Contains(newPrintPath))
+					for (int i = 2; existingPrints.Contains(newPrintPath = Path.Combine(Program.ExtraDataPath, $"{printPrefix} (Shot {i}).png")); i++) { }
+				image.Save(newPrintPath);
 			}
 		}
 

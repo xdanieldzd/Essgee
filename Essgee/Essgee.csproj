@@ -130,6 +130,7 @@
     <Compile Include="Emulation\SaveStateHandler.cs" />
     <Compile Include="Emulation\Video\DMGVideo.cs" />
     <Compile Include="Emulation\Video\IVideo.cs" />
+    <Compile Include="EventArguments\GetGameMetadataEventArgs.cs" />
     <Compile Include="EventArguments\SendLogMessageEventArgs.cs" />
     <Compile Include="Exceptions\CartridgeLoaderException.cs" />
     <Compile Include="Exceptions\GraphicsException.cs" />

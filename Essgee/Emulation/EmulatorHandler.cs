@@ -76,6 +76,12 @@ namespace Essgee.Emulation
 			remove { emulator.EnqueueSamples -= value; }
 		}
 
+		public event EventHandler<GetGameMetadataEventArgs> GetGameMetadata
+		{
+			add { emulator.GetGameMetadata += value; }
+			remove { emulator.GetGameMetadata -= value; }
+		}
+
 		public event EventHandler<EventArgs> PauseChanged;
 
 		GameMetadata currentGameMetadata;

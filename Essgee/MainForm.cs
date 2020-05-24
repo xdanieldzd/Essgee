@@ -316,6 +316,7 @@ namespace Essgee
 			emulatorHandler.SizeScreen += EmulatorHandler_SizeScreen;
 			emulatorHandler.ChangeViewport += EmulatorHandler_ChangeViewport;
 			emulatorHandler.PollInput += EmulatorHandler_PollInput;
+			emulatorHandler.GetGameMetadata += EmulatorHandler_GetGameMetadata;
 			emulatorHandler.EnqueueSamples += soundHandler.EnqueueSamples;
 			emulatorHandler.PauseChanged += EmulatorHandler_PauseChanged;
 
@@ -499,6 +500,7 @@ namespace Essgee
 			emulatorHandler.SizeScreen -= EmulatorHandler_SizeScreen;
 			emulatorHandler.ChangeViewport -= EmulatorHandler_ChangeViewport;
 			emulatorHandler.PollInput -= EmulatorHandler_PollInput;
+			emulatorHandler.GetGameMetadata -= EmulatorHandler_GetGameMetadata;
 			emulatorHandler.EnqueueSamples -= soundHandler.EnqueueSamples;
 			emulatorHandler.PauseChanged -= EmulatorHandler_PauseChanged;
 
@@ -1138,13 +1140,21 @@ namespace Essgee
 
 		private void EmulatorHandler_PollInput(object sender, PollInputEventArgs e)
 		{
-			e.Keyboard = new List<Keys>(keysDown);
+			lock (keysDown)
+			{
+				e.Keyboard = new List<Keys>(keysDown);
+			}
 			e.MouseButtons = mouseButtonsDown;
 
 			var vx = (currentViewport.x - 50);
 			var dvx = renderControl.ClientSize.Width / (currentViewport.width - (double)vx);
 			var dvy = renderControl.ClientSize.Height / (currentViewport.height - (double)currentViewport.y);
 			e.MousePosition = ((int)(mousePosition.x / dvx) - vx, (int)(mousePosition.y / dvy) - currentViewport.y);
+		}
+
+		private void EmulatorHandler_GetGameMetadata(object sender, GetGameMetadataEventArgs e)
+		{
+			e.Metadata = lastGameMetadata;
 		}
 
 		private void EmulatorHandler_PauseChanged(object sender, EventArgs e)

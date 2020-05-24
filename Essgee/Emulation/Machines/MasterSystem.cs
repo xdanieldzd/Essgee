@@ -62,6 +62,9 @@ namespace Essgee.Emulation.Machines
 			remove { psg.EnqueueSamples -= value; }
 		}
 
+		public event EventHandler<GetGameMetadataEventArgs> GetGameMetadata;
+		protected virtual void OnGetGameMetadata(GetGameMetadataEventArgs e) { GetGameMetadata?.Invoke(this, e); }
+
 		public string ManufacturerName => "Sega";
 		public string ModelName => "Master System";
 		public string DatFilename => "Sega - Master System - Mark III.dat";

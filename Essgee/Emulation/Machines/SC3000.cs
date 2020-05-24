@@ -65,6 +65,9 @@ namespace Essgee.Emulation.Machines
 			remove { psg.EnqueueSamples -= value; }
 		}
 
+		public event EventHandler<GetGameMetadataEventArgs> GetGameMetadata;
+		protected virtual void OnGetGameMetadata(GetGameMetadataEventArgs e) { GetGameMetadata?.Invoke(this, e); }
+
 		public string ManufacturerName => "Sega";
 		public string ModelName => "SC-3000";
 		public string DatFilename => "Sega - SG-1000.dat";      // TODO: SC-3000 .dat does not exist?

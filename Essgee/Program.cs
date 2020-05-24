@@ -38,6 +38,7 @@ namespace Essgee
 		const string saveDataDirectoryName = "Saves";
 		const string screenshotDirectoryName = "Screenshots";
 		const string saveStateDirectoryName = "Savestates";
+		const string extraDataDirectoryName = "Extras";
 
 		readonly static string programDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), Application.ProductName);
 		readonly static string programConfigPath = Path.Combine(programDataDirectory, jsonConfigFileName);
@@ -48,6 +49,7 @@ namespace Essgee
 		public static string SaveDataPath = Path.Combine(programDataDirectory, saveDataDirectoryName);
 		public static string ScreenshotPath = Path.Combine(programDataDirectory, screenshotDirectoryName);
 		public static string SaveStatePath = Path.Combine(programDataDirectory, saveStateDirectoryName);
+		public static string ExtraDataPath = Path.Combine(programDataDirectory, extraDataDirectoryName);
 
 		public static TextWriter Logger { get; private set; }
 
@@ -73,6 +75,9 @@ namespace Essgee
 
 			if (!Directory.Exists(SaveStatePath))
 				Directory.CreateDirectory(SaveStatePath);
+
+			if (!Directory.Exists(ExtraDataPath))
+				Directory.CreateDirectory(ExtraDataPath);
 
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);

@@ -61,6 +61,9 @@ namespace Essgee.Emulation.Machines
 			remove { audio.EnqueueSamples -= value; }
 		}
 
+		public event EventHandler<GetGameMetadataEventArgs> GetGameMetadata;
+		protected virtual void OnGetGameMetadata(GetGameMetadataEventArgs e) { GetGameMetadata?.Invoke(this, e); }
+
 		public string ManufacturerName => "Nintendo";
 		public string ModelName => "Game Boy";
 		public string DatFilename => "Nintendo - Game Boy.dat";
@@ -179,20 +182,6 @@ namespace Essgee.Emulation.Machines
 			audio?.SetClockRate(masterClock);
 			audio?.SetRefreshRate(refreshRate);
 
-			switch (configuration.SerialDevice)
-			{
-				case SerialDevices.None:
-					serialDevice = new DummyDevice();
-					break;
-
-				case SerialDevices.GBPrinter:
-					serialDevice = new GBPrinter();
-					break;
-
-				default:
-					throw new EmulationException($"Unknown serial device {configuration.SerialDevice} selected");
-			}
-
 			currentMasterClockCyclesInFrame = 0;
 			totalMasterClockCyclesInFrame = (int)Math.Round(masterClock / refreshRate);
 
@@ -216,6 +205,23 @@ namespace Essgee.Emulation.Machines
 			cpu.Startup();
 			video.Startup();
 			audio.Startup();
+
+			var getGameMetadataEventArgs = new GetGameMetadataEventArgs();
+			OnGetGameMetadata(getGameMetadataEventArgs);
+
+			switch (configuration.SerialDevice)
+			{
+				case SerialDevices.None:
+					serialDevice = new DummyDevice();
+					break;
+
+				case SerialDevices.GBPrinter:
+					serialDevice = new GBPrinter(getGameMetadataEventArgs?.Metadata?.FileName);
+					break;
+
+				default:
+					throw new EmulationException($"Unknown serial device {configuration.SerialDevice} selected");
+			}
 		}
 
 		public void Reset()

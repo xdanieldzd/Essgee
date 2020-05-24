@@ -18,6 +18,7 @@ namespace Essgee.Emulation.Machines
 		event EventHandler<ChangeViewportEventArgs> ChangeViewport;
 		event EventHandler<PollInputEventArgs> PollInput;
 		event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples;
+		event EventHandler<GetGameMetadataEventArgs> GetGameMetadata;
 
 		string ManufacturerName { get; }
 		string ModelName { get; }

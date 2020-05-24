@@ -58,6 +58,9 @@ namespace Essgee.Emulation.Machines
 			remove { psg.EnqueueSamples -= value; }
 		}
 
+		public event EventHandler<GetGameMetadataEventArgs> GetGameMetadata;
+		protected virtual void OnGetGameMetadata(GetGameMetadataEventArgs e) { GetGameMetadata?.Invoke(this, e); }
+
 		public string ManufacturerName => "Sega";
 		public string ModelName => "Game Gear";
 		public string DatFilename => "Sega - Game Gear.dat";
