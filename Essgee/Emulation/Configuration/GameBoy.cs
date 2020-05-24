@@ -21,6 +21,10 @@ namespace Essgee.Emulation.Configuration
 		[FileBrowserControl("General", "Bootstrap Path", "Game Boy Bootstrap ROM (*.gb;*.bin;*.zip)|*.gb;*.bin;*.zip")]
 		public string BootstrapRom { get; set; }
 
+		[DropDownControl("General", "Serial Device", typeof(Machines.GameBoy.SerialDevices))]
+		[JsonConverter(typeof(StringEnumConverter))]
+		public Machines.GameBoy.SerialDevices SerialDevice { get; set; }
+
 		[DropDownControl("Controls", "Up", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys ControlsUp { get; set; }

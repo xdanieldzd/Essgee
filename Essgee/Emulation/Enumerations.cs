@@ -7,6 +7,8 @@ using System.ComponentModel;
 
 namespace Essgee.Emulation
 {
+	// TODO change all these b/c gameboy is a thing now
+
 	public enum TVStandard
 	{
 		[ValueIgnored(true)]

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 using Essgee.Emulation.Configuration;
 using Essgee.Emulation.CPU;
@@ -10,6 +11,7 @@ using Essgee.Emulation.Video;
 using Essgee.Emulation.Audio;
 using Essgee.Emulation.Cartridges;
 using Essgee.Emulation.Cartridges.Nintendo;
+using Essgee.Emulation.Peripherals.Serial;
 using Essgee.EventArguments;
 using Essgee.Exceptions;
 using Essgee.Utilities;
@@ -74,6 +76,7 @@ namespace Essgee.Emulation.Machines
 		SM83 cpu;
 		DMGVideo video;
 		DMGAudio audio;
+		ISerialDevice serialDevice;
 
 		// FF00 - P1/JOYP
 		byte joypadRegister;
@@ -113,6 +116,14 @@ namespace Essgee.Emulation.Machines
 			B = (1 << 5),
 			Select = (1 << 6),
 			Start = (1 << 7)
+		}
+
+		public enum SerialDevices
+		{
+			[Description("None")]
+			None = 0,
+			[Description("Game Boy Printer")]
+			GBPrinter = 1
 		}
 
 		JoypadInputs inputsPressed;
@@ -167,6 +178,20 @@ namespace Essgee.Emulation.Machines
 			audio?.SetOutputChannels(2);
 			audio?.SetClockRate(masterClock);
 			audio?.SetRefreshRate(refreshRate);
+
+			switch (configuration.SerialDevice)
+			{
+				case SerialDevices.None:
+					serialDevice = new DummyDevice();
+					break;
+
+				case SerialDevices.GBPrinter:
+					serialDevice = new GBPrinter();
+					break;
+
+				default:
+					throw new EmulationException($"Unknown serial device {configuration.SerialDevice} selected");
+			}
 
 			currentMasterClockCyclesInFrame = 0;
 			totalMasterClockCyclesInFrame = (int)Math.Round(masterClock / refreshRate);
@@ -405,32 +430,27 @@ namespace Essgee.Emulation.Machines
 		{
 			if (serialTransferInProgress)
 			{
-				/* If using internal clock... */
-				if (serialUseInternalClock)
+				serialCycles += clockCyclesInStep;
+				if (serialCycles >= 512)
 				{
-					serialCycles += clockCyclesInStep;
-					if (serialCycles >= 512)
+					serialBitsCounter++;
+					if (serialBitsCounter == 8)
 					{
-						serialBitsCounter++;
-						if (serialBitsCounter == 8)
-						{
-							// TODO proper serial emulation
-							serialData = 0xFF;
+						/* If using internal clock... */
+						if (serialUseInternalClock)
+							serialData = serialDevice.DoSlaveTransfer(serialData);
 
-							cpu.RequestInterrupt(SM83.InterruptSource.SerialIO);
+						/* If other devices provides clock... */
+						else if (serialDevice.ProvidesClock())
+							serialData = serialDevice.DoMasterTransfer(serialData);
 
-							serialTransferInProgress = false;
+						cpu.RequestInterrupt(SM83.InterruptSource.SerialIO);
 
-							serialBitsCounter = 0;
-						}
-						serialCycles -= 512;
+						serialTransferInProgress = false;
+
+						serialBitsCounter = 0;
 					}
-				}
-
-				/* If not using internal clock -AND- other device provides clock... */
-				else if (false)
-				{
-					//TODO
+					serialCycles -= 512;
 				}
 			}
 		}

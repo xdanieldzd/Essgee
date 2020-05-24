@@ -124,6 +124,9 @@
     <Compile Include="Emulation\Peripherals\IPeripheral.cs" />
     <Compile Include="Emulation\Audio\DMGAudio.cs" />
     <Compile Include="Emulation\Audio\IAudio.cs" />
+    <Compile Include="Emulation\Peripherals\Serial\DummyDevice.cs" />
+    <Compile Include="Emulation\Peripherals\Serial\GBPrinter.cs" />
+    <Compile Include="Emulation\Peripherals\Serial\ISerialDevice.cs" />
     <Compile Include="Emulation\SaveStateHandler.cs" />
     <Compile Include="Emulation\Video\DMGVideo.cs" />
     <Compile Include="Emulation\Video\IVideo.cs" />
