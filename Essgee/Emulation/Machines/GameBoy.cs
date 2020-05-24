@@ -356,6 +356,11 @@ namespace Essgee.Emulation.Machines
 						mapperType = typeof(MBC3Cartridge);
 						break;
 
+					case 0xFC:
+						mapperType = typeof(GBCameraCartridge);
+						ramSize = 128 * 1024;   // TODO not specified in header??
+						break;
+
 					// TODO more mbcs and stuffs
 
 					default:
@@ -366,6 +371,9 @@ namespace Essgee.Emulation.Machines
 			cartridge = (ICartridge)Activator.CreateInstance(mapperType, new object[] { romSize, ramSize });
 			cartridge.LoadRom(romData);
 			cartridge.LoadRam(ramData);
+
+			if (cartridge is GBCameraCartridge camCartridge)
+				camCartridge.SetImageSource(configuration.CameraSource);
 		}
 
 		public byte[] GetCartridgeRam()

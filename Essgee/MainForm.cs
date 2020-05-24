@@ -37,6 +37,8 @@ namespace Essgee
 		readonly static int maxSampleRateFactor = 3;
 		readonly static int maxSaveStateCount = 8;
 
+		object uiLock = new object();
+
 		// https://stackoverflow.com/a/21319086
 		private bool cursorShown = true;
 		public bool CursorShown
@@ -1140,16 +1142,17 @@ namespace Essgee
 
 		private void EmulatorHandler_PollInput(object sender, PollInputEventArgs e)
 		{
-			lock (keysDown)
+			// TODO: rare, random, weird argument exceptions on e.Keyboard assignment; does this lock help??
+			lock (uiLock)
 			{
 				e.Keyboard = new List<Keys>(keysDown);
-			}
-			e.MouseButtons = mouseButtonsDown;
+				e.MouseButtons = mouseButtonsDown;
 
-			var vx = (currentViewport.x - 50);
-			var dvx = renderControl.ClientSize.Width / (currentViewport.width - (double)vx);
-			var dvy = renderControl.ClientSize.Height / (currentViewport.height - (double)currentViewport.y);
-			e.MousePosition = ((int)(mousePosition.x / dvx) - vx, (int)(mousePosition.y / dvy) - currentViewport.y);
+				var vx = (currentViewport.x - 50);
+				var dvx = renderControl.ClientSize.Width / (currentViewport.width - (double)vx);
+				var dvy = renderControl.ClientSize.Height / (currentViewport.height - (double)currentViewport.y);
+				e.MousePosition = ((int)(mousePosition.x / dvx) - vx, (int)(mousePosition.y / dvy) - currentViewport.y);
+			}
 		}
 
 		private void EmulatorHandler_GetGameMetadata(object sender, GetGameMetadataEventArgs e)

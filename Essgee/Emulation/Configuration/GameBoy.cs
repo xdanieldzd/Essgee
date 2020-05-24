@@ -21,9 +21,14 @@ namespace Essgee.Emulation.Configuration
 		[FileBrowserControl("General", "Bootstrap Path", "Game Boy Bootstrap ROM (*.gb;*.bin;*.zip)|*.gb;*.bin;*.zip")]
 		public string BootstrapRom { get; set; }
 
-		[DropDownControl("General", "Serial Device", typeof(Machines.GameBoy.SerialDevices))]
+		[DropDownControl("Devices", "Serial Device", typeof(Machines.GameBoy.SerialDevices))]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Machines.GameBoy.SerialDevices SerialDevice { get; set; }
+		[DropDownControl("Devices", "Camera Source", typeof(Cartridges.Nintendo.GBCameraCartridge.ImageSources))]
+		[JsonConverter(typeof(StringEnumConverter))]
+		public Cartridges.Nintendo.GBCameraCartridge.ImageSources CameraSource { get; set; }
+		[FileBrowserControl("Devices", "Camera Image", "Image Files (*.png;*.bmp)|*.png;*.bmp")]
+		public string CameraImageFile { get; set; }
 
 		[DropDownControl("Controls", "Up", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
@@ -54,6 +59,10 @@ namespace Essgee.Emulation.Configuration
 		{
 			UseBootstrap = false;
 			BootstrapRom = string.Empty;
+
+			SerialDevice = Machines.GameBoy.SerialDevices.None;
+			CameraSource = Cartridges.Nintendo.GBCameraCartridge.ImageSources.Noise;
+			CameraImageFile = string.Empty;
 
 			ControlsUp = Keys.Up;
 			ControlsDown = Keys.Down;

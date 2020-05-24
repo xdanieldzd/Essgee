@@ -4,21 +4,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 
 namespace Essgee.Emulation.Peripherals.Serial
 {
 	public class GBPrinter : ISerialDevice
 	{
-		Color[] defaultPalette = new Color[]
+		readonly Color[] defaultPalette = new Color[]
 		{
-			Color.FromArgb(248, 248, 248),
-			Color.FromArgb(160, 160, 160),
-			Color.FromArgb(80, 80, 80),
-			Color.FromArgb(0, 0, 0)
+			Color.FromArgb(0xF8, 0xF8, 0xF8),
+			Color.FromArgb(0x9B, 0x9B, 0x9B),
+			Color.FromArgb(0x3E, 0x3E, 0x3E),
+			Color.FromArgb(0x1F, 0x1F, 0x1F)
 		};
-
-		Color[] modifiedPalette = new Color[4];
 
 		enum PrinterCommands : byte
 		{
@@ -57,8 +56,7 @@ namespace Essgee.Emulation.Peripherals.Serial
 		PrinterPresenceBits presence;
 
 		List<byte> imageData;
-		int marginBefore, marginAfter;
-		byte palette, exposure;
+		byte marginBefore, marginAfter, palette, exposure;
 
 		int imageHeight;
 		int printDelay;
@@ -213,10 +211,10 @@ namespace Essgee.Emulation.Peripherals.Serial
 
 							case PrinterCommands.StartPrinting:
 								/* Fetch parameters from packet, tell GB that we're about to print & perform printing */
-								marginBefore = (packet.data[1] >> 4);
-								marginAfter = (packet.data[1] & 0xF);
+								marginBefore = (byte)((packet.data[1] >> 4) & 0x0F);
+								marginAfter = (byte)(packet.data[1] & 0x0F);
 								palette = packet.data[2];
-								exposure = packet.data[3];
+								exposure = (byte)(packet.data[3] & 0x7F);
 
 								status &= ~PrinterStatusBits.ReadyToPrint;
 								status |= PrinterStatusBits.PrintRequested;
@@ -279,17 +277,6 @@ namespace Essgee.Emulation.Peripherals.Serial
 		{
 			if (imageHeight == 0) return;
 
-			/* Create new palette with changed brightness (APPROXIMATION) */
-			var colorModifier = (sbyte)-(exposure - 0x60);
-			for (var i = 0; i < modifiedPalette.Length; i++)
-			{
-				modifiedPalette[i] = Color.FromArgb(
-					defaultPalette[i].A,
-					Clamp(defaultPalette[i].R + colorModifier, 0, 255),
-					Clamp(defaultPalette[i].G + colorModifier, 0, 255),
-					Clamp(defaultPalette[i].B + colorModifier, 0, 255));
-			}
-
 			/* Create bitmap for "printing" */
 			using (var image = new Bitmap(160, imageHeight))
 			{
@@ -307,7 +294,7 @@ namespace Essgee.Emulation.Peripherals.Serial
 								var ba = (imageData[tileAddress + 0] >> (7 - (px % 8))) & 0b1;
 								var bb = (imageData[tileAddress + 1] >> (7 - (px % 8))) & 0b1;
 								var c = (byte)((bb << 1) | ba);
-								image.SetPixel(x + px, y + py, modifiedPalette[(byte)((palette >> (c << 1)) & 0x03)]);
+								image.SetPixel(x + px, y + py, defaultPalette[(byte)((palette >> (c << 1)) & 0x03)]);
 							}
 
 							tileAddress += 2;
@@ -315,19 +302,64 @@ namespace Essgee.Emulation.Peripherals.Serial
 					}
 				}
 
-				/* Save the image */
-				var printPrefix = $"{baseImageFilename} ({DateTime.Now:yyyy-MM-dd HH-mm-ss})";
-				var newPrintPath = Path.Combine(Program.ExtraDataPath, $"{printPrefix}.png");
-				var existingPrints = Directory.EnumerateFiles(Program.ExtraDataPath, $"{printPrefix}*.png");
-				if (existingPrints.Contains(newPrintPath))
-					for (int i = 2; existingPrints.Contains(newPrintPath = Path.Combine(Program.ExtraDataPath, $"{printPrefix} (Shot {i}).png")); i++) { }
-				image.Save(newPrintPath);
+				/* Apply approximate exposure (i.e. mess with the brightness a bit) */
+				using (var adjustedImage = new Bitmap(image.Width, image.Height))
+				{
+					using (var g = System.Drawing.Graphics.FromImage(adjustedImage))
+					{
+						var scale = ((128 - exposure) / 128.0f) + 0.5f;
+						var matrix = new float[][]
+						{
+							new float[] { scale, 0.0f, 0.0f, 0.0f, 0.0f },
+							new float[] { 0.0f, scale, 0.0f, 0.0f, 0.0f },
+							new float[] { 0.0f, 0.0f, scale, 0.0f, 0.0f },
+							new float[] { 0.0f, 0.0f, 0.0f, 1.0f, 0.0f },
+							new float[] { 0.0f, 0.0f, 0.0f, 0.0f, 1.0f }
+						};
+
+						var imageAttribs = new ImageAttributes();
+						imageAttribs.ClearColorMatrix();
+						imageAttribs.SetColorMatrix(new ColorMatrix(matrix), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+						g.DrawImage(image, new Rectangle(0, 0, adjustedImage.Width, adjustedImage.Height), 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, imageAttribs);
+
+						/* Save the image */
+						var printPrefix = $"{baseImageFilename} ({DateTime.Now:yyyy-MM-dd HH-mm-ss})";
+						var newPrintPath = Path.Combine(Program.ExtraDataPath, $"{printPrefix}.png");
+						var existingPrints = Directory.EnumerateFiles(Program.ExtraDataPath, $"{printPrefix}*.png");
+						if (existingPrints.Contains(newPrintPath))
+							for (int i = 2; existingPrints.Contains(newPrintPath = Path.Combine(Program.ExtraDataPath, $"{printPrefix} (Shot {i}).png")); i++) { }
+
+						adjustedImage.Save(newPrintPath);
+					}
+				}
 			}
 		}
 
 		private void DumpPacket()
 		{
-			//
+			if (Program.AppEnvironment.EnableLogger)
+			{
+				Program.Logger.WriteLine("[Received GB Printer Packet]");
+				Program.Logger.WriteLine("- Magic bytes: 0x" + packet.magic.ToString("X4"));
+				Program.Logger.WriteLine("- Command: " + packet.command.ToString());
+				Program.Logger.WriteLine("- Is data compressed? " + packet.isCompressed.ToString());
+				Program.Logger.WriteLine("- Data length: 0x" + packet.dataLen.ToString("X4"));
+				if (packet.dataLen != 0)
+				{
+					Program.Logger.WriteLine("- Data (UNCOMPRESSED):");
+					for (int line = 0; line < ((packet.dataLen / 16) == 0 ? 1 : (packet.dataLen / 16)); line++)
+					{
+						Program.Logger.Write(" - 0x" + (line * 16).ToString("X4") + ": ");
+						for (int byteno = 0; byteno < ((packet.dataLen % 16) == 0 ? 0x10 : (packet.dataLen % 16)); byteno++) Program.Logger.Write(packet.data[(line * 16) + byteno].ToString("X2") + " ");
+						Program.Logger.WriteLine();
+					}
+				}
+				Program.Logger.WriteLine("- Checksum: 0x" + packet.checksum.ToString("X4"));
+				Program.Logger.WriteLine("[Status Returned]");
+				Program.Logger.WriteLine("- Presence: " + presence.ToString());
+				Program.Logger.WriteLine("- Status: " + status.ToString());
+				Program.Logger.WriteLine();
+			}
 		}
 	}
 }

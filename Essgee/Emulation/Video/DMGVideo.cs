@@ -84,7 +84,7 @@ namespace Essgee.Emulation.Video
 		{
 			/*              B     G     R */
 			new byte[] { 0xF8, 0xF8, 0xF8 },	/* White */
-			new byte[] { 0x7C, 0x7C, 0x7C },	/* Light gray */
+			new byte[] { 0x9B, 0x9B, 0x9B },	/* Light gray */
 			new byte[] { 0x3E, 0x3E, 0x3E },	/* Dark gray */
 			new byte[] { 0x1F, 0x1F, 0x1F },	/* Black */
 		};
