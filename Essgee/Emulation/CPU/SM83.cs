@@ -128,8 +128,8 @@ namespace Essgee.Emulation.CPU
 			/* Handle delayed interrupt enable */
 			if (eiDelay)
 			{
-				eiDelay = false;
 				ime = true;
+				eiDelay = false;
 			}
 			else
 			{
@@ -248,15 +248,10 @@ namespace Essgee.Emulation.CPU
 			if (((intEnable & intSourceBit) == intSourceBit) && ((intFlags & intSourceBit) == intSourceBit))
 			{
 				ime = false;
-				eiDelay = false;
-
-				memoryWriteDelegate(0xFF0F, (byte)(memoryReadDelegate(0xFF0F) & (byte)~intSourceBit));
-
-				Restart((ushort)(0x0040 + (byte)((int)intSource << 3)));
 
 				currentCycles += 20;
 
-				return true;
+				return RestartFromInterrupt(intSource);
 			}
 
 			return false;
@@ -523,6 +518,17 @@ namespace Essgee.Emulation.CPU
 			SetClearFlagConditional(Flags.Carry, (af.High != 0x00));
 
 			af.High = (byte)result;
+		}
+
+		protected void EnableInterrupts()
+		{
+			ime = false;
+			eiDelay = true;
+		}
+
+		protected void DisableInterrupts()
+		{
+			ime = false;
 		}
 
 		#endregion
@@ -864,6 +870,31 @@ namespace Essgee.Emulation.CPU
 			WriteMemory8(--sp, (byte)(pc >> 8));
 			WriteMemory8(--sp, (byte)(pc & 0xFF));
 			pc = address;
+		}
+
+		protected bool RestartFromInterrupt(InterruptSource intSource)
+		{
+			// https://github.com/Gekkio/mooneye-gb/blob/ca7ff30/tests/acceptance/interrupts/ie_push.s
+
+			var address = (ushort)(0x0040 + (byte)((int)intSource << 3));
+			var intSourceBit = (byte)(1 << (byte)intSource);
+
+			WriteMemory8(--sp, (byte)(pc >> 8));
+
+			var newIntEnable = memoryReadDelegate(0xFFFF);
+			var continueRestart = (newIntEnable & intSourceBit) != 0;
+
+			WriteMemory8(--sp, (byte)(pc & 0xFF));
+
+			if (continueRestart)
+			{
+				pc = address;
+				memoryWriteDelegate(0xFF0F, (byte)(memoryReadDelegate(0xFF0F) & (byte)~intSourceBit));
+			}
+			else
+				pc = 0x0000;
+
+			return continueRestart;
 		}
 
 		#endregion

@@ -10,11 +10,9 @@ namespace Essgee.Emulation.CPU
 	{
 		public static class CycleCounts
 		{
-			// TODO VERIFY
-
-			public const int AdditionalJumpCond8Taken = 5;
-			public const int AdditionalRetCondTaken = 6;
-			public const int AdditionalCallCondTaken = 7;
+			public const int AdditionalJumpCond8Taken = 4;
+			public const int AdditionalRetCondTaken = 12;
+			public const int AdditionalCallCondTaken = 12;
 
 			// 32 cycles == dummy
 			public static readonly int[] NoPrefix = new int[]

@@ -27,8 +27,6 @@ namespace Essgee.Emulation.Machines
 		const int wramSize = 8 * 1024;
 		const int hramSize = 0x7F;
 
-		readonly int[] timerValues = { 1024, 16, 64, 256 };
-
 		//
 
 		public event EventHandler<SendLogMessageEventArgs> SendLogMessage;
@@ -91,9 +89,10 @@ namespace Essgee.Emulation.Machines
 
 		// FF04 - DIV
 		byte divider;
-
 		// FF05 - TIMA
 		byte timerCounter;
+		//
+		ushort clockCycleCount;
 
 		// FF06 - TMA
 		byte timerModulo;
@@ -101,6 +100,8 @@ namespace Essgee.Emulation.Machines
 		// FF07 - TAC
 		bool timerRunning;
 		byte timerInputClock;
+		//
+		bool timerOverflow, timerLoading;
 
 		// FF0F - IF
 		bool irqVBlank, irqLCDCStatus, irqTimerOverflow, irqSerialIO, irqKeypad;
@@ -132,7 +133,7 @@ namespace Essgee.Emulation.Machines
 		JoypadInputs inputsPressed;
 
 		int serialBitsCounter;
-		int dividerCycles, timerCycles, serialCycles;
+		int timerCycles, serialCycles;
 
 		int currentMasterClockCyclesInFrame, totalMasterClockCyclesInFrame;
 
@@ -253,14 +254,15 @@ namespace Essgee.Emulation.Machines
 			serialData = 0xFF;
 			serialUseInternalClock = serialTransferInProgress = false;
 
-			divider = 0;
-
 			timerCounter = 0;
+			clockCycleCount = 0;
 
 			timerModulo = 0;
 
 			timerRunning = false;
 			timerInputClock = 0;
+
+			timerOverflow = timerLoading = false;
 
 			irqVBlank = irqLCDCStatus = irqTimerOverflow = irqSerialIO = irqKeypad = false;
 
@@ -269,7 +271,7 @@ namespace Essgee.Emulation.Machines
 			inputsPressed = 0;
 
 			serialBitsCounter = 0;
-			dividerCycles = timerCycles = serialCycles = 0;
+			timerCycles = serialCycles = 0;
 
 			OnEmulationReset(EventArgs.Empty);
 		}
@@ -400,48 +402,64 @@ namespace Essgee.Emulation.Machines
 
 		public void RunStep()
 		{
-			double currentCpuClockCycles = 0.0;
-			currentCpuClockCycles += cpu.Step();
+			var clockCyclesInStep = cpu.Step();
 
-			var cyclesRounded = (int)Math.Round(currentCpuClockCycles);
-
-			video.Step(cyclesRounded);
-
-			HandleTimer(cyclesRounded);
-			HandleDivider(cyclesRounded);
-			HandleSerialIO(cyclesRounded);
-
-			audio.Step(cyclesRounded);
-
-			cartridge.Step(cyclesRounded);
-
-			currentMasterClockCyclesInFrame += cyclesRounded;
-		}
-
-		private void HandleTimer(int clockCyclesInStep)
-		{
-			if (!timerRunning) return;
-
-			timerCycles += clockCyclesInStep;
-			if (timerCycles >= timerValues[timerInputClock])
+			for (var s = 0; s < clockCyclesInStep / 4; s++)
 			{
-				timerCounter++;
-				if (timerCounter == 0)
-				{
-					timerCounter = timerModulo;
-					cpu.RequestInterrupt(SM83.InterruptSource.TimerOverflow);
-				}
-				timerCycles -= timerValues[timerInputClock];
+				HandleTimerOverflow();
+				UpdateCycleCounter((ushort)(clockCycleCount + 4));
+
+				HandleSerialIO(4);
+
+				video.Step(4);
+				audio.Step(4);
+				cartridge.Step(4);
+
+				currentMasterClockCyclesInFrame += 4;
 			}
 		}
 
-		private void HandleDivider(int clockCyclesInStep)
+		private void IncrementTimer()
 		{
-			dividerCycles += clockCyclesInStep;
-			if (dividerCycles >= 256)
+			timerCounter++;
+			if (timerCounter == 0) timerOverflow = true;
+		}
+
+		private bool GetTimerBit(byte value, ushort cycles)
+		{
+			switch (value & 0b11)
 			{
-				divider++;
-				dividerCycles -= 256;
+				case 0: return (cycles & (1 << 9)) != 0;
+				case 1: return (cycles & (1 << 3)) != 0;
+				case 2: return (cycles & (1 << 5)) != 0;
+				case 3: return (cycles & (1 << 7)) != 0;
+				default: throw new EmulationException("Unhandled timer state");
+			}
+		}
+
+		private void UpdateCycleCounter(ushort value)
+		{
+			if (timerRunning)
+			{
+				if (!GetTimerBit(timerInputClock, value) && GetTimerBit(timerInputClock, clockCycleCount))
+					IncrementTimer();
+			}
+
+			clockCycleCount = value;
+			divider = (byte)(clockCycleCount >> 8);
+		}
+
+		private void HandleTimerOverflow()
+		{
+			timerLoading = false;
+
+			if (timerOverflow)
+			{
+				cpu.RequestInterrupt(SM83.InterruptSource.TimerOverflow);
+				timerOverflow = false;
+
+				timerCounter = timerModulo;
+				timerLoading = true;
 			}
 		}
 
@@ -667,20 +685,37 @@ namespace Essgee.Emulation.Machines
 						break;
 
 					case 0xFF04:
-						divider = value;
+						UpdateCycleCounter(0);
 						break;
 
 					case 0xFF05:
-						timerCounter = value;
+						if (!timerLoading)
+						{
+							timerCounter = value;
+							timerOverflow = false;
+						}
 						break;
 
 					case 0xFF06:
 						timerModulo = value;
+						if (timerLoading)
+							timerCounter = value;
 						break;
 
 					case 0xFF07:
-						timerRunning = (value & (1 << 2)) != 0;
-						timerInputClock = (byte)(value & 0b11);
+						{
+							var newTimerRunning = (value & (1 << 2)) != 0;
+							var newTimerInputClock = (byte)(value & 0b11);
+
+							var oldBit = timerRunning && GetTimerBit(timerInputClock, clockCycleCount);
+							var newBit = newTimerRunning && GetTimerBit(newTimerInputClock, clockCycleCount);
+
+							if (oldBit && !newBit)
+								IncrementTimer();
+
+							timerRunning = newTimerRunning;
+							timerInputClock = newTimerInputClock;
+						}
 						break;
 
 					case 0xFF0F:

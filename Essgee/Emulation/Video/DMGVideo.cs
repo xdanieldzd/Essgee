@@ -46,6 +46,8 @@ namespace Essgee.Emulation.Video
 
 		// FF40 - LCDC
 		protected bool lcdEnable, wndMapSelect, wndEnable, bgWndTileSelect, bgMapSelect, objSize, objEnable, bgEnable;
+		// (derived addresses)
+		protected ushort bgWndTileBase, bgMapBase, wndMapBase;
 
 		// FF41 - STAT
 		protected bool lycLyInterrupt, m2OamInterrupt, m1VBlankInterrupt, m0HBlankInterrupt, coincidenceFlag;
@@ -204,9 +206,6 @@ namespace Essgee.Emulation.Video
 
 							currentScanline++;
 
-							if (SetAndCheckLYCInterrupt())
-								statDelay = 36;
-
 							if (currentScanline >= 144)
 							{
 								if (currentScanline == 144)
@@ -225,7 +224,10 @@ namespace Essgee.Emulation.Video
 							{
 								modeNumber = 2;
 
-								if (m2OamInterrupt)
+								if (SetAndCheckLYCInterrupt())
+									statDelay = 36;
+
+								if (m2OamInterrupt && !lycLyInterrupt)
 									RequestInterrupt(InterruptSource.LCDCStatus);
 							}
 							break;
@@ -330,22 +332,19 @@ namespace Essgee.Emulation.Video
 
 		protected virtual void RenderBackground(int y)
 		{
-			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
-			var mapBase = (ushort)(bgMapSelect ? 0x1C00 : 0x1800);
-
 			var yTransformed = (byte)(scrollY + y);
 
 			for (var x = 0; x < 160; x++)
 			{
 				var xTransformed = (byte)(scrollX + x);
 
-				var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
+				var mapAddress = bgMapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
 				var tileNumber = vram[mapAddress];
 
 				if (!bgWndTileSelect)
 					tileNumber = (byte)(tileNumber ^ 0x80);
 
-				var tileAddress = tileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
+				var tileAddress = bgWndTileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
 
 				var ba = (vram[tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
 				var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
@@ -360,9 +359,6 @@ namespace Essgee.Emulation.Video
 
 		protected virtual void RenderWindow(int y)
 		{
-			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
-			var mapBase = (ushort)(wndMapSelect ? 0x1C00 : 0x1800);
-
 			if (y < windowY) return;
 
 			var yTransformed = (byte)(y - windowY);
@@ -373,13 +369,13 @@ namespace Essgee.Emulation.Video
 
 				var xTransformed = (byte)((7 - windowX) + x);
 
-				var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
+				var mapAddress = wndMapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
 				var tileNumber = vram[mapAddress];
 
 				if (!bgWndTileSelect)
 					tileNumber = (byte)(tileNumber ^ 0x80);
 
-				var tileAddress = tileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
+				var tileAddress = bgWndTileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
 
 				var ba = (vram[tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
 				var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
@@ -665,6 +661,10 @@ namespace Essgee.Emulation.Video
 						objSize = ((value >> 2) & 0b1) == 0b1;
 						objEnable = ((value >> 1) & 0b1) == 0b1;
 						bgEnable = ((value >> 0) & 0b1) == 0b1;
+
+						bgWndTileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
+						bgMapBase = (ushort)(bgMapSelect ? 0x1C00 : 0x1800);
+						wndMapBase = (ushort)(wndMapSelect ? 0x1C00 : 0x1800);
 					}
 					break;
 

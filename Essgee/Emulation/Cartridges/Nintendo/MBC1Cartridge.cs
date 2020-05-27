@@ -86,7 +86,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			}
 			else if (address >= 0xA000 && address <= 0xBFFF)
 			{
-				if (ramEnable)
+				if (ramEnable && ramData.Length != 0)
 					return ramData[(ramBank << 13) | (address & 0x1FFF)];
 				else
 					return 0;
@@ -126,7 +126,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			}
 			else if (address >= 0xA000 && address <= 0xBFFF)
 			{
-				if (ramEnable)
+				if (ramEnable && ramData.Length != 0)
 				{
 					ramData[(ramBank << 13) | (address & 0x1FFF)] = value;
 					hasCartRam = true;
