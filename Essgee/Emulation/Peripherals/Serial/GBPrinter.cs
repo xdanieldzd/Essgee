@@ -316,7 +316,7 @@ namespace Essgee.Emulation.Peripherals.Serial
 						g.DrawImage(image, new Rectangle(0, 0, adjustedImage.Width, adjustedImage.Height), 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, imageAttribs);
 
 						/* Save the image */
-						OnSaveExtraData(new SaveExtraDataEventArgs("Printout", "png", true, adjustedImage));
+						OnSaveExtraData(new SaveExtraDataEventArgs(ExtraDataTypes.Image, ExtraDataOptions.IncludeDateTime, "Printout", adjustedImage));
 					}
 				}
 			}

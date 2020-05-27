@@ -162,7 +162,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 					if ((camRegisters[0x00] & 0b1) == 0)
 						return ramData[(ramBank << 13) | (address & 0x1FFF)];
 					else
-						return 0;
+						return 0xFF;
 				}
 				else
 				{
@@ -170,11 +170,11 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 					if (reg == 0x00)
 						return (byte)(camRegisters[reg] & 0x07);
 					else
-						return 0;
+						return 0xFF;
 				}
 			}
 			else
-				return 0;
+				return 0xFF;
 		}
 
 		public void Write(ushort address, byte value)

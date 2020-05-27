@@ -88,10 +88,10 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 					return (byte)((ramData[ramOffset] >> valueShift) & 0x0F);
 				}
 				else
-					return 0;
+					return 0xFF;
 			}
 			else
-				return 0;
+				return 0xFF;
 		}
 
 		public void Write(ushort address, byte value)

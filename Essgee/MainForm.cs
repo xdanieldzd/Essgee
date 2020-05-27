@@ -1157,12 +1157,29 @@ namespace Essgee
 
 		private void EmulatorHandler_SaveExtraData(object sender, SaveExtraDataEventArgs e)
 		{
-			var filePrefix = $"{Path.GetFileNameWithoutExtension(lastGameMetadata.FileName)} ({e.Description}{(e.IncludeDate ? $" {DateTime.Now:yyyy-MM-dd HH-mm-ss})" : ")")}";
-			var filePath = Path.Combine(Program.ExtraDataPath, $"{filePrefix}.{e.Extension}");
-			var existingFiles = Directory.EnumerateFiles(Program.ExtraDataPath, $"{filePrefix}*{e.Extension}");
-			if (existingFiles.Contains(filePath))
-				for (int i = 2; existingFiles.Contains(filePath = Path.Combine(Program.ExtraDataPath, $"{filePrefix} ({i}).{e.Extension}")); i++) { }
+			/* Extract options etc. */
+			var includeDateTime = e.Options.HasFlag(ExtraDataOptions.IncludeDateTime);
+			var allowOverwrite = e.Options.HasFlag(ExtraDataOptions.AllowOverwrite);
 
+			var extension = string.Empty;
+			switch (e.DataType)
+			{
+				case ExtraDataTypes.Image: extension = "png"; break;
+				case ExtraDataTypes.Raw: extension = "bin"; break;
+				default: throw new EmulationException($"Unknown extra data type {e.DataType}");
+			}
+
+			/* Generate filename/path */
+			var filePrefix = $"{Path.GetFileNameWithoutExtension(lastGameMetadata.FileName)} ({e.Description}{(includeDateTime ? $" {DateTime.Now:yyyy-MM-dd HH-mm-ss})" : ")")}";
+			var filePath = Path.Combine(Program.ExtraDataPath, $"{filePrefix}.{extension}");
+			if (!allowOverwrite)
+			{
+				var existingFiles = Directory.EnumerateFiles(Program.ExtraDataPath, $"{filePrefix}*{extension}");
+				if (existingFiles.Contains(filePath))
+					for (int i = 2; existingFiles.Contains(filePath = Path.Combine(Program.ExtraDataPath, $"{filePrefix} ({i}).{extension}")); i++) { }
+			}
+
+			/* Handle data */
 			if (e.Data is Bitmap image)
 			{
 				/* Images, ex. GB Printer printouts */
@@ -1175,11 +1192,6 @@ namespace Essgee
 				{
 					file.Write(raw, 0, raw.Length);
 				}
-			}
-			else
-			{
-				/* Unsupported! */
-				throw new EmulationException($"Cannot write unsupported extra data, type {e.Data.GetType().Name}");
 			}
 		}
 

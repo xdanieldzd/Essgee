@@ -89,10 +89,10 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 				if (ramEnable && ramData.Length != 0)
 					return ramData[(ramBank << 13) | (address & 0x1FFF)];
 				else
-					return 0;
+					return 0xFF;
 			}
 			else
-				return 0;
+				return 0xFF;
 		}
 
 		public void Write(ushort address, byte value)
