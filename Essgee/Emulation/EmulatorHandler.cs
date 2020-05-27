@@ -76,10 +76,10 @@ namespace Essgee.Emulation
 			remove { emulator.EnqueueSamples -= value; }
 		}
 
-		public event EventHandler<GetGameMetadataEventArgs> GetGameMetadata
+		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData
 		{
-			add { emulator.GetGameMetadata += value; }
-			remove { emulator.GetGameMetadata -= value; }
+			add { emulator.SaveExtraData += value; }
+			remove { emulator.SaveExtraData -= value; }
 		}
 
 		public event EventHandler<EventArgs> PauseChanged;

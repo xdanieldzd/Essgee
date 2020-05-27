@@ -65,8 +65,8 @@ namespace Essgee.Emulation.Machines
 			remove { psg.EnqueueSamples -= value; }
 		}
 
-		public event EventHandler<GetGameMetadataEventArgs> GetGameMetadata;
-		protected virtual void OnGetGameMetadata(GetGameMetadataEventArgs e) { GetGameMetadata?.Invoke(this, e); }
+		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
+		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
 
 		public string ManufacturerName => "Sega";
 		public string ModelName => "SC-3000";

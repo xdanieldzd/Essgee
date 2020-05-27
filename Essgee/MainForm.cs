@@ -318,8 +318,8 @@ namespace Essgee
 			emulatorHandler.SizeScreen += EmulatorHandler_SizeScreen;
 			emulatorHandler.ChangeViewport += EmulatorHandler_ChangeViewport;
 			emulatorHandler.PollInput += EmulatorHandler_PollInput;
-			emulatorHandler.GetGameMetadata += EmulatorHandler_GetGameMetadata;
 			emulatorHandler.EnqueueSamples += soundHandler.EnqueueSamples;
+			emulatorHandler.SaveExtraData += EmulatorHandler_SaveExtraData;
 			emulatorHandler.PauseChanged += EmulatorHandler_PauseChanged;
 
 			emulatorHandler.EnqueueSamples += soundDebuggerForm.EnqueueSamples;
@@ -502,8 +502,8 @@ namespace Essgee
 			emulatorHandler.SizeScreen -= EmulatorHandler_SizeScreen;
 			emulatorHandler.ChangeViewport -= EmulatorHandler_ChangeViewport;
 			emulatorHandler.PollInput -= EmulatorHandler_PollInput;
-			emulatorHandler.GetGameMetadata -= EmulatorHandler_GetGameMetadata;
 			emulatorHandler.EnqueueSamples -= soundHandler.EnqueueSamples;
+			emulatorHandler.SaveExtraData -= EmulatorHandler_SaveExtraData;
 			emulatorHandler.PauseChanged -= EmulatorHandler_PauseChanged;
 
 			emulatorHandler.EnqueueSamples -= soundDebuggerForm.EnqueueSamples;
@@ -963,9 +963,9 @@ namespace Essgee
 					);
 					*/
 				ClientSize = new Size(
-					(int)((currentViewport.width * currentPixelAspectRatio) * Program.Configuration.ScreenSize),
-					(int)(currentViewport.height * Program.Configuration.ScreenSize) + (menuStrip.Height + statusStrip.Height)
-					);
+						(int)((currentViewport.width * currentPixelAspectRatio) * Program.Configuration.ScreenSize),
+						(int)(currentViewport.height * Program.Configuration.ScreenSize) + (menuStrip.Height + statusStrip.Height)
+						);
 
 				// https://stackoverflow.com/a/6837499
 				var screen = Screen.FromControl(this);
@@ -1155,9 +1155,32 @@ namespace Essgee
 			}
 		}
 
-		private void EmulatorHandler_GetGameMetadata(object sender, GetGameMetadataEventArgs e)
+		private void EmulatorHandler_SaveExtraData(object sender, SaveExtraDataEventArgs e)
 		{
-			e.Metadata = lastGameMetadata;
+			var filePrefix = $"{Path.GetFileNameWithoutExtension(lastGameMetadata.FileName)} ({e.Description}{(e.IncludeDate ? $" {DateTime.Now:yyyy-MM-dd HH-mm-ss})" : ")")}";
+			var filePath = Path.Combine(Program.ExtraDataPath, $"{filePrefix}.{e.Extension}");
+			var existingFiles = Directory.EnumerateFiles(Program.ExtraDataPath, $"{filePrefix}*{e.Extension}");
+			if (existingFiles.Contains(filePath))
+				for (int i = 2; existingFiles.Contains(filePath = Path.Combine(Program.ExtraDataPath, $"{filePrefix} ({i}).{e.Extension}")); i++) { }
+
+			if (e.Data is Bitmap image)
+			{
+				/* Images, ex. GB Printer printouts */
+				image.Save(filePath);
+			}
+			else if (e.Data is byte[] raw)
+			{
+				/* Raw bytes */
+				using (var file = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+				{
+					file.Write(raw, 0, raw.Length);
+				}
+			}
+			else
+			{
+				/* Unsupported! */
+				throw new EmulationException($"Cannot write unsupported extra data, type {e.Data.GetType().Name}");
+			}
 		}
 
 		private void EmulatorHandler_PauseChanged(object sender, EventArgs e)

@@ -59,8 +59,8 @@ namespace Essgee.Emulation.Machines
 			remove { audio.EnqueueSamples -= value; }
 		}
 
-		public event EventHandler<GetGameMetadataEventArgs> GetGameMetadata;
-		protected virtual void OnGetGameMetadata(GetGameMetadataEventArgs e) { GetGameMetadata?.Invoke(this, e); }
+		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
+		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
 
 		public string ManufacturerName => "Nintendo";
 		public string ModelName => "Game Boy";
@@ -174,21 +174,45 @@ namespace Essgee.Emulation.Machines
 
 		private void ReconfigureSystem()
 		{
+			/* Video */
 			video?.SetClockRate(masterClock);
 			video?.SetRefreshRate(refreshRate);
 			video?.SetRevision(0);
 
+			/* Audio */
 			audio?.SetSampleRate(Program.Configuration.SampleRate);
 			audio?.SetOutputChannels(2);
 			audio?.SetClockRate(masterClock);
 			audio?.SetRefreshRate(refreshRate);
 
+			/* Cartridge */
 			if (cartridge is GBCameraCartridge camCartridge)
 				camCartridge.SetImageSource(configuration.CameraSource, configuration.CameraImageFile);
 
+			/* Serial */
+			if (serialDevice is GBPrinter gbPrinter)
+				gbPrinter.SaveExtraData -= SaveExtraData;
+
+			switch (configuration.SerialDevice)
+			{
+				case SerialDevices.None:
+					serialDevice = new DummyDevice();
+					break;
+
+				case SerialDevices.GBPrinter:
+					serialDevice = new GBPrinter();
+					(serialDevice as GBPrinter).SaveExtraData += SaveExtraData;
+					break;
+
+				default:
+					throw new EmulationException($"Unknown serial device {configuration.SerialDevice} selected");
+			}
+
+			/* Misc timing */
 			currentMasterClockCyclesInFrame = 0;
 			totalMasterClockCyclesInFrame = (int)Math.Round(masterClock / refreshRate);
 
+			/* Announce viewport */
 			OnChangeViewport(new ChangeViewportEventArgs(video.Viewport));
 		}
 
@@ -209,23 +233,6 @@ namespace Essgee.Emulation.Machines
 			cpu.Startup();
 			video.Startup();
 			audio.Startup();
-
-			var getGameMetadataEventArgs = new GetGameMetadataEventArgs();
-			OnGetGameMetadata(getGameMetadataEventArgs);
-
-			switch (configuration.SerialDevice)
-			{
-				case SerialDevices.None:
-					serialDevice = new DummyDevice();
-					break;
-
-				case SerialDevices.GBPrinter:
-					serialDevice = new GBPrinter(getGameMetadataEventArgs?.Metadata?.FileName);
-					break;
-
-				default:
-					throw new EmulationException($"Unknown serial device {configuration.SerialDevice} selected");
-			}
 		}
 
 		public void Reset()
@@ -278,6 +285,9 @@ namespace Essgee.Emulation.Machines
 
 		public void Shutdown()
 		{
+			if (serialDevice is GBPrinter gbPrinter)
+				gbPrinter.SaveExtraData -= SaveExtraData;
+
 			cpu?.Shutdown();
 			video?.Shutdown();
 			audio?.Shutdown();

@@ -7,6 +7,8 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 
+using Essgee.EventArguments;
+
 namespace Essgee.Emulation.Peripherals.Serial
 {
 	public class GBPrinter : ISerialDevice
@@ -61,12 +63,11 @@ namespace Essgee.Emulation.Peripherals.Serial
 		int imageHeight;
 		int printDelay;
 
-		readonly string baseImageFilename;
+		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
+		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
 
-		public GBPrinter(string gameFilename)
+		public GBPrinter()
 		{
-			baseImageFilename = Path.GetFileNameWithoutExtension(gameFilename);
-
 			ResetPacket();
 
 			packetBytesReceived = 0;
@@ -156,7 +157,6 @@ namespace Essgee.Emulation.Peripherals.Serial
 						ret = (byte)presence;
 						break;
 
-
 					case 9:
 						/* Printer status */
 
@@ -232,7 +232,7 @@ namespace Essgee.Emulation.Peripherals.Serial
 								{
 									/* Delay the process a bit... */
 									printDelay++;
-									if (printDelay >= 8)
+									if (printDelay >= 16)   // TODO: figure out actual print duration/timing?
 									{
 										/* If we said printing is in progress, tell the GB we're finished with it */
 										status &= ~PrinterStatusBits.PrintInProgress;
@@ -316,13 +316,7 @@ namespace Essgee.Emulation.Peripherals.Serial
 						g.DrawImage(image, new Rectangle(0, 0, adjustedImage.Width, adjustedImage.Height), 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, imageAttribs);
 
 						/* Save the image */
-						var printPrefix = $"{baseImageFilename} ({DateTime.Now:yyyy-MM-dd HH-mm-ss})";
-						var newPrintPath = Path.Combine(Program.ExtraDataPath, $"{printPrefix}.png");
-						var existingPrints = Directory.EnumerateFiles(Program.ExtraDataPath, $"{printPrefix}*.png");
-						if (existingPrints.Contains(newPrintPath))
-							for (int i = 2; existingPrints.Contains(newPrintPath = Path.Combine(Program.ExtraDataPath, $"{printPrefix} (Shot {i}).png")); i++) { }
-
-						adjustedImage.Save(newPrintPath);
+						OnSaveExtraData(new SaveExtraDataEventArgs("Printout", "png", true, adjustedImage));
 					}
 				}
 			}
