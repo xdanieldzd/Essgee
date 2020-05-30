@@ -254,6 +254,16 @@ namespace Essgee.Emulation.Machines
 				cpu.SetRegisterBC(0x0013);
 				cpu.SetRegisterDE(0x00D8);
 				cpu.SetRegisterHL(0x014D);
+
+				video.WritePort(0x40, 0x91);
+				video.WritePort(0x42, 0x00);
+				video.WritePort(0x43, 0x00);
+				video.WritePort(0x45, 0x00);
+				video.WritePort(0x47, 0xFC);
+				video.WritePort(0x48, 0xFF);
+				video.WritePort(0x49, 0xFF);
+				video.WritePort(0x4A, 0x00);
+				video.WritePort(0x4B, 0x00);
 			}
 
 			joypadRegister = 0x0F;

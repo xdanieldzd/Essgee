@@ -19,6 +19,9 @@ namespace Essgee.Emulation.Video
 	{
 		const int numOamSlots = 40;
 
+		const int mode2Boundary = 80;
+		const int mode3Boundary = mode2Boundary + 168;
+
 		readonly MemoryReadDelegate memoryReadDelegate;
 		readonly RequestInterruptDelegate requestInterruptDelegate;
 
@@ -33,8 +36,6 @@ namespace Essgee.Emulation.Video
 		public virtual event EventHandler<EventArgs> EndOfScanline;
 		public virtual void OnEndOfScanline(EventArgs e) { EndOfScanline?.Invoke(this, e); }
 
-		readonly int[] cyclesPerMode = new int[] { 204, 456, 80, 172 };
-
 		//
 
 		protected double clockRate, refreshRate;
@@ -46,8 +47,6 @@ namespace Essgee.Emulation.Video
 
 		// FF40 - LCDC
 		protected bool lcdEnable, wndMapSelect, wndEnable, bgWndTileSelect, bgMapSelect, objSize, objEnable, bgEnable;
-		// (derived addresses)
-		protected ushort bgWndTileBase, bgMapBase, wndMapBase;
 
 		// FF41 - STAT
 		protected bool lycLyInterrupt, m2OamInterrupt, m1VBlankInterrupt, m0HBlankInterrupt, coincidenceFlag;
@@ -59,7 +58,7 @@ namespace Essgee.Emulation.Video
 		protected byte scrollX;
 
 		// FF44 - LY
-		protected byte currentScanline;
+		protected byte ly;
 		// FF45 - LYC
 		protected byte lyCompare;
 
@@ -80,7 +79,8 @@ namespace Essgee.Emulation.Video
 
 		//
 
-		int statIrqLine, statDelay;
+		int numSpritesOnLine, /*statIrqLine, */skipFrames;
+		bool statIrqSignal;
 
 		readonly byte[][] colorValuesBgr = new byte[][]
 		{
@@ -100,7 +100,7 @@ namespace Essgee.Emulation.Video
 		protected const ushort spriteUsageEmpty = 0xFFFF;
 		protected ushort[] spriteUsage;
 
-		protected int cycleCount;
+		protected int cycleCount, cyclePenaltyMode3, currentScanline;
 		protected byte[] outputFramebuffer;
 
 		protected int clockCyclesPerLine;
@@ -136,22 +136,29 @@ namespace Essgee.Emulation.Video
 
 		public virtual void Reset()
 		{
-			WritePort(0x40, 0x91);
+			for (var i = 0; i < vram.Length; i++) vram[i] = 0;
+			for (var i = 0; i < oam.Length; i++) oam[i] = 0;
+
+			WritePort(0x40, 0x00);
 			WritePort(0x42, 0x00);
 			WritePort(0x43, 0x00);
 			WritePort(0x45, 0x00);
-			WritePort(0x47, 0xFC);
-			WritePort(0x48, 0xFF);
-			WritePort(0x49, 0xFF);
+			WritePort(0x47, 0x00);
+			WritePort(0x48, 0x00);
+			WritePort(0x49, 0x00);
 			WritePort(0x4A, 0x00);
 			WritePort(0x4B, 0x00);
 
-			statIrqLine = -1;
+			numSpritesOnLine = 0;
+			//statIrqLine = -1;
+			skipFrames = 0;
+
+			statIrqSignal = false;
 
 			ClearScreenUsage();
 			ClearSpriteUsage();
 
-			cycleCount = 0;
+			cycleCount = cyclePenaltyMode3 = 0;
 		}
 
 		public void SetClockRate(double clock)
@@ -176,219 +183,298 @@ namespace Essgee.Emulation.Video
 		protected virtual void ReconfigureTimings()
 		{
 			/* Calculate cycles/line */
-			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / 153);
+			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / 154);
 
 			/* Create arrays */
 			screenUsage = new byte[160 * 144];
 			spriteUsage = new ushort[160 * 144];
 			outputFramebuffer = new byte[(160 * 144) * 4];
+
+			for (var y = 0; y < 144; y++)
+				SetLine(y, 0xFF, 0xFF, 0xFF);
 		}
 
 		public virtual void Step(int clockCyclesInStep)
 		{
-			// http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
-
-			// TODO verify and stuff, etc etc etc......
-
-			if (lcdEnable)
+			for (var c = 0; c < clockCyclesInStep; c++)
 			{
-				cycleCount += clockCyclesInStep;
-
-				if (cycleCount >= cyclesPerMode[modeNumber])
+				if (lcdEnable)
 				{
-					cycleCount -= cyclesPerMode[modeNumber];
+					/* LCD enabled, handle LCD modes */
 
-					switch (modeNumber)
+					if (modeNumber == 1)
 					{
-						// Mode 0 (H-blank)
-						case 0:
+						/* V-blank */
+						cycleCount++;
+						if (cycleCount >= clockCyclesPerLine)
+						{
+							/* End of scanline reached */
 							OnEndOfScanline(EventArgs.Empty);
-
 							currentScanline++;
+							ly = (byte)currentScanline;
 
-							if (currentScanline >= 144)
-							{
-								if (currentScanline == 144)
-								{
-									statIrqLine = -1;
-									RequestInterrupt(InterruptSource.VBlank);
-								}
-
-								modeNumber = 1;
-								if (m1VBlankInterrupt || m2OamInterrupt)
-									RequestInterrupt(InterruptSource.LCDCStatus);
-
-								OnRenderScreen(new RenderScreenEventArgs(160, 144, outputFramebuffer.Clone() as byte[]));
-							}
-							else
-							{
-								modeNumber = 2;
-
-								if (SetAndCheckLYCInterrupt())
-									statDelay = 36;
-
-								if (m2OamInterrupt && !lycLyInterrupt)
-									RequestInterrupt(InterruptSource.LCDCStatus);
-							}
-							break;
-
-						// Mode 1 (V-blank)
-						case 1:
-							currentScanline++;
-
-							if (SetAndCheckLYCInterrupt())
+							/* Check for & request STAT interrupts */
+							coincidenceFlag = (ly == lyCompare);
+							CheckAndRequestStatInterupt();
+							/*if (SetAndCheckLYCInterrupt())
 								RequestInterrupt(InterruptSource.LCDCStatus);
-
-							if (currentScanline > 153)
+								*/
+							if (currentScanline == 153)
 							{
+								/* LY reports as 0 on line 153 */
+								ly = 0;
+
+								/* Check for & request STAT interrupts */
+								coincidenceFlag = (ly == lyCompare);
+								CheckAndRequestStatInterupt();
+								/*if (SetAndCheckLYCInterrupt())
+									RequestInterrupt(InterruptSource.LCDCStatus);*/
+							}
+							else if (currentScanline == 154)
+							{
+								/* End of V-blank reached */
 								modeNumber = 2;
-								if (m2OamInterrupt)
-									RequestInterrupt(InterruptSource.LCDCStatus);
+								CheckAndRequestStatInterupt();
+								//SetLCDMode(2);
 
 								currentScanline = 0;
+								ly = 0;
+								//statIrqLine = -1;
+								statIrqSignal = false;
 
-								if (SetAndCheckLYCInterrupt())
+								coincidenceFlag = (ly == lyCompare);
+								CheckAndRequestStatInterupt();
+								/*if (SetAndCheckLYCInterrupt())
 									RequestInterrupt(InterruptSource.LCDCStatus);
-
+									*/
 								ClearScreenUsage();
 								ClearSpriteUsage();
 							}
-							break;
 
-						// Mode 2 (OAM search)
-						case 2:
-							modeNumber = 3;
-							break;
+							cycleCount = 0;
+						}
+					}
+					else
+					{
+						switch (modeNumber)
+						{
+							/* OAM search */
+							case 2:
+								/* Get object Y coord */
+								var objIndex = (cycleCount >> 1) % 40;
+								var objY = oam[(objIndex << 2) + 0] - 16;
 
-						// Mode 3 (Data transfer to LCD)
-						case 3:
-							modeNumber = 0;
-							if (m0HBlankInterrupt)
-								RequestInterrupt(InterruptSource.LCDCStatus);
+								/* Check if object is on current scanline & maximum number of objects was not exceeded, then increment counter */
+								if (currentScanline >= objY && currentScanline < (objY + (objSize ? 16 : 8)) && numSpritesOnLine < 10)
+									numSpritesOnLine++;
 
-							RenderLine(currentScanline);
-							break;
+								/* Increment cycle count & check for next LCD mode */
+								cycleCount++;
+								if (cycleCount >= mode2Boundary)
+								{
+									modeNumber = 3;
+									CheckAndRequestStatInterupt();
+									//SetLCDMode(3);
+
+									cyclePenaltyMode3 = (8 * numSpritesOnLine) + (scrollX % 8);
+								}
+								break;
+
+							/* Data transfer to LCD */
+							case 3:
+								/* Render pixels */
+								RenderPixel(currentScanline, cycleCount - mode2Boundary);
+
+								/* Increment cycle count & check for next LCD mode */
+								cycleCount++;
+								if (cycleCount >= mode3Boundary + cyclePenaltyMode3)
+								{
+									modeNumber = 0;
+									CheckAndRequestStatInterupt();
+									//SetLCDMode(0);
+								}
+								break;
+
+							/* H-blank */
+							case 0:
+								/* Increment cycle count & check for next LCD mode */
+								cycleCount++;
+								if (cycleCount >= clockCyclesPerLine)
+								{
+									/* End of scanline reached */
+									OnEndOfScanline(EventArgs.Empty);
+									currentScanline++;
+									ly = (byte)currentScanline;
+
+									coincidenceFlag = (ly == lyCompare);
+									CheckAndRequestStatInterupt();
+									/*if (SetAndCheckLYCInterrupt())
+										RequestInterrupt(InterruptSource.LCDCStatus);
+										*/
+									numSpritesOnLine = 0;
+
+									if (currentScanline < 144)
+									{
+										modeNumber = 2;
+										CheckAndRequestStatInterupt();
+										//SetLCDMode(2);
+									}
+									else
+									{
+										modeNumber = 1;
+										CheckAndRequestStatInterupt();
+										//SetLCDMode(1);
+
+										//statIrqLine = -1;
+										statIrqSignal = false;
+
+										/* Reached V-blank, request V-blank interrupt */
+										requestInterruptDelegate(InterruptSource.VBlank);
+
+										if (skipFrames > 0) skipFrames--;
+
+										/* Submit screen for rendering */
+										OnRenderScreen(new RenderScreenEventArgs(160, 144, outputFramebuffer.Clone() as byte[]));
+									}
+
+									cycleCount = 0;
+								}
+								break;
+						}
 					}
 				}
-			}
-			else
-			{
-				cycleCount += clockCyclesInStep;
-				if (cycleCount >= cyclesPerMode[modeNumber])
-					cycleCount -= cyclesPerMode[modeNumber];
-
-				modeNumber = 0;
-				currentScanline = 0;
-
-				if (SetAndCheckLYCInterrupt())
-					RequestInterrupt(InterruptSource.LCDCStatus);
-			}
-
-			if (statDelay > 0)
-			{
-				statDelay -= clockCyclesInStep;
-				if (statDelay <= 0)
+				else
 				{
-					statDelay = 0;
-					RequestInterrupt(InterruptSource.LCDCStatus);
+					/* LCD disabled */
+					modeNumber = 0;
+					cycleCount = 0;
+
+					currentScanline = 0;
+					ly = 0;
 				}
 			}
+		}
+		/*
+		private void SetLCDMode(byte mode)
+		{
+			if (lcdEnable)
+				Program.Logger?.WriteLine($"Line {currentScanline - 1:D3}: End of mode {modeNumber} at {cycleCount:D3}/{clockCyclesPerLine:D3} cycles; going to mode {mode}");
+
+			if ((mode == 0 && m0HBlankInterrupt) ||
+				(mode == 1 && (m1VBlankInterrupt || m2OamInterrupt)) ||
+				(mode == 2 && m2OamInterrupt))
+			{
+				RequestInterrupt(InterruptSource.LCDCStatus);
+			}
+
+			modeNumber = mode;
+		}*/
+
+		private void CheckAndRequestStatInterupt()
+		{
+			if (!lcdEnable) return;
+
+			var newSignal =
+				(coincidenceFlag && lycLyInterrupt) ||
+				(modeNumber == 0 && m0HBlankInterrupt) ||
+				(modeNumber == 1 && (m1VBlankInterrupt || m2OamInterrupt)) ||
+				(modeNumber == 2 && m2OamInterrupt);
+
+			if (!statIrqSignal && newSignal)
+				requestInterruptDelegate(InterruptSource.LCDCStatus);
+
+			statIrqSignal = newSignal;
 		}
 
 		private bool SetAndCheckLYCInterrupt()
 		{
-			coincidenceFlag = (currentScanline == lyCompare);
+			coincidenceFlag = (ly == lyCompare);
 			return (lycLyInterrupt && coincidenceFlag);
 		}
 
 		private void RequestInterrupt(InterruptSource source)
 		{
-			if (source == InterruptSource.LCDCStatus)
+			/*if (source == InterruptSource.LCDCStatus)
 			{
 				if (statIrqLine == currentScanline)
 					return;
 				else
 					statIrqLine = currentScanline;
 			}
-
+			*/
 			requestInterruptDelegate(source);
 		}
 
-		protected virtual void RenderLine(int y)
+		protected virtual void RenderPixel(int y, int x)
 		{
-			if (lcdEnable)
-			{
-				if (bgEnable)
-					RenderBackground(y);
-				else
-					SetLine(y, 0xFF, 0xFF, 0xFF);
+			if (x < 0 || x >= 160 || y < 0 || y >= 144) return;
+			if (skipFrames > 0) return;
 
-				if (wndEnable) RenderWindow(y);
-				if (objEnable) RenderSprites(y);
-			}
+			if (bgEnable)
+				RenderBackground(y, x);
 			else
-				SetLine(y, 0xFF, 0xFF, 0xFF);
+				SetPixel(y, x, 0xFF, 0xFF, 0xFF);
+
+			if (wndEnable) RenderWindow(y, x);
+			if (objEnable) RenderSprites(y, x);
 		}
 
-		protected virtual void RenderBackground(int y)
+		protected virtual void RenderBackground(int y, int x)
 		{
+			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
+			var mapBase = (ushort)(bgMapSelect ? 0x1C00 : 0x1800);
+
 			var yTransformed = (byte)(scrollY + y);
+			var xTransformed = (byte)(scrollX + x);
 
-			for (var x = 0; x < 160; x++)
-			{
-				var xTransformed = (byte)(scrollX + x);
+			var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
+			var tileNumber = vram[mapAddress];
 
-				var mapAddress = bgMapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
-				var tileNumber = vram[mapAddress];
+			if (!bgWndTileSelect)
+				tileNumber = (byte)(tileNumber ^ 0x80);
 
-				if (!bgWndTileSelect)
-					tileNumber = (byte)(tileNumber ^ 0x80);
+			var tileAddress = tileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
 
-				var tileAddress = bgWndTileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
+			var ba = (vram[tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
+			var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
+			var c = (byte)((bb << 1) | ba);
 
-				var ba = (vram[tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
-				var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
-				var c = (byte)((bb << 1) | ba);
+			if (c != 0)
+				SetScreenUsageFlag(y, x, screenUsageBackground);
 
-				if (c != 0)
-					SetScreenUsageFlag(y, x, screenUsageBackground);
-
-				SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
-			}
+			SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
 		}
 
-		protected virtual void RenderWindow(int y)
+		protected virtual void RenderWindow(int y, int x)
 		{
+			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
+			var mapBase = (ushort)(wndMapSelect ? 0x1C00 : 0x1800);
+
 			if (y < windowY) return;
+			if (x < (windowX - 7)) return;
 
 			var yTransformed = (byte)(y - windowY);
+			var xTransformed = (byte)((7 - windowX) + x);
 
-			for (var x = (windowX - 7); x < 160; x++)
-			{
-				if (x < 0) continue;
+			var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
+			var tileNumber = vram[mapAddress];
 
-				var xTransformed = (byte)((7 - windowX) + x);
+			if (!bgWndTileSelect)
+				tileNumber = (byte)(tileNumber ^ 0x80);
 
-				var mapAddress = wndMapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
-				var tileNumber = vram[mapAddress];
+			var tileAddress = tileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
 
-				if (!bgWndTileSelect)
-					tileNumber = (byte)(tileNumber ^ 0x80);
+			var ba = (vram[tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
+			var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
+			var c = (byte)((bb << 1) | ba);
 
-				var tileAddress = bgWndTileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
+			if (c != 0)
+				SetScreenUsageFlag(y, x, screenUsageWindow);
 
-				var ba = (vram[tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
-				var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
-				var c = (byte)((bb << 1) | ba);
-
-				if (c != 0)
-					SetScreenUsageFlag(y, x, screenUsageWindow);
-
-				SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
-			}
+			SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
 		}
 
-		protected virtual void RenderSprites(int y)
+		protected virtual void RenderSprites(int y, int x)
 		{
 			var objHeight = (objSize ? 16 : 8);
 			var numObjDisplayed = 0;
@@ -414,11 +500,8 @@ namespace Essgee.Emulation.Video
 				// Iterate over pixels
 				for (var px = 0; px < 8; px++)
 				{
-					// Calc screen X coordinate
-					var x = (byte)(objX + px);
-
-					// If pixel X coord is outside screen, continue to next pixel
-					if (x < 0 || x >= 160) continue;
+					// If sprite pixel X coord does not equal current rendering X coord, continue to next pixel
+					if (x != (byte)(objX + px)) continue;
 
 					// If sprite of lower X coord already exists -or- sprite of same X coord BUT lower slot exists, continue to next pixel
 					var prevObjX = GetSpriteUsageCoord(y, x);
@@ -549,22 +632,30 @@ namespace Essgee.Emulation.Video
 
 		public virtual byte ReadVram(ushort address)
 		{
-			return vram[address & (vram.Length - 1)];
+			if (modeNumber != 3)
+				return vram[address & (vram.Length - 1)];
+			else
+				return 0xFF;
 		}
 
 		public virtual void WriteVram(ushort address, byte value)
 		{
-			vram[address & (vram.Length - 1)] = value;
+			if (modeNumber != 3)
+				vram[address & (vram.Length - 1)] = value;
 		}
 
 		public virtual byte ReadOam(ushort address)
 		{
-			return oam[address - 0xFE00];
+			if (modeNumber != 2 && modeNumber != 3)
+				return oam[address - 0xFE00];
+			else
+				return 0xFF;
 		}
 
 		public virtual void WriteOam(ushort address, byte value)
 		{
-			oam[address - 0xFE00] = value;
+			if (modeNumber != 2 && modeNumber != 3)
+				oam[address - 0xFE00] = value;
 		}
 
 		public virtual byte ReadPort(byte port)
@@ -604,7 +695,7 @@ namespace Essgee.Emulation.Video
 
 				case 0x44:
 					// LY
-					return currentScanline;
+					return ly;
 
 				case 0x45:
 					// LYC
@@ -650,7 +741,13 @@ namespace Essgee.Emulation.Video
 						if (lcdEnable != newLcdEnable)
 						{
 							modeNumber = 2;
+							CheckAndRequestStatInterupt();
+							//SetLCDMode(2);
 							currentScanline = 0;
+							ly = 0;
+
+							if (newLcdEnable)
+								skipFrames = 4;
 						}
 
 						lcdEnable = newLcdEnable;
@@ -661,10 +758,6 @@ namespace Essgee.Emulation.Video
 						objSize = ((value >> 2) & 0b1) == 0b1;
 						objEnable = ((value >> 1) & 0b1) == 0b1;
 						bgEnable = ((value >> 0) & 0b1) == 0b1;
-
-						bgWndTileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
-						bgMapBase = (ushort)(bgMapSelect ? 0x1C00 : 0x1800);
-						wndMapBase = (ushort)(wndMapSelect ? 0x1C00 : 0x1800);
 					}
 					break;
 
@@ -675,10 +768,12 @@ namespace Essgee.Emulation.Video
 					m1VBlankInterrupt = ((value >> 4) & 0b1) == 0b1;
 					m0HBlankInterrupt = ((value >> 3) & 0b1) == 0b1;
 
-					statIrqLine = -1;
+					//statIrqLine = -1;
+					statIrqSignal = false;
 
-					if (lcdEnable && modeNumber == 1 && currentScanline != 0)
-						RequestInterrupt(InterruptSource.LCDCStatus);
+					CheckAndRequestStatInterupt();
+					/*if (lcdEnable && modeNumber == 1 && currentScanline != 0)
+						RequestInterrupt(InterruptSource.LCDCStatus);*/
 					break;
 
 				case 0x42:
@@ -691,14 +786,20 @@ namespace Essgee.Emulation.Video
 					scrollX = value;
 					break;
 
+				case 0x44:
+					// LY
+					break;
+
 				case 0x45:
 					// LYC
 					lyCompare = value;
 
 					if (lcdEnable)
 					{
-						if (SetAndCheckLYCInterrupt())
-							RequestInterrupt(InterruptSource.LCDCStatus);
+						coincidenceFlag = (ly == lyCompare);
+						CheckAndRequestStatInterupt();
+						/*if (SetAndCheckLYCInterrupt())
+							RequestInterrupt(InterruptSource.LCDCStatus);*/
 					}
 					break;
 

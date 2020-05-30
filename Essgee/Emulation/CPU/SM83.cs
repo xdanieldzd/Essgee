@@ -52,7 +52,7 @@ namespace Essgee.Emulation.CPU
 		protected ushort sp, pc;
 
 		[StateRequired]
-		protected bool ime, eiDelay, halt, doHaltBug;
+		protected bool ime, imeDelay, newIme, halt, doHaltBug;
 
 		[StateRequired]
 		protected byte op;
@@ -87,14 +87,25 @@ namespace Essgee.Emulation.CPU
 			pc = 0;
 			sp = 0;
 
-			ime = eiDelay = halt = doHaltBug = false;
+			ime = imeDelay = newIme = halt = doHaltBug = false;
 
 			currentCycles = 0;
 		}
 
 		public int Step()
 		{
+			// TODO: Look into interrupt-related bug in X, currently doesn't work -- https://www.reddit.com/r/EmuDev/comments/4reuio/games_that_work_unintentionally/
+
 			currentCycles = 0;
+
+			/* Handle delayed interrupt enable */
+			if (imeDelay)
+				imeDelay = false;
+			else
+				ime = newIme;
+
+			/* Check interrupts */
+			HandleInterrupts();
 
 			if (halt)
 			{
@@ -123,18 +134,6 @@ namespace Essgee.Emulation.CPU
 					case 0xCB: ExecuteOpCB(); break;
 					default: ExecuteOpcodeNoPrefix(op); break;
 				}
-			}
-
-			/* Handle delayed interrupt enable */
-			if (eiDelay)
-			{
-				ime = true;
-				eiDelay = false;
-			}
-			else
-			{
-				/* Check interrupts */
-				HandleInterrupts();
 			}
 
 			return currentCycles;
@@ -248,6 +247,7 @@ namespace Essgee.Emulation.CPU
 			if (((intEnable & intSourceBit) == intSourceBit) && ((intFlags & intSourceBit) == intSourceBit))
 			{
 				ime = false;
+				newIme = false;
 
 				currentCycles += 20;
 
@@ -522,8 +522,8 @@ namespace Essgee.Emulation.CPU
 
 		protected void EnableInterrupts()
 		{
-			ime = false;
-			eiDelay = true;
+			newIme = true;
+			imeDelay = true;
 		}
 
 		protected void DisableInterrupts()
