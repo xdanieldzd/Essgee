@@ -79,8 +79,8 @@ namespace Essgee.Emulation.Video
 
 		//
 
-		int numSpritesOnLine, /*statIrqLine, */skipFrames;
-		bool statIrqSignal;
+		int numSpritesOnLine, skipFrames;
+		bool statIrqSignal, vBlankReady;
 
 		readonly byte[][] colorValuesBgr = new byte[][]
 		{
@@ -149,16 +149,13 @@ namespace Essgee.Emulation.Video
 			WritePort(0x4A, 0x00);
 			WritePort(0x4B, 0x00);
 
-			numSpritesOnLine = 0;
-			//statIrqLine = -1;
-			skipFrames = 0;
-
-			statIrqSignal = false;
+			numSpritesOnLine = skipFrames = 0;
+			statIrqSignal = vBlankReady = false;
 
 			ClearScreenUsage();
 			ClearSpriteUsage();
 
-			cycleCount = cyclePenaltyMode3 = 0;
+			cycleCount = cyclePenaltyMode3 = currentScanline = 0;
 		}
 
 		public void SetClockRate(double clock)
@@ -204,9 +201,16 @@ namespace Essgee.Emulation.Video
 
 					if (modeNumber == 1)
 					{
+						// TODO: *should* be 4, but Altered Space hangs w/ any value lower than 8?
+						if (cycleCount == 8 && vBlankReady)
+						{
+							requestInterruptDelegate(InterruptSource.VBlank);
+							vBlankReady = false;
+						}
+
 						/* V-blank */
 						cycleCount++;
-						if (cycleCount >= clockCyclesPerLine)
+						if (cycleCount == clockCyclesPerLine)
 						{
 							/* End of scanline reached */
 							OnEndOfScanline(EventArgs.Empty);
@@ -214,39 +218,26 @@ namespace Essgee.Emulation.Video
 							ly = (byte)currentScanline;
 
 							/* Check for & request STAT interrupts */
-							coincidenceFlag = (ly == lyCompare);
 							CheckAndRequestStatInterupt();
-							/*if (SetAndCheckLYCInterrupt())
-								RequestInterrupt(InterruptSource.LCDCStatus);
-								*/
+
 							if (currentScanline == 153)
 							{
+								// TODO: specific cycle this happens?
+
 								/* LY reports as 0 on line 153 */
 								ly = 0;
 
-								/* Check for & request STAT interrupts */
-								coincidenceFlag = (ly == lyCompare);
 								CheckAndRequestStatInterupt();
-								/*if (SetAndCheckLYCInterrupt())
-									RequestInterrupt(InterruptSource.LCDCStatus);*/
 							}
 							else if (currentScanline == 154)
 							{
 								/* End of V-blank reached */
 								modeNumber = 2;
-								CheckAndRequestStatInterupt();
-								//SetLCDMode(2);
-
 								currentScanline = 0;
 								ly = 0;
-								//statIrqLine = -1;
-								statIrqSignal = false;
 
-								coincidenceFlag = (ly == lyCompare);
 								CheckAndRequestStatInterupt();
-								/*if (SetAndCheckLYCInterrupt())
-									RequestInterrupt(InterruptSource.LCDCStatus);
-									*/
+
 								ClearScreenUsage();
 								ClearSpriteUsage();
 							}
@@ -261,7 +252,7 @@ namespace Essgee.Emulation.Video
 							/* OAM search */
 							case 2:
 								/* Get object Y coord */
-								var objIndex = (cycleCount >> 1) % 40;
+								var objIndex = cycleCount >> 1;
 								var objY = oam[(objIndex << 2) + 0] - 16;
 
 								/* Check if object is on current scanline & maximum number of objects was not exceeded, then increment counter */
@@ -270,13 +261,12 @@ namespace Essgee.Emulation.Video
 
 								/* Increment cycle count & check for next LCD mode */
 								cycleCount++;
-								if (cycleCount >= mode2Boundary)
+								if (cycleCount == mode2Boundary)
 								{
 									modeNumber = 3;
 									CheckAndRequestStatInterupt();
-									//SetLCDMode(3);
 
-									cyclePenaltyMode3 = (8 * numSpritesOnLine) + (scrollX % 8);
+									cyclePenaltyMode3 += (8 * numSpritesOnLine);    // TODO: more details
 								}
 								break;
 
@@ -287,11 +277,10 @@ namespace Essgee.Emulation.Video
 
 								/* Increment cycle count & check for next LCD mode */
 								cycleCount++;
-								if (cycleCount >= mode3Boundary + cyclePenaltyMode3)
+								if (cycleCount == mode3Boundary + cyclePenaltyMode3)
 								{
 									modeNumber = 0;
 									CheckAndRequestStatInterupt();
-									//SetLCDMode(0);
 								}
 								break;
 
@@ -299,42 +288,35 @@ namespace Essgee.Emulation.Video
 							case 0:
 								/* Increment cycle count & check for next LCD mode */
 								cycleCount++;
-								if (cycleCount >= clockCyclesPerLine)
+								if (cycleCount == clockCyclesPerLine)
 								{
 									/* End of scanline reached */
 									OnEndOfScanline(EventArgs.Empty);
 									currentScanline++;
 									ly = (byte)currentScanline;
 
-									coincidenceFlag = (ly == lyCompare);
 									CheckAndRequestStatInterupt();
-									/*if (SetAndCheckLYCInterrupt())
-										RequestInterrupt(InterruptSource.LCDCStatus);
-										*/
-									numSpritesOnLine = 0;
 
-									if (currentScanline < 144)
-									{
-										modeNumber = 2;
-										CheckAndRequestStatInterupt();
-										//SetLCDMode(2);
-									}
-									else
+									numSpritesOnLine = 0;
+									cyclePenaltyMode3 = (scrollX % 8);
+
+									if (currentScanline == 144)
 									{
 										modeNumber = 1;
 										CheckAndRequestStatInterupt();
-										//SetLCDMode(1);
-
-										//statIrqLine = -1;
-										statIrqSignal = false;
 
 										/* Reached V-blank, request V-blank interrupt */
-										requestInterruptDelegate(InterruptSource.VBlank);
+										vBlankReady = true;
 
 										if (skipFrames > 0) skipFrames--;
 
 										/* Submit screen for rendering */
 										OnRenderScreen(new RenderScreenEventArgs(160, 144, outputFramebuffer.Clone() as byte[]));
+									}
+									else
+									{
+										modeNumber = 2;
+										CheckAndRequestStatInterupt();
 									}
 
 									cycleCount = 0;
@@ -354,61 +336,34 @@ namespace Essgee.Emulation.Video
 				}
 			}
 		}
-		/*
-		private void SetLCDMode(byte mode)
-		{
-			if (lcdEnable)
-				Program.Logger?.WriteLine($"Line {currentScanline - 1:D3}: End of mode {modeNumber} at {cycleCount:D3}/{clockCyclesPerLine:D3} cycles; going to mode {mode}");
-
-			if ((mode == 0 && m0HBlankInterrupt) ||
-				(mode == 1 && (m1VBlankInterrupt || m2OamInterrupt)) ||
-				(mode == 2 && m2OamInterrupt))
-			{
-				RequestInterrupt(InterruptSource.LCDCStatus);
-			}
-
-			modeNumber = mode;
-		}*/
 
 		private void CheckAndRequestStatInterupt()
 		{
 			if (!lcdEnable) return;
 
-			var newSignal =
-				(coincidenceFlag && lycLyInterrupt) ||
-				(modeNumber == 0 && m0HBlankInterrupt) ||
-				(modeNumber == 1 && (m1VBlankInterrupt || m2OamInterrupt)) ||
-				(modeNumber == 2 && m2OamInterrupt);
+			var oldSignal = statIrqSignal;
+			statIrqSignal = false;
 
-			if (!statIrqSignal && newSignal)
-				requestInterruptDelegate(InterruptSource.LCDCStatus);
+			if (modeNumber == 0 && m0HBlankInterrupt) statIrqSignal = true;
+			if (modeNumber == 1 && m1VBlankInterrupt) statIrqSignal = true;
+			if (modeNumber == 2 && m2OamInterrupt) statIrqSignal = true;
 
-			statIrqSignal = newSignal;
-		}
-
-		private bool SetAndCheckLYCInterrupt()
-		{
 			coincidenceFlag = (ly == lyCompare);
-			return (lycLyInterrupt && coincidenceFlag);
-		}
+			if (coincidenceFlag && lycLyInterrupt) statIrqSignal = true;
 
-		private void RequestInterrupt(InterruptSource source)
-		{
-			/*if (source == InterruptSource.LCDCStatus)
-			{
-				if (statIrqLine == currentScanline)
-					return;
-				else
-					statIrqLine = currentScanline;
-			}
-			*/
-			requestInterruptDelegate(source);
+			if (!oldSignal && statIrqSignal)
+				requestInterruptDelegate(InterruptSource.LCDCStatus);
 		}
 
 		protected virtual void RenderPixel(int y, int x)
 		{
 			if (x < 0 || x >= 160 || y < 0 || y >= 144) return;
-			if (skipFrames > 0) return;
+
+			if (skipFrames > 0)
+			{
+				SetPixel(y, x, 0xFF, 0xFF, 0xFF);
+				return;
+			}
 
 			if (bgEnable)
 				RenderBackground(y, x);
@@ -741,10 +696,10 @@ namespace Essgee.Emulation.Video
 						if (lcdEnable != newLcdEnable)
 						{
 							modeNumber = 2;
-							CheckAndRequestStatInterupt();
-							//SetLCDMode(2);
 							currentScanline = 0;
 							ly = 0;
+
+							CheckAndRequestStatInterupt();
 
 							if (newLcdEnable)
 								skipFrames = 4;
@@ -768,12 +723,11 @@ namespace Essgee.Emulation.Video
 					m1VBlankInterrupt = ((value >> 4) & 0b1) == 0b1;
 					m0HBlankInterrupt = ((value >> 3) & 0b1) == 0b1;
 
-					//statIrqLine = -1;
-					statIrqSignal = false;
-
 					CheckAndRequestStatInterupt();
-					/*if (lcdEnable && modeNumber == 1 && currentScanline != 0)
-						RequestInterrupt(InterruptSource.LCDCStatus);*/
+
+					// TODO: correct?
+					if (lcdEnable && modeNumber == 1 && currentScanline != 0)
+						requestInterruptDelegate(InterruptSource.LCDCStatus);
 					break;
 
 				case 0x42:
@@ -793,14 +747,7 @@ namespace Essgee.Emulation.Video
 				case 0x45:
 					// LYC
 					lyCompare = value;
-
-					if (lcdEnable)
-					{
-						coincidenceFlag = (ly == lyCompare);
-						CheckAndRequestStatInterupt();
-						/*if (SetAndCheckLYCInterrupt())
-							RequestInterrupt(InterruptSource.LCDCStatus);*/
-					}
+					CheckAndRequestStatInterupt();
 					break;
 
 				case 0x46:

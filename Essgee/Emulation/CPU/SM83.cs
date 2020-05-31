@@ -52,7 +52,7 @@ namespace Essgee.Emulation.CPU
 		protected ushort sp, pc;
 
 		[StateRequired]
-		protected bool ime, imeDelay, newIme, halt, doHaltBug;
+		protected bool ime, imeDelay, halt, doHaltBug;
 
 		[StateRequired]
 		protected byte op;
@@ -60,12 +60,23 @@ namespace Essgee.Emulation.CPU
 		[StateRequired]
 		int currentCycles;
 
+		string logFile;
+		int numLogEntries;
+		string[] logEntries;
+
 		public SM83(MemoryReadDelegate memoryRead, MemoryWriteDelegate memoryWrite)
 		{
 			af = bc = de = hl = new Register();
 
 			memoryReadDelegate = memoryRead;
 			memoryWriteDelegate = memoryWrite;
+
+			if (Program.AppEnvironment.EnableSuperSlowCPULogger)
+			{
+				logFile = @"D:\Temp\Essgee\log-lr35902.txt";
+				numLogEntries = 0;
+				logEntries = new string[2000];
+			}
 		}
 
 		public virtual void Startup()
@@ -78,6 +89,11 @@ namespace Essgee.Emulation.CPU
 
 		public virtual void Shutdown()
 		{
+			if (Program.AppEnvironment.EnableSuperSlowCPULogger && logEntries != null)
+			{
+				System.IO.File.AppendAllText(logFile, string.Join("", logEntries.Take(numLogEntries)));
+			}
+
 			//
 		}
 
@@ -87,22 +103,21 @@ namespace Essgee.Emulation.CPU
 			pc = 0;
 			sp = 0;
 
-			ime = imeDelay = newIme = halt = doHaltBug = false;
+			ime = imeDelay = halt = doHaltBug = false;
 
 			currentCycles = 0;
 		}
 
 		public int Step()
 		{
-			// TODO: Look into interrupt-related bug in X, currently doesn't work -- https://www.reddit.com/r/EmuDev/comments/4reuio/games_that_work_unintentionally/
-
 			currentCycles = 0;
 
 			/* Handle delayed interrupt enable */
 			if (imeDelay)
+			{
+				ime = true;
 				imeDelay = false;
-			else
-				ime = newIme;
+			}
 
 			/* Check interrupts */
 			HandleInterrupts();
@@ -114,10 +129,15 @@ namespace Essgee.Emulation.CPU
 			}
 			else
 			{
-				if (Program.AppEnvironment.EnableSuperSlowCPULogger)
+				if (Program.AppEnvironment.EnableSuperSlowCPULogger && logEntries != null)
 				{
 					string disasm = string.Format("{0} | {1} | {2} | {3}\n", DisassembleOpcode(this, pc).PadRight(48), PrintRegisters(this), PrintFlags(this), PrintInterrupt(this));
-					System.IO.File.AppendAllText(@"D:\Temp\Essgee\log-lr35902.txt", disasm);
+					logEntries[numLogEntries++] = disasm;
+					if (numLogEntries >= logEntries.Length)
+					{
+						System.IO.File.AppendAllText(logFile, string.Join("", logEntries));
+						numLogEntries = 0;
+					}
 				}
 
 				/* Do HALT bug */
@@ -247,7 +267,6 @@ namespace Essgee.Emulation.CPU
 			if (((intEnable & intSourceBit) == intSourceBit) && ((intFlags & intSourceBit) == intSourceBit))
 			{
 				ime = false;
-				newIme = false;
 
 				currentCycles += 20;
 
@@ -522,7 +541,7 @@ namespace Essgee.Emulation.CPU
 
 		protected void EnableInterrupts()
 		{
-			newIme = true;
+			ime = false;
 			imeDelay = true;
 		}
 

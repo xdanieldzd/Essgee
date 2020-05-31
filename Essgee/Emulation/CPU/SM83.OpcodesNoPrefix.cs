@@ -241,7 +241,7 @@ namespace Essgee.Emulation.CPU
 			new SimpleOpcodeDelegate((c) => { c.Subtract8(c.ReadMemory8(c.pc++), false); }),
 			new SimpleOpcodeDelegate((c) => { c.Restart(0x0010); }),
 			new SimpleOpcodeDelegate((c) => { c.ReturnConditional(c.IsFlagSet(Flags.Carry)); }),
-			new SimpleOpcodeDelegate((c) => { c.EnableInterrupts(); c.Return(); }),
+			new SimpleOpcodeDelegate((c) => { c.ime = true; c.imeDelay = false; c.Return(); }),
 			new SimpleOpcodeDelegate((c) => { c.JumpConditional16(c.IsFlagSet(Flags.Carry)); }),
 			new SimpleOpcodeDelegate((c) => { c.pc--; }),
 			new SimpleOpcodeDelegate((c) => { c.CallConditional16(c.IsFlagSet(Flags.Carry)); }),

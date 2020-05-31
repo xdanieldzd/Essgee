@@ -151,7 +151,7 @@ namespace Essgee.Emulation.CPU
 				$"{((intEnable & InterruptSource.SerialIO) != 0 ? "S" : "-")}" +
 				$"{((intEnable & InterruptSource.Keypad) != 0 ? "K" : "-")}";
 
-			return $"{(cpu.ime ? "EI" : "DI")} {(cpu.halt ? "HLT" : "---")} IF:{intFlagsString} IE:{intEnableString}";
+			return $"IME:{(cpu.ime ? "1" : "0")} IF:{intFlagsString} IE:{intEnableString}";
 		}
 
 		public static string DisassembleOpcode(SM83 cpu, ushort address)

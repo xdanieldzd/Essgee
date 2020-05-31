@@ -417,7 +417,7 @@ namespace Essgee.Emulation.Machines
 			while (currentMasterClockCyclesInFrame < totalMasterClockCyclesInFrame)
 				RunStep();
 
-			currentMasterClockCyclesInFrame -= totalMasterClockCyclesInFrame;
+			currentMasterClockCyclesInFrame = 0;
 		}
 
 		public void RunStep()
