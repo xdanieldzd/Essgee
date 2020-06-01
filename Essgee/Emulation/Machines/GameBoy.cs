@@ -433,7 +433,7 @@ namespace Essgee.Emulation.Machines
 
 				video.Step(4);
 				audio.Step(4);
-				cartridge.Step(4);
+				cartridge?.Step(4);
 
 				currentMasterClockCyclesInFrame += 4;
 			}
@@ -535,7 +535,7 @@ namespace Essgee.Emulation.Machines
 				if (configuration.UseBootstrap && address < 0x0100 && !bootstrapDisabled)
 					return bootstrap[address & 0x00FF];
 				else
-					return (cartridge != null ? cartridge.Read(address) : (byte)0x00);
+					return (cartridge != null ? cartridge.Read(address) : (byte)0xFF);
 			}
 			else if (address >= 0x8000 && address <= 0x9FFF)
 			{
@@ -543,7 +543,7 @@ namespace Essgee.Emulation.Machines
 			}
 			else if (address >= 0xA000 && address <= 0xBFFF)
 			{
-				return (cartridge != null ? cartridge.Read(address) : (byte)0x00);
+				return (cartridge != null ? cartridge.Read(address) : (byte)0xFF);
 			}
 			else if (address >= 0xC000 && address <= 0xFDFF)
 			{

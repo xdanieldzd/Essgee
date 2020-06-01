@@ -105,7 +105,7 @@ namespace Essgee.Emulation.Audio
 					lfsr = (ushort)((lfsr >> 1) | (result << 14));
 
 					if (lfsrWidthMode)
-						lfsr = (ushort)((lfsr & 0b10111111) | ((result << 6) & 0b1));
+						lfsr = (ushort)((lfsr & 0b10111111) | (result << 6));
 				}
 
 				if (isChannelEnabled && isDacEnabled && ((lfsr & 0b1) == 0))

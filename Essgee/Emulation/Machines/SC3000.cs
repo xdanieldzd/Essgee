@@ -327,7 +327,7 @@ namespace Essgee.Emulation.Machines
 
 			psg.Step((int)Math.Round(currentCpuClockCycles));
 
-			cartridge.Step((int)Math.Round(currentCpuClockCycles));
+			cartridge?.Step((int)Math.Round(currentCpuClockCycles));
 
 			currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
 		}
