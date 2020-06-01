@@ -96,7 +96,7 @@ namespace Essgee.Emulation.Audio
 				{
 					sweepCounter = sweepPeriodReload;
 
-					if (sweepPeriodReload != 0)
+					if (isSweepEnabled && sweepPeriodReload != 0)
 					{
 						var newFrequency = PerformSweepCalculations();
 						if (newFrequency <= 2047 && sweepShift != 0)
@@ -167,10 +167,7 @@ namespace Essgee.Emulation.Audio
 					sweepCounter = sweepPeriodReload;
 					isSweepEnabled = sweepPeriodReload != 0 || sweepShift != 0;
 					if (sweepShift != 0)
-					{
-						var newFrequency = PerformSweepCalculations();
-						if (newFrequency > 2047) isChannelEnabled = false;
-					}
+						PerformSweepCalculations();
 				}
 			}
 
@@ -179,6 +176,7 @@ namespace Essgee.Emulation.Audio
 				var newFrequency = sweepFreqShadow >> sweepShift;
 				if (sweepNegate) newFrequency = -newFrequency;
 				newFrequency += sweepFreqShadow;
+				if (newFrequency > 2047) isChannelEnabled = false;
 				return newFrequency;
 			}
 
