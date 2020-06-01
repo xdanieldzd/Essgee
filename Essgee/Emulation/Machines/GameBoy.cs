@@ -501,6 +501,10 @@ namespace Essgee.Emulation.Machines
 						else if (serialDevice.ProvidesClock())
 							serialData = serialDevice.DoMasterTransfer(serialData);
 
+						/* No other device attached */
+						else
+							serialData = 0xFF;
+
 						cpu.RequestInterrupt(SM83.InterruptSource.SerialIO);
 
 						serialTransferInProgress = false;
