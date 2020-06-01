@@ -139,15 +139,8 @@ namespace Essgee.Emulation.Video
 			for (var i = 0; i < vram.Length; i++) vram[i] = 0;
 			for (var i = 0; i < oam.Length; i++) oam[i] = 0;
 
-			WritePort(0x40, 0x00);
-			WritePort(0x42, 0x00);
-			WritePort(0x43, 0x00);
-			WritePort(0x45, 0x00);
-			WritePort(0x47, 0x00);
-			WritePort(0x48, 0x00);
-			WritePort(0x49, 0x00);
-			WritePort(0x4A, 0x00);
-			WritePort(0x4B, 0x00);
+			for (var i = (byte)0x40; i < 0x4C; i++)
+				WritePort(i, 0x00);
 
 			numSpritesOnLine = skipFrames = 0;
 			statIrqSignal = vBlankReady = false;
