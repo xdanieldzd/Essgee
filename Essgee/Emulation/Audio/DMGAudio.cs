@@ -8,8 +8,6 @@ using Essgee.Exceptions;
 using Essgee.EventArguments;
 using Essgee.Utilities;
 
-using static Essgee.Emulation.Utilities;
-
 namespace Essgee.Emulation.Audio
 {
 	public partial class DMGAudio : IAudio
@@ -21,36 +19,8 @@ namespace Essgee.Emulation.Audio
 		protected const int numChannels = 4;
 
 		Square channel1, channel2;
-
-		// FF1A - NR30
-		bool ch3SoundOn;
-
-		// FF1B - NR31
-		byte ch3SoundLengthData;
-
-		// FF1C - NR32
-		byte ch3OutputLevel;
-
-		// FF1D - NR33
-		byte ch3FrequencyLo;
-
-		// FF1E - NR34
-		byte ch3FrequencyHi;
-		bool ch3CounterConsecutiveSelection, ch3Initial;
-
-		// FF20 - NR41
-		byte ch4SoundLengthData;
-
-		// FF21 - NR42
-		byte ch4InitialEnvelopeVol, ch4NumEnvelopeSweep;
-		bool ch4EnvelopeIncDec;
-
-		// FF22 - NR43
-		byte ch4ShiftClockFreq, ch4FreqDivRatio;
-		bool ch4CounterStepSelect;
-
-		// FF23 - NR44
-		bool ch4CounterConsecutiveSelection, ch4Initial;
+		Wave channel3;
+		Noise channel4;
 
 		// FF24 - NR50
 		byte[] volumeRightLeft;
@@ -89,7 +59,8 @@ namespace Essgee.Emulation.Audio
 
 			channel1 = new Square(true);
 			channel2 = new Square(false);
-			//
+			channel3 = new Wave();
+			channel4 = new Noise();
 
 			samplesPerFrame = cyclesPerFrame = cyclesPerSample = -1;
 		}
@@ -155,7 +126,8 @@ namespace Essgee.Emulation.Audio
 
 			channel1.Reset();
 			channel2.Reset();
-			//
+			channel3.Reset();
+			channel4.Reset();
 
 			frameSequencerReload = (int)(clockRate / 512);
 			frameSequencerCounter = frameSequencerReload;
@@ -183,8 +155,8 @@ namespace Essgee.Emulation.Audio
 						case 0:
 							channel1.LengthCounterClock();
 							channel2.LengthCounterClock();
-							//channel3.LengthCounterClock();
-							//channel4.LengthCounterClock();
+							channel3.LengthCounterClock();
+							channel4.LengthCounterClock();
 							break;
 
 						case 1:
@@ -194,8 +166,8 @@ namespace Essgee.Emulation.Audio
 							channel1.SweepClock();
 							channel1.LengthCounterClock();
 							channel2.LengthCounterClock();
-							//channel3.LengthCounterClock();
-							//channel4.LengthCounterClock();
+							channel3.LengthCounterClock();
+							channel4.LengthCounterClock();
 							break;
 
 						case 3:
@@ -204,8 +176,8 @@ namespace Essgee.Emulation.Audio
 						case 4:
 							channel1.LengthCounterClock();
 							channel2.LengthCounterClock();
-							//channel3.LengthCounterClock();
-							//channel4.LengthCounterClock();
+							channel3.LengthCounterClock();
+							channel4.LengthCounterClock();
 							break;
 
 						case 5:
@@ -215,14 +187,14 @@ namespace Essgee.Emulation.Audio
 							channel1.SweepClock();
 							channel1.LengthCounterClock();
 							channel2.LengthCounterClock();
-							//channel3.LengthCounterClock();
-							//channel4.LengthCounterClock();
+							channel3.LengthCounterClock();
+							channel4.LengthCounterClock();
 							break;
 
 						case 7:
 							channel1.VolumeEnvelopeClock();
 							channel2.VolumeEnvelopeClock();
-							//channel4.VolumeEnvelopeClock();
+							channel4.VolumeEnvelopeClock();
 							break;
 					}
 
@@ -233,8 +205,8 @@ namespace Essgee.Emulation.Audio
 
 				channel1.Step();
 				channel2.Step();
-				//channel3.Step();
-				//channel4.Step();
+				channel3.Step();
+				channel4.Step();
 			}
 
 			if (sampleCycleCount >= cyclesPerSample)
@@ -269,8 +241,8 @@ namespace Essgee.Emulation.Audio
 				/* Generate samples */
 				var ch1 = (short)(((channel1Enable[i] ? channel1.OutputVolume : 0) * (volumeRightLeft[i] + 1)) << 8);
 				var ch2 = (short)(((channel2Enable[i] ? channel2.OutputVolume : 0) * (volumeRightLeft[i] + 1)) << 8);
-				var ch3 = (short)0;
-				var ch4 = (short)0;
+				var ch3 = (short)(((channel3Enable[i] ? channel3.OutputVolume : 0) * (volumeRightLeft[i] + 1)) << 8);
+				var ch4 = (short)(((channel4Enable[i] ? channel4.OutputVolume : 0) * (volumeRightLeft[i] + 1)) << 8);
 
 				channelSampleBuffer[0].Add(ch1);
 				channelSampleBuffer[1].Add(ch2);
@@ -299,52 +271,24 @@ namespace Essgee.Emulation.Audio
 
 		public virtual byte ReadPort(byte port)
 		{
+			// Channels
 			if (port >= 0x10 && port <= 0x14)
 				return channel1.ReadPort((byte)(port - 0x10));
 			else if (port >= 0x15 && port <= 0x19)
 				return channel2.ReadPort((byte)(port - 0x15));
-			else // TODO move other channels to classes
+			else if (port >= 0x1A && port <= 0x1E)
+				return channel3.ReadPort((byte)(port - 0x1A));
+			else if (port >= 0x1F && port <= 0x23)
+				return channel4.ReadPort((byte)(port - 0x1F));
+
+			// Channel 3 Wave RAM
+			else if (port >= 0x30 && port <= 0x3F)
+				return channel3.ReadWaveRam((byte)(port - 0x30));
+
+			// Control ports
+			else
 				switch (port)
 				{
-					case 0x1A:
-						return (byte)(
-							0x7F |
-							(ch3SoundOn ? (1 << 7) : 0));
-
-					case 0x1B:
-						return ch3SoundLengthData;
-
-					case 0x1C:
-						return (byte)(
-							0x9F |
-							(ch3OutputLevel << 5));
-
-					case 0x1E:
-						return (byte)(
-							(ch3CounterConsecutiveSelection ? (1 << 6) : 0));
-
-					case 0x20:
-						return (byte)(
-							0xC0 |
-							(ch4SoundLengthData));
-
-					case 0x21:
-						return (byte)(
-							(ch4InitialEnvelopeVol << 4) |
-							(ch4EnvelopeIncDec ? (1 << 3) : 0) |
-							(ch4NumEnvelopeSweep << 0));
-
-					case 0x22:
-						return (byte)(
-							(ch4ShiftClockFreq << 4) |
-							(ch4CounterStepSelect ? (1 << 3) : 0) |
-							(ch4FreqDivRatio << 0));
-
-					case 0x23:
-						return (byte)(
-							0x3F |
-							(ch4CounterConsecutiveSelection ? (1 << 6) : 0));
-
 					case 0x24:
 						return (byte)(
 							(vinEnableRightLeft[1] ? (1 << 7) : 0) |
@@ -379,15 +323,24 @@ namespace Essgee.Emulation.Audio
 
 		public virtual void WritePort(byte port, byte value)
 		{
+			// Channels
 			if (port >= 0x10 && port <= 0x14)
 				channel1.WritePort((byte)(port - 0x10), value);
 			else if (port >= 0x15 && port <= 0x19)
 				channel2.WritePort((byte)(port - 0x15), value);
-			else // TODO move other channels to classes
+			else if (port >= 0x1A && port <= 0x1E)
+				channel3.WritePort((byte)(port - 0x1A), value);
+			else if (port >= 0x1F && port <= 0x23)
+				channel4.WritePort((byte)(port - 0x1F), value);
+
+			// Channel 3 Wave RAM
+			else if (port >= 0x30 && port <= 0x3F)
+				channel3.WriteWaveRam((byte)(port - 0x30), value);
+
+			// Control ports
+			else
 				switch (port)
 				{
-					//
-
 					case 0x24:
 						vinEnableRightLeft[1] = ((value >> 7) & 0b1) == 0b1;
 						volumeRightLeft[1] = (byte)((value >> 4) & 0b111);
@@ -408,9 +361,6 @@ namespace Essgee.Emulation.Audio
 
 					case 0x26:
 						isSoundHwEnabled = ((value >> 7) & 0b1) == 0b1;
-						break;
-
-					default:
 						break;
 				}
 		}

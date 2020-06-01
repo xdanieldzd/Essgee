@@ -98,7 +98,9 @@
     <Compile Include="Debugging\SoundDebuggerForm.Designer.cs">
       <DependentUpon>SoundDebuggerForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Emulation\Audio\DMGAudio.Noise.cs" />
     <Compile Include="Emulation\Audio\DMGAudio.Square.cs" />
+    <Compile Include="Emulation\Audio\DMGAudio.Wave.cs" />
     <Compile Include="Emulation\CartridgeLoader.cs" />
     <Compile Include="Emulation\Cartridges\Coleco\ColecoCartridge.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\MBC2Cartridge.cs" />
