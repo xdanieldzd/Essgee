@@ -25,6 +25,7 @@ using Essgee.Exceptions;
 using Essgee.Extensions;
 using Essgee.Metadata;
 using Essgee.Utilities;
+using Essgee.Utilities.XInput;
 
 namespace Essgee
 {
@@ -1118,6 +1119,9 @@ namespace Essgee
 				}
 				lastFramebufferData = e.FrameData;
 				graphicsHandler?.SetTextureData(e.FrameData);
+
+				// TODO: create emulation "EndOfFrame" event for this?
+				ControllerManager.Update();
 			});
 		}
 
@@ -1151,6 +1155,8 @@ namespace Essgee
 				var dvx = renderControl.ClientSize.Width / (currentViewport.width - (double)vx);
 				var dvy = renderControl.ClientSize.Height / (currentViewport.height - (double)currentViewport.y);
 				e.MousePosition = ((int)(mousePosition.x / dvx) - vx, (int)(mousePosition.y / dvy) - currentViewport.y);
+
+				e.ControllerState = ControllerManager.GetController(0).GetControllerState();
 			}
 		}
 

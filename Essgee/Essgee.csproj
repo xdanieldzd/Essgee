@@ -66,6 +66,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BuildInformation.cs" />
+    <Compile Include="Utilities\XInput\Controller.cs" />
+    <Compile Include="Utilities\XInput\ControllerManager.cs" />
+    <Compile Include="Utilities\XInput\ControllerState.cs" />
+    <Compile Include="Utilities\XInput\NativeMethods.cs" />
+    <Compile Include="Utilities\XInput\XInputCapabilities.cs" />
+    <Compile Include="Utilities\XInput\XInputGamepad.cs" />
+    <Compile Include="Utilities\XInput\XInputState.cs" />
+    <Compile Include="Utilities\XInput\XInputVibration.cs" />
     <EmbeddedResource Include="Debugging\ExceptionForm.resx">
       <DependentUpon>ExceptionForm.cs</DependentUpon>
     </EmbeddedResource>
