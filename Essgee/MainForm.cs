@@ -30,9 +30,6 @@ namespace Essgee
 {
 	public partial class MainForm : Form
 	{
-		readonly static double defaultPixelAspectRatio = (4.0 / 3.0);
-		readonly static int baseSampleRate = 11025;
-
 		readonly static int maxScreenSizeFactor = 5;
 		readonly static int maxSampleRateFactor = 3;
 		readonly static int maxSaveStateCount = 8;
@@ -55,8 +52,6 @@ namespace Essgee
 			}
 		}
 
-		double currentPixelAspectRatio;
-
 		OnScreenDisplayHandler onScreenDisplayHandler;
 
 		GraphicsHandler graphicsHandler;
@@ -74,6 +69,7 @@ namespace Essgee
 
 		bool lastUserPauseState;
 		(int x, int y, int width, int height) currentViewport;
+		double currentPixelAspectRatio;
 		byte[] lastFramebufferData;
 		(int width, int height) lastFramebufferSize;
 
@@ -99,8 +95,8 @@ namespace Essgee
 				};
 			}
 
-			currentPixelAspectRatio = defaultPixelAspectRatio;
 			currentViewport = (0, 0, 256, 240);
+			currentPixelAspectRatio = 4.0 / 3.0;
 
 			SizeAndPositionWindow();
 			SetWindowTitleAndStatus();
@@ -820,7 +816,7 @@ namespace Essgee
 
 			for (int i = 0; i < maxSampleRateFactor; i++)
 			{
-				var sampleRate = (baseSampleRate << i);
+				var sampleRate = 11025 << i;
 				var menuItem = new ToolStripMenuItem($"{sampleRate} Hz")
 				{
 					Checked = (Program.Configuration.SampleRate == sampleRate),
@@ -964,16 +960,11 @@ namespace Essgee
 				menuStrip.Enabled = statusStrip.Enabled = true;
 
 				CursorShown = true;
-				/*
+
 				ClientSize = new Size(
-					(int)((baseScreenSize * currentPixelAspectRatio) * Program.Configuration.ScreenSize),
-					(int)(baseScreenSize * Program.Configuration.ScreenSize) + (menuStrip.Height + statusStrip.Height)
+					(int)((currentViewport.width * currentPixelAspectRatio) * Program.Configuration.ScreenSize),
+					(currentViewport.height * Program.Configuration.ScreenSize) + (menuStrip.Height + statusStrip.Height)
 					);
-					*/
-				ClientSize = new Size(
-						(int)((currentViewport.width * currentPixelAspectRatio) * Program.Configuration.ScreenSize),
-						(int)(currentViewport.height * Program.Configuration.ScreenSize) + (menuStrip.Height + statusStrip.Height)
-						);
 
 				// https://stackoverflow.com/a/6837499
 				var screen = Screen.FromControl(this);
