@@ -10,7 +10,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 {
 	/* Image processing, etc. based on https://github.com/AntonioND/gbcam-rev-engineer/blob/master/doc/gb_camera_doc_v1_1_1.pdf */
 
-	public class GBCameraCartridge : ICartridge
+	public class GBCameraCartridge : IGameBoyCartridge
 	{
 		const int camSensorExtraLines = 8;
 		const int camSensorWidth = 128;
@@ -37,7 +37,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 		readonly byte[,,] tileBuffer;
 
 		byte[] romData, ramData;
-		bool hasCartRam;
+		bool hasBattery;
 
 		byte romBank, ramBank;
 		bool ramEnable;
@@ -68,7 +68,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			camRegisters = new byte[0x80];  // 0x36 used
 			camSelected = false;
 
-			hasCartRam = false;
+			hasBattery = false;
 		}
 
 		public void LoadRom(byte[] data)
@@ -93,7 +93,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 		public bool IsRamSaveNeeded()
 		{
-			return hasCartRam;
+			return hasBattery;
 		}
 
 		public ushort GetLowerBound()
@@ -104,6 +104,11 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 		public ushort GetUpperBound()
 		{
 			return 0x7FFF;
+		}
+
+		public void SetCartridgeConfig(bool battery, bool rtc, bool rumble)
+		{
+			hasBattery = battery;
 		}
 
 		public void SetImageSource(ImageSources source, string filename)
@@ -206,10 +211,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 				if (!camSelected)
 				{
 					if (ramEnable)
-					{
 						ramData[(ramBank << 13) | (address & 0x1FFF)] = value;
-						hasCartRam = true;
-					}
 				}
 				else
 				{

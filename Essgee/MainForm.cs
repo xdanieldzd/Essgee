@@ -317,6 +317,7 @@ namespace Essgee
 			emulatorHandler.PollInput += EmulatorHandler_PollInput;
 			emulatorHandler.EnqueueSamples += soundHandler.EnqueueSamples;
 			emulatorHandler.SaveExtraData += EmulatorHandler_SaveExtraData;
+			emulatorHandler.EnableRumble += EmulatorHandler_EnableRumble;
 			emulatorHandler.PauseChanged += EmulatorHandler_PauseChanged;
 
 			emulatorHandler.EnqueueSamples += soundDebuggerForm.EnqueueSamples;
@@ -509,6 +510,7 @@ namespace Essgee
 			emulatorHandler.PollInput -= EmulatorHandler_PollInput;
 			emulatorHandler.EnqueueSamples -= soundHandler.EnqueueSamples;
 			emulatorHandler.SaveExtraData -= EmulatorHandler_SaveExtraData;
+			emulatorHandler.EnableRumble -= EmulatorHandler_EnableRumble;
 			emulatorHandler.PauseChanged -= EmulatorHandler_PauseChanged;
 
 			emulatorHandler.EnqueueSamples -= soundDebuggerForm.EnqueueSamples;
@@ -1198,6 +1200,11 @@ namespace Essgee
 					file.Write(raw, 0, raw.Length);
 				}
 			}
+		}
+
+		private void EmulatorHandler_EnableRumble(object sender, EventArgs e)
+		{
+			ControllerManager.GetController(0).Vibrate(0.0f, 0.5f, TimeSpan.FromSeconds(0.1f));
 		}
 
 		private void EmulatorHandler_PauseChanged(object sender, EventArgs e)

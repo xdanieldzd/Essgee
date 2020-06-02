@@ -66,6 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BuildInformation.cs" />
+    <Compile Include="Emulation\Cartridges\Nintendo\IGameBoyCartridge.cs" />
     <Compile Include="Utilities\XInput\Controller.cs" />
     <Compile Include="Utilities\XInput\ControllerManager.cs" />
     <Compile Include="Utilities\XInput\ControllerState.cs" />
@@ -116,7 +117,7 @@
     <Compile Include="Emulation\Cartridges\Nintendo\MBC3Cartridge.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\MBC1Cartridge.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\GBCameraCartridge.cs" />
-    <Compile Include="Emulation\Cartridges\Nintendo\ROMOnlyCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Nintendo\NoMapperCartridge.cs" />
     <Compile Include="Emulation\Cartridges\Sega\KoreanMapperCartridge.cs" />
     <Compile Include="Emulation\Cartridges\Sega\KoreanMSX8kMapperCartridge.cs" />
     <Compile Include="Emulation\Cartridges\Sega\KoreanSpriteMapperCartridge.cs" />

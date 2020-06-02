@@ -68,6 +68,8 @@ namespace Essgee.Emulation.Machines
 		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
 		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
 
+		public event EventHandler<EventArgs> EnableRumble;
+
 		public string ManufacturerName => "Sega";
 		public string ModelName => "SC-3000";
 		public string DatFilename => "Sega - SG-1000.dat";      // TODO: SC-3000 .dat does not exist?

@@ -62,6 +62,9 @@ namespace Essgee.Emulation.Machines
 		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
 		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
 
+		public event EventHandler<EventArgs> EnableRumble;
+		protected virtual void OnEnableRumble(EventArgs e) { EnableRumble?.Invoke(this, EventArgs.Empty); }
+
 		public string ManufacturerName => "Nintendo";
 		public string ModelName => "Game Boy";
 		public string DatFilename => "Nintendo - Game Boy.dat";
@@ -71,7 +74,7 @@ namespace Essgee.Emulation.Machines
 		public double PixelAspectRatio => 1.0;
 
 		byte[] bootstrap;
-		ICartridge cartridge;
+		IGameBoyCartridge cartridge;
 		byte[] wram, hram;
 		byte ie;
 		SM83 cpu;
@@ -286,6 +289,9 @@ namespace Essgee.Emulation.Machines
 			if (serialDevice is GBPrinter gbPrinter)
 				gbPrinter.SaveExtraData -= SaveExtraData;
 
+			if (cartridge is MBC5Cartridge mbc5Cartridge)
+				mbc5Cartridge.EnableRumble -= EnableRumble;
+
 			cpu?.Shutdown();
 			video?.Shutdown();
 			audio?.Shutdown();
@@ -324,6 +330,7 @@ namespace Essgee.Emulation.Machines
 				case 0x05: romSize = 1024 * 1024; break;
 				case 0x06: romSize = 2048 * 1024; break;
 				case 0x07: romSize = 4096 * 1024; break;
+				case 0x08: romSize = 8192 * 1024; break;
 				case 0x52: romSize = 1152 * 1024; break;
 				case 0x53: romSize = 1280 * 1024; break;
 				case 0x54: romSize = 1536 * 1024; break;
@@ -338,64 +345,66 @@ namespace Essgee.Emulation.Machines
 				case 0x01: ramSize = 2 * 1024; break;
 				case 0x02: ramSize = 8 * 1024; break;
 				case 0x03: ramSize = 32 * 1024; break;
+				case 0x04: ramSize = 128 * 1024; break;
+				case 0x05: ramSize = 64 * 1024; break;
 
 				default: ramSize = 0; break;
 			}
-			if (mapperType == null)
+
+			/* NOTES:
+			 *  MBC2 internal RAM is not given in header, 512*4b == 256 bytes 
+			 *  GB Camera internal RAM ~seems~ to not be given in header? 128 kbytes
+			 */
+
+			var mapperTypeFromHeader = typeof(NoMapperCartridge);
+			var hasBattery = false;
+			var hasRtc = false;
+			var hasRumble = false;
+			switch (romData[0x0147])
 			{
-				switch (romData[0x0147])
-				{
-					case 0x00:
-						mapperType = typeof(ROMOnlyCartridge);
-						break;
+				case 0x00: mapperType = typeof(NoMapperCartridge); break;
+				case 0x01: mapperType = typeof(MBC1Cartridge); break;
+				case 0x02: mapperType = typeof(MBC1Cartridge); break;
+				case 0x03: mapperType = typeof(MBC1Cartridge); hasBattery = true; break;
+				case 0x05: mapperType = typeof(MBC2Cartridge); ramSize = 0x100; break;
+				case 0x06: mapperType = typeof(MBC2Cartridge); ramSize = 0x100; hasBattery = true; break;
+				case 0x08: mapperType = typeof(NoMapperCartridge); break;
+				case 0x09: mapperType = typeof(NoMapperCartridge); hasBattery = true; break;
+				// 0B-0D, MMM01
+				case 0x0F: mapperType = typeof(MBC3Cartridge); hasBattery = true; hasRtc = true; break;
+				case 0x10: mapperType = typeof(MBC3Cartridge); hasBattery = true; hasRtc = true; break;
+				case 0x11: mapperType = typeof(MBC3Cartridge); break;
+				case 0x12: mapperType = typeof(MBC3Cartridge); break;
+				case 0x13: mapperType = typeof(MBC3Cartridge); hasBattery = true; break;
+				case 0x19: mapperType = typeof(MBC5Cartridge); break;
+				case 0x1A: mapperType = typeof(MBC5Cartridge); break;
+				case 0x1B: mapperType = typeof(MBC5Cartridge); hasBattery = true; break;
+				case 0x1C: mapperType = typeof(MBC5Cartridge); hasRumble = true; break;
+				case 0x1D: mapperType = typeof(MBC5Cartridge); hasRumble = true; break;
+				case 0x1E: mapperType = typeof(MBC5Cartridge); hasBattery = true; hasRumble = true; break;
+				// 20, MBC6
+				// 22, MBC7
+				case 0xFC: mapperType = typeof(GBCameraCartridge); ramSize = 128 * 1024; break;
+				// FD, BANDAI TAMA5
+				// FE, HuC3
+				// FF, HuC1
 
-					case 0x01:
-					case 0x02:
-					case 0x03:
-						mapperType = typeof(MBC1Cartridge);
-						break;
-
-					case 0x05:
-					case 0x06:
-						mapperType = typeof(MBC2Cartridge);
-						ramSize = 0x100;    /* MBC2 internal RAM, 512*4b == 256 bytes */
-						break;
-
-					case 0x0F:
-					case 0x10:
-					case 0x11:
-					case 0x12:
-					case 0x13:
-						mapperType = typeof(MBC3Cartridge);
-						break;
-
-					case 0x19:
-					case 0x1A:
-					case 0x1B:
-					case 0x1C:
-					case 0x1D:
-					case 0x1E:
-						mapperType = typeof(MBC5Cartridge);
-						break;
-
-					case 0xFC:
-						mapperType = typeof(GBCameraCartridge);
-						ramSize = 128 * 1024;   // TODO not specified in header??
-						break;
-
-					// TODO more mbcs and stuffs
-
-					default:
-						throw new EmulationException($"Unimplemented cartridge type 0x{romData[0x0147]:X2}");
-				}
+				default: throw new EmulationException($"Unimplemented cartridge type 0x{romData[0x0147]:X2}");
 			}
 
-			cartridge = (ICartridge)Activator.CreateInstance(mapperType, new object[] { romSize, ramSize });
+			if (mapperType == null)
+				mapperType = mapperTypeFromHeader;
+
+			cartridge = (IGameBoyCartridge)Activator.CreateInstance(mapperType, new object[] { romSize, ramSize });
 			cartridge.LoadRom(romData);
 			cartridge.LoadRam(ramData);
+			cartridge.SetCartridgeConfig(hasBattery, hasRtc, hasRumble);
 
 			if (cartridge is GBCameraCartridge camCartridge)
 				camCartridge.SetImageSource(configuration.CameraSource, configuration.CameraImageFile);
+
+			if (cartridge is MBC5Cartridge mbc5Cartridge)
+				mbc5Cartridge.EnableRumble += EnableRumble;
 		}
 
 		public byte[] GetCartridgeRam()
@@ -549,10 +558,6 @@ namespace Essgee.Emulation.Machines
 			if (eventArgs.Keyboard.Contains(configuration.ControlsB) || eventArgs.ControllerState.IsXPressed() || eventArgs.ControllerState.IsBPressed()) inputsPressed |= JoypadInputs.B;
 			if (eventArgs.Keyboard.Contains(configuration.ControlsSelect) || eventArgs.ControllerState.IsBackPressed()) inputsPressed |= JoypadInputs.Select;
 			if (eventArgs.Keyboard.Contains(configuration.ControlsStart) || eventArgs.ControllerState.IsStartPressed()) inputsPressed |= JoypadInputs.Start;
-
-
-			//TEST
-			if (eventArgs.ControllerState.IsYPressed()) Essgee.Utilities.XInput.ControllerManager.GetController(0).Vibrate(0.0f, 0.5f, TimeSpan.FromSeconds(1.0f));
 		}
 
 		private byte ReadMemory(ushort address)

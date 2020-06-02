@@ -11,10 +11,13 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 {
 	// TODO: rumble?
 
-	public class MBC5Cartridge : ICartridge
+	public class MBC5Cartridge : IGameBoyCartridge
 	{
+		public event EventHandler<EventArgs> EnableRumble;
+		protected virtual void OnEnableRumble(EventArgs e) { EnableRumble?.Invoke(this, EventArgs.Empty); }
+
 		byte[] romData, ramData;
-		bool hasCartRam;
+		bool hasBattery, hasRumble;
 
 		ushort romBank;
 		byte ramBank;
@@ -30,7 +33,8 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 			ramEnable = false;
 
-			hasCartRam = false;
+			hasBattery = false;
+			hasRumble = false;
 		}
 
 		public void LoadRom(byte[] data)
@@ -55,7 +59,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 		public bool IsRamSaveNeeded()
 		{
-			return hasCartRam;
+			return hasBattery;
 		}
 
 		public ushort GetLowerBound()
@@ -66,6 +70,12 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 		public ushort GetUpperBound()
 		{
 			return 0x7FFF;
+		}
+
+		public void SetCartridgeConfig(bool battery, bool rtc, bool rumble)
+		{
+			hasBattery = battery;
+			hasRumble = rumble;
 		}
 
 		public void Step(int clockCyclesInStep)
@@ -114,15 +124,22 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			}
 			else if (address >= 0x4000 && address <= 0x5FFF)
 			{
-				ramBank = (byte)(value & 0x0F);
+				if (hasRumble)
+				{
+					if ((value & 0x08) == 0x08) OnEnableRumble(EventArgs.Empty);
+					ramBank = (byte)(value & 0x07);
+					ramBank %= (byte)(ramData.Length >> 13);
+				}
+				else
+				{
+					ramBank = (byte)(value & 0x0F);
+					ramBank %= (byte)(ramData.Length >> 13);
+				}
 			}
 			else if (address >= 0xA000 && address <= 0xBFFF)
 			{
 				if (ramEnable && ramData.Length != 0)
-				{
 					ramData[(ramBank << 13) | (address & 0x1FFF)] = value;
-					hasCartRam = true;
-				}
 			}
 		}
 	}

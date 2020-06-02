@@ -9,13 +9,15 @@ using Essgee.Utilities;
 
 namespace Essgee.Emulation.Cartridges.Nintendo
 {
-	public class ROMOnlyCartridge : ICartridge
+	public class NoMapperCartridge : IGameBoyCartridge
 	{
-		byte[] romData;
+		byte[] romData, ramData;
+		bool hasBattery;
 
-		public ROMOnlyCartridge(int romSize, int ramSize)
+		public NoMapperCartridge(int romSize, int ramSize)
 		{
 			romData = new byte[romSize];
+			ramData = new byte[ramSize];
 		}
 
 		public void LoadRom(byte[] data)
@@ -25,7 +27,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 		public void LoadRam(byte[] data)
 		{
-			/* Not supported */
+			Buffer.BlockCopy(data, 0, ramData, 0, Math.Min(data.Length, ramData.Length));
 		}
 
 		public byte[] GetRomData()
@@ -35,12 +37,12 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 		public byte[] GetRamData()
 		{
-			return new byte[0];
+			return ramData;
 		}
 
 		public bool IsRamSaveNeeded()
 		{
-			return false;
+			return hasBattery;
 		}
 
 		public ushort GetLowerBound()
@@ -58,14 +60,25 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			/* Nothing to do */
 		}
 
+		public void SetCartridgeConfig(bool battery, bool rtc, bool rumble)
+		{
+			hasBattery = battery;
+		}
+
 		public byte Read(ushort address)
 		{
-			return romData[address & (romData.Length - 1)];
+			if (address >= 0x0000 && address <= 0x7FFF)
+				return romData[address & 0x7FFF];
+			else if (address >= 0xA000 && address <= 0xBFFF)
+				return ramData[address & 0x1FFF];
+			else
+				return 0xFF;
 		}
 
 		public void Write(ushort address, byte value)
 		{
-			/* Not supported */
+			if (address >= 0xA000 && address <= 0xBFFF)
+				ramData[address & 0x1FFF] = value;
 		}
 	}
 }

@@ -19,6 +19,7 @@ namespace Essgee.Emulation.Machines
 		event EventHandler<PollInputEventArgs> PollInput;
 		event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples;
 		event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
+		event EventHandler<EventArgs> EnableRumble;
 
 		string ManufacturerName { get; }
 		string ModelName { get; }

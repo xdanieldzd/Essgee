@@ -9,7 +9,7 @@ using Essgee.Utilities;
 
 namespace Essgee.Emulation.Cartridges.Nintendo
 {
-	public class MBC3Cartridge : ICartridge
+	public class MBC3Cartridge : IGameBoyCartridge
 	{
 		// https://thomas.spurden.name/gameboy/#mbc3-real-time-clock-rtc
 
@@ -113,7 +113,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 		}
 
 		byte[] romData, ramData;
-		bool hasCartRam, hasRTC;
+		bool hasBattery, hasRTC;
 
 		byte romBank, ramBank;
 		bool ramEnable;
@@ -125,7 +125,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			romData = new byte[romSize];
 			ramData = new byte[ramSize];
 
-			hasCartRam = false;
+			hasBattery = false;
 			hasRTC = false;
 
 			romBank = 1;
@@ -163,7 +163,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 		public bool IsRamSaveNeeded()
 		{
-			return hasCartRam;
+			return hasBattery;
 		}
 
 		public ushort GetLowerBound()
@@ -174,6 +174,12 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 		public ushort GetUpperBound()
 		{
 			return 0x7FFF;
+		}
+
+		public void SetCartridgeConfig(bool battery, bool rtc, bool rumble)
+		{
+			hasBattery = battery;
+			hasRTC = rtc;
 		}
 
 		public void Step(int clockCyclesInStep)
@@ -252,13 +258,9 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 				{
 					rtc.Update();
 					rtc.BaseRegisters[rtc.SelectedRegister] = value;
-					hasRTC = true;
 				}
 				else if (ramEnable)
-				{
 					ramData[(ramBank << 13) | (address & 0x1FFF)] = value;
-					hasCartRam = true;
-				}
 			}
 		}
 	}

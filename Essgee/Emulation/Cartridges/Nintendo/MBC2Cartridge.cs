@@ -9,10 +9,10 @@ using Essgee.Utilities;
 
 namespace Essgee.Emulation.Cartridges.Nintendo
 {
-	public class MBC2Cartridge : ICartridge
+	public class MBC2Cartridge : IGameBoyCartridge
 	{
 		byte[] romData, ramData;
-		bool hasCartRam;
+		bool hasBattery;
 
 		byte romBank;
 		bool ramEnable;
@@ -26,7 +26,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 			ramEnable = false;
 
-			hasCartRam = false;
+			hasBattery = false;
 		}
 
 		public void LoadRom(byte[] data)
@@ -51,7 +51,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 		public bool IsRamSaveNeeded()
 		{
-			return hasCartRam;
+			return hasBattery;
 		}
 
 		public ushort GetLowerBound()
@@ -62,6 +62,11 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 		public ushort GetUpperBound()
 		{
 			return 0x7FFF;
+		}
+
+		public void SetCartridgeConfig(bool battery, bool rtc, bool rumble)
+		{
+			hasBattery = battery;
 		}
 
 		public void Step(int clockCyclesInStep)
@@ -118,7 +123,6 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 					var valueShift = (address & 0x01) << 2;
 
 					ramData[ramOffset] = (byte)((ramData[ramOffset] & (0x0F << (valueShift ^ 0x04))) | (value << valueShift));
-					hasCartRam = true;
 				}
 			}
 		}

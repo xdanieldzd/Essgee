@@ -65,6 +65,8 @@ namespace Essgee.Emulation.Machines
 		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
 		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
 
+		public event EventHandler<EventArgs> EnableRumble;
+
 		public string ManufacturerName => "Sega";
 		public string ModelName => "Master System";
 		public string DatFilename => "Sega - Master System - Mark III.dat";

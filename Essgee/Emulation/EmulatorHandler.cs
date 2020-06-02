@@ -82,6 +82,12 @@ namespace Essgee.Emulation
 			remove { emulator.SaveExtraData -= value; }
 		}
 
+		public event EventHandler<EventArgs> EnableRumble
+		{
+			add { emulator.EnableRumble += value; }
+			remove { emulator.EnableRumble -= value; }
+		}
+
 		public event EventHandler<EventArgs> PauseChanged;
 
 		GameMetadata currentGameMetadata;
