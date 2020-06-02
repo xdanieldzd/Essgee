@@ -356,6 +356,9 @@ namespace Essgee
 
 		private void PowerOnWithoutCartridge(Type machineType)
 		{
+			if (soundHandler.IsRecording)
+				soundHandler.CancelRecording();
+
 			InitializeEmulation(machineType);
 
 			lastGameMetadata = null;
@@ -364,6 +367,7 @@ namespace Essgee
 
 			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = true;
 			loadStateToolStripMenuItem.Enabled = saveStateToolStripMenuItem.Enabled = false;
+			startRecordingToolStripMenuItem.Enabled = true;
 
 			emulatorHandler.Startup();
 
@@ -379,6 +383,9 @@ namespace Essgee
 			{
 				var (machineType, romData) = CartridgeLoader.Load(fileName, "ROM image");
 
+				if (soundHandler.IsRecording)
+					soundHandler.CancelRecording();
+
 				InitializeEmulation(machineType);
 
 				lastGameMetadata = gameMetadataHandler.GetGameMetadata(emulatorHandler.Information.DatFileName, fileName, Crc32.Calculate(romData), romData.Length);
@@ -393,6 +400,7 @@ namespace Essgee
 
 				takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = true;
 				loadStateToolStripMenuItem.Enabled = saveStateToolStripMenuItem.Enabled = true;
+				startRecordingToolStripMenuItem.Enabled = true;
 
 				emulatorHandler.Startup();
 
@@ -1231,6 +1239,23 @@ namespace Essgee
 			SignalStopEmulation();
 		}
 
+		private void startRecordingToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			soundHandler?.BeginRecording();
+			stopRecordingToolStripMenuItem.Enabled = true;
+			(sender as ToolStripMenuItem).Enabled = false;
+		}
+
+		private void stopRecordingToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (sfdSaveWavRecording.ShowDialog() == DialogResult.OK)
+			{
+				soundHandler?.SaveRecording(sfdSaveWavRecording.FileName);
+				startRecordingToolStripMenuItem.Enabled = true;
+				(sender as ToolStripMenuItem).Enabled = false;
+			}
+		}
+
 		private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			SetTemporaryPause(true);
@@ -1280,6 +1305,8 @@ namespace Essgee
 					}
 					croppedBitmap.Save(newScreenshotPath);
 				}
+
+				onScreenDisplayHandler.EnqueueMessageSuccess("Screenshot saved.");
 			}
 
 			SetTemporaryPause(false);

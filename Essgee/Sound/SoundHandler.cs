@@ -42,11 +42,12 @@ namespace Essgee.Sound
 		Thread audioThread;
 		volatile bool audioThreadRunning;
 
-		// TODO properly implement saving wav files
-		bool saveWav = false;
+		// TODO: move sound recording stuff to separate class?
 		WaveHeader waveHeader;
 		FormatChunk formatChunk;
 		DataChunk dataChunk;
+
+		public bool IsRecording { get; private set; }
 
 		bool disposed = false;
 
@@ -72,15 +73,6 @@ namespace Essgee.Sound
 			InitializeFilters();
 
 			onScreenDisplayHandler.EnqueueMessageSuccess($"Sound initialized; {SampleRate} Hz, {NumChannels} channel(s).");
-
-			// TODO
-			if (saveWav)
-			{
-				waveHeader = new WaveHeader();
-				formatChunk = new FormatChunk(sampleRate, numChannels);
-				dataChunk = new DataChunk();
-				waveHeader.FileLength += formatChunk.Length();
-			}
 		}
 
 		~SoundHandler()
@@ -147,17 +139,39 @@ namespace Essgee.Sound
 				AL.DeleteBuffer(buffer);
 
 			sampleQueue.Clear();
+		}
 
-			// TODO
-			if (saveWav)
+		public void BeginRecording()
+		{
+			waveHeader = new WaveHeader();
+			formatChunk = new FormatChunk(SampleRate, NumChannels);
+			dataChunk = new DataChunk();
+			waveHeader.FileLength += formatChunk.Length();
+
+			IsRecording = true;
+
+			onScreenDisplayHandler.EnqueueMessage("Sound recording started.");
+		}
+
+		public void SaveRecording(string filename)
+		{
+			using (FileStream file = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
 			{
-				using (FileStream file = new FileStream(@"D:\Temp\Essgee\out.wav", FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
-				{
-					file.Write(waveHeader.GetBytes(), 0, (int)waveHeader.Length());
-					file.Write(formatChunk.GetBytes(), 0, (int)formatChunk.Length());
-					file.Write(dataChunk.GetBytes(), 0, (int)dataChunk.Length());
-				}
+				file.Write(waveHeader.GetBytes(), 0, (int)waveHeader.Length());
+				file.Write(formatChunk.GetBytes(), 0, (int)formatChunk.Length());
+				file.Write(dataChunk.GetBytes(), 0, (int)dataChunk.Length());
 			}
+
+			IsRecording = false;
+
+			onScreenDisplayHandler.EnqueueMessage("Sound recording stopped.");
+		}
+
+		public void CancelRecording()
+		{
+			IsRecording = false;
+
+			onScreenDisplayHandler.EnqueueMessage("Sound recording cancelled.");
 		}
 
 		private void ThreadMainLoop()
@@ -215,8 +229,7 @@ namespace Essgee.Sound
 
 			sampleQueue.Enqueue(e.MixedSamples.ToArray());
 
-			// TODO
-			if (saveWav)
+			if (IsRecording)
 			{
 				dataChunk.AddSampleData(e.MixedSamples);
 				waveHeader.FileLength += (uint)e.MixedSamples.Length;
