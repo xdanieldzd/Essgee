@@ -369,6 +369,15 @@ namespace Essgee.Emulation.Machines
 						mapperType = typeof(MBC3Cartridge);
 						break;
 
+					case 0x19:
+					case 0x1A:
+					case 0x1B:
+					case 0x1C:
+					case 0x1D:
+					case 0x1E:
+						mapperType = typeof(MBC5Cartridge);
+						break;
+
 					case 0xFC:
 						mapperType = typeof(GBCameraCartridge);
 						ramSize = 128 * 1024;   // TODO not specified in header??

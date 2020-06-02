@@ -103,6 +103,7 @@
     <Compile Include="Emulation\Audio\DMGAudio.Wave.cs" />
     <Compile Include="Emulation\CartridgeLoader.cs" />
     <Compile Include="Emulation\Cartridges\Coleco\ColecoCartridge.cs" />
+    <Compile Include="Emulation\Cartridges\Nintendo\MBC5Cartridge.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\MBC2Cartridge.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\MBC3Cartridge.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\MBC1Cartridge.cs" />
