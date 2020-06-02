@@ -5,12 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
+using System.ComponentModel;
 
 using Essgee.EventArguments;
 
-namespace Essgee.Emulation.Peripherals.Serial
+namespace Essgee.Emulation.ExtDevices.Nintendo
 {
+	[Description("Game Boy Printer")]
 	public class GBPrinter : ISerialDevice
 	{
 		readonly Color[] defaultPalette = new Color[]

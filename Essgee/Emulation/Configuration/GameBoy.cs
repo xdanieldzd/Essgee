@@ -8,6 +8,8 @@ using System.Windows.Forms;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
+using Essgee.Emulation.Cartridges.Nintendo;
+using Essgee.Emulation.ExtDevices.Nintendo;
 using Essgee.Utilities;
 
 namespace Essgee.Emulation.Configuration
@@ -20,13 +22,13 @@ namespace Essgee.Emulation.Configuration
 		[IsBootstrapRomPath]
 		[FileBrowserControl("General", "Bootstrap Path", "Game Boy Bootstrap ROM (*.gb;*.bin;*.zip)|*.gb;*.bin;*.zip")]
 		public string BootstrapRom { get; set; }
-		[DropDownControl("General", "Serial Device", typeof(Machines.GameBoy.SerialDevices))]
-		[JsonConverter(typeof(StringEnumConverter))]
-		public Machines.GameBoy.SerialDevices SerialDevice { get; set; }
+		[DropDownControl("General", "Serial Device", typeof(ISerialDevice))]
+		[JsonConverter(typeof(TypeNameJsonConverter), "Essgee.Emulation.ExtDevices.Nintendo")]
+		public Type SerialDevice { get; set; }
 
-		[DropDownControl("GB Camera", "Camera Source", typeof(Cartridges.Nintendo.GBCameraCartridge.ImageSources))]
+		[DropDownControl("GB Camera", "Camera Source", typeof(GBCameraCartridge.ImageSources))]
 		[JsonConverter(typeof(StringEnumConverter))]
-		public Cartridges.Nintendo.GBCameraCartridge.ImageSources CameraSource { get; set; }
+		public GBCameraCartridge.ImageSources CameraSource { get; set; }
 		[FileBrowserControl("GB Camera", "Camera Image", "Image Files (*.png;*.bmp)|*.png;*.bmp")]
 		public string CameraImageFile { get; set; }
 
@@ -60,8 +62,8 @@ namespace Essgee.Emulation.Configuration
 			UseBootstrap = false;
 			BootstrapRom = string.Empty;
 
-			SerialDevice = Machines.GameBoy.SerialDevices.None;
-			CameraSource = Cartridges.Nintendo.GBCameraCartridge.ImageSources.Noise;
+			SerialDevice = typeof(DummyDevice);
+			CameraSource = GBCameraCartridge.ImageSources.Noise;
 			CameraImageFile = string.Empty;
 
 			ControlsUp = Keys.Up;

@@ -355,13 +355,27 @@ namespace Essgee
 			else
 			{
 				var dict = new Dictionary<string, object>();
-				foreach (var value in Enum.GetValues(valueType))
+				if (valueType.IsEnum)
 				{
-					if (value.GetType().GetField(value.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored ?? false) continue;
-					if (ignoredValues?.Contains(value) ?? false) continue;
+					foreach (var value in Enum.GetValues(valueType))
+					{
+						if (value.GetType().GetField(value.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored ?? false) continue;
+						if (ignoredValues?.Contains(value) ?? false) continue;
 
-					var key = value.GetType().GetField(value.ToString())?.GetAttribute<DescriptionAttribute>()?.Description ?? value.ToString();
-					if (!dict.ContainsKey(key)) dict.Add(key, value);
+						var key = value.GetType().GetField(value.ToString())?.GetAttribute<DescriptionAttribute>()?.Description ?? value.ToString();
+						if (!dict.ContainsKey(key)) dict.Add(key, value);
+					}
+				}
+				else if (valueType.IsInterface)
+				{
+					foreach (var value in Assembly.GetExecutingAssembly().GetTypes().Where(x => valueType.IsAssignableFrom(x) && !x.IsInterface))
+					{
+						if (value.GetType().GetField(value.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored ?? false) continue;
+						if (ignoredValues?.Contains(value) ?? false) continue;
+
+						var key = value.GetAttribute<DescriptionAttribute>()?.Description ?? value.ToString();
+						if (!dict.ContainsKey(key)) dict.Add(key, value);
+					}
 				}
 				cache[valueType.FullName] = Values = dict.ToList();
 			}

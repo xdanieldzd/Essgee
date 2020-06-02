@@ -11,7 +11,7 @@ using Essgee.Emulation.Video;
 using Essgee.Emulation.Audio;
 using Essgee.Emulation.Cartridges;
 using Essgee.Emulation.Cartridges.Nintendo;
-using Essgee.Emulation.Peripherals.Serial;
+using Essgee.Emulation.ExtDevices.Nintendo;
 using Essgee.EventArguments;
 using Essgee.Exceptions;
 using Essgee.Utilities;
@@ -190,23 +190,11 @@ namespace Essgee.Emulation.Machines
 				camCartridge.SetImageSource(configuration.CameraSource, configuration.CameraImageFile);
 
 			/* Serial */
-			if (serialDevice is GBPrinter gbPrinter)
-				gbPrinter.SaveExtraData -= SaveExtraData;
+			if (serialDevice != null)
+				serialDevice.SaveExtraData -= SaveExtraData;
 
-			switch (configuration.SerialDevice)
-			{
-				case SerialDevices.None:
-					serialDevice = new DummyDevice();
-					break;
-
-				case SerialDevices.GBPrinter:
-					serialDevice = new GBPrinter();
-					(serialDevice as GBPrinter).SaveExtraData += SaveExtraData;
-					break;
-
-				default:
-					throw new EmulationException($"Unknown serial device {configuration.SerialDevice} selected");
-			}
+			serialDevice = (ISerialDevice)Activator.CreateInstance(configuration.SerialDevice);
+			serialDevice.SaveExtraData += SaveExtraData;
 
 			/* Misc timing */
 			currentMasterClockCyclesInFrame = 0;
