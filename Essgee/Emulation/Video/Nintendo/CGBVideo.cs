@@ -117,19 +117,20 @@ namespace Essgee.Emulation.Video.Nintendo
 			var tileAttribs = vram[0x2000 | mapAddress];
 			var tileBgPalette = tileAttribs & 0b111;
 			var tileVramBank = (tileAttribs >> 3) & 0b1;
-			var tileHorizontalFlip = ((tileAttribs >> 4) & 0b1) == 0b1;
-			var tileVerticalFlip = ((tileAttribs >> 5) & 0b1) == 0b1;
-			var tileBgHasPriority = ((tileAttribs >> 6) & 0b1) == 0b1;
+			var tileHorizontalFlip = ((tileAttribs >> 5) & 0b1) == 0b1;
+			var tileVerticalFlip = ((tileAttribs >> 6) & 0b1) == 0b1;
+			var tileBgHasPriority = ((tileAttribs >> 7) & 0b1) == 0b1;
 
-			// TODO flips
+			var xShift = tileHorizontalFlip ? (xTransformed % 8) : (7 - (xTransformed % 8));
+			var yShift = tileVerticalFlip ? (7 - (yTransformed & 7)) : (yTransformed & 7);
 
 			if (!bgWndTileSelect)
 				tileNumber = (byte)(tileNumber ^ 0x80);
 
-			var tileAddress = (tileVramBank << 13) + tileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
+			var tileAddress = (tileVramBank << 13) + tileBase + (tileNumber << 4) + (yShift << 1);
 
-			var ba = (vram[tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
-			var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
+			var ba = (vram[tileAddress + 0] >> xShift) & 0b1;
+			var bb = (vram[tileAddress + 1] >> xShift) & 0b1;
 			var c = (byte)((bb << 1) | ba);
 
 			if (c != 0)
@@ -156,19 +157,20 @@ namespace Essgee.Emulation.Video.Nintendo
 			var tileAttribs = vram[0x2000 | mapAddress];
 			var tileBgPalette = tileAttribs & 0b111;
 			var tileVramBank = (tileAttribs >> 3) & 0b1;
-			var tileHorizontalFlip = ((tileAttribs >> 4) & 0b1) == 0b1;
-			var tileVerticalFlip = ((tileAttribs >> 5) & 0b1) == 0b1;
-			var tileBgHasPriority = ((tileAttribs >> 6) & 0b1) == 0b1;
+			var tileHorizontalFlip = ((tileAttribs >> 5) & 0b1) == 0b1;
+			var tileVerticalFlip = ((tileAttribs >> 6) & 0b1) == 0b1;
+			var tileBgHasPriority = ((tileAttribs >> 7) & 0b1) == 0b1;
 
-			// TODO flips
+			var xShift = tileHorizontalFlip ? (xTransformed % 8) : (7 - (xTransformed % 8));
+			var yShift = tileVerticalFlip ? (7 - (yTransformed & 7)) : (yTransformed & 7);
 
 			if (!bgWndTileSelect)
 				tileNumber = (byte)(tileNumber ^ 0x80);
 
-			var tileAddress = (tileVramBank << 13) + tileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
+			var tileAddress = (tileVramBank << 13) + tileBase + (tileNumber << 4) + (yShift << 1);
 
-			var ba = (vram[tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
-			var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
+			var ba = (vram[tileAddress + 0] >> xShift) & 0b1;
+			var bb = (vram[tileAddress + 1] >> xShift) & 0b1;
 			var c = (byte)((bb << 1) | ba);
 
 			if (c != 0)
