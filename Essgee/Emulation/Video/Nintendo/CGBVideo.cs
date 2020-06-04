@@ -115,7 +115,7 @@ namespace Essgee.Emulation.Video.Nintendo
 			var tileNumber = vram[mapAddress];
 
 			var tileAttribs = vram[0x2000 | mapAddress];
-			var tileBgPalette = tileAttribs & 0b11;
+			var tileBgPalette = tileAttribs & 0b111;
 			var tileVramBank = (tileAttribs >> 3) & 0b1;
 			var tileHorizontalFlip = ((tileAttribs >> 4) & 0b1) == 0b1;
 			var tileVerticalFlip = ((tileAttribs >> 5) & 0b1) == 0b1;
@@ -154,7 +154,7 @@ namespace Essgee.Emulation.Video.Nintendo
 			var tileNumber = vram[mapAddress];
 
 			var tileAttribs = vram[0x2000 | mapAddress];
-			var tileBgPalette = tileAttribs & 0b11;
+			var tileBgPalette = tileAttribs & 0b111;
 			var tileVramBank = (tileAttribs >> 3) & 0b1;
 			var tileHorizontalFlip = ((tileAttribs >> 4) & 0b1) == 0b1;
 			var tileVerticalFlip = ((tileAttribs >> 5) & 0b1) == 0b1;
@@ -355,7 +355,7 @@ namespace Essgee.Emulation.Video.Nintendo
 					{
 						// General purpose DMA
 						// TODO accuracy?
-						for (int i = 0; i < (dmaTransferLength << 4) + 1; i++)
+						for (int i = 0; i < (dmaTransferLength << 4); i++)
 							vram[(vramBank << 13) | dmaDestinationAddress++] = memoryReadDelegate(dmaSourceAddress++);
 						dmaTransferLength = 0xFF;
 					}
