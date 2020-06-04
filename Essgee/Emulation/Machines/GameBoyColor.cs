@@ -17,13 +17,15 @@ using Essgee.Utilities;
 
 namespace Essgee.Emulation.Machines
 {
-	[MachineIndex(5)]
-	public class GameBoy : IMachine
+	// TODO: make GB and GBC share ex. ROM loading routine?
+
+	[MachineIndex(6)]
+	public class GameBoyColor : IMachine
 	{
 		const double masterClock = 4194304;
 		const double refreshRate = 59.727500569606;
 
-		const int wramSize = 8 * 1024;
+		const int wramSize = 8 * 8 * 1024;
 		const int hramSize = 0x7F;
 
 		public event EventHandler<SendLogMessageEventArgs> SendLogMessage;
@@ -63,9 +65,9 @@ namespace Essgee.Emulation.Machines
 		protected virtual void OnEnableRumble(EventArgs e) { EnableRumble?.Invoke(this, EventArgs.Empty); }
 
 		public string ManufacturerName => "Nintendo";
-		public string ModelName => "Game Boy";
-		public string DatFilename => "Nintendo - Game Boy.dat";
-		public (string Extension, string Description) FileFilter => (".gb", "Game Boy ROMs");
+		public string ModelName => "Game Boy Color";
+		public string DatFilename => "Nintendo - Game Boy Color.dat";
+		public (string Extension, string Description) FileFilter => (".gbc", "Game Boy Color ROMs");
 		public bool HasBootstrap => true;
 		public double RefreshRate => refreshRate;
 		public double PixelAspectRatio => 1.0;
@@ -75,7 +77,7 @@ namespace Essgee.Emulation.Machines
 		byte[] wram, hram;
 		byte ie;
 		SM83 cpu;
-		DMGVideo video;
+		CGBVideo video;
 		DMGAudio audio;
 		ISerialDevice serialDevice;
 
@@ -106,8 +108,20 @@ namespace Essgee.Emulation.Machines
 		// FF0F - IF
 		bool irqVBlank, irqLCDCStatus, irqTimerOverflow, irqSerialIO, irqKeypad;
 
+		// FF4C
+
+		// FF4D - KEY1
+		bool speedIsDouble, speedPrepareSwitch;
+
 		// FF50
 		bool bootstrapDisabled;
+
+		// FF56 - RP
+		bool irWriteData, irReadData;
+		byte irReadEnable;
+
+		// FF70 - SVBK
+		byte wramBank;
 
 		[Flags]
 		enum JoypadInputs : byte
@@ -137,9 +151,9 @@ namespace Essgee.Emulation.Machines
 
 		int currentMasterClockCyclesInFrame, totalMasterClockCyclesInFrame;
 
-		Configuration.GameBoy configuration;
+		Configuration.GameBoyColor configuration;
 
-		public GameBoy() { }
+		public GameBoyColor() { }
 
 		public void Initialize()
 		{
@@ -149,7 +163,7 @@ namespace Essgee.Emulation.Machines
 			wram = new byte[wramSize];
 			hram = new byte[hramSize];
 			cpu = new SM83(ReadMemory, WriteMemory);
-			video = new DMGVideo(ReadMemory, cpu.RequestInterrupt);
+			video = new CGBVideo(ReadMemory, cpu.RequestInterrupt);
 			audio = new DMGAudio();
 
 			video.EndOfScanline += (s, e) =>
@@ -162,7 +176,7 @@ namespace Essgee.Emulation.Machines
 
 		public void SetConfiguration(IConfiguration config)
 		{
-			configuration = (Configuration.GameBoy)config;
+			configuration = (Configuration.GameBoyColor)config;
 
 			ReconfigureSystem();
 		}
@@ -208,7 +222,7 @@ namespace Essgee.Emulation.Machines
 		{
 			if (configuration.UseBootstrap)
 			{
-				var (type, bootstrapRomData) = CartridgeLoader.Load(configuration.BootstrapRom, "Game Boy Bootstrap");
+				var (type, bootstrapRomData) = CartridgeLoader.Load(configuration.BootstrapRom, "Game Boy Color Bootstrap");
 				bootstrap = new byte[bootstrapRomData.Length];
 				Buffer.BlockCopy(bootstrapRomData, 0, bootstrap, 0, bootstrap.Length);
 			}
@@ -238,7 +252,7 @@ namespace Essgee.Emulation.Machines
 			{
 				cpu.SetProgramCounter(0x0100);
 				cpu.SetStackPointer(0xFFFE);
-				cpu.SetRegisterAF(0x01B0);
+				cpu.SetRegisterAF(0x11B0);
 				cpu.SetRegisterBC(0x0013);
 				cpu.SetRegisterDE(0x00D8);
 				cpu.SetRegisterHL(0x014D);
@@ -272,6 +286,8 @@ namespace Essgee.Emulation.Machines
 			irqVBlank = irqLCDCStatus = irqTimerOverflow = irqSerialIO = irqKeypad = false;
 
 			bootstrapDisabled = !configuration.UseBootstrap;
+
+			wramBank = 0x01;
 
 			inputsPressed = 0;
 
@@ -576,7 +592,10 @@ namespace Essgee.Emulation.Machines
 			}
 			else if (address >= 0xC000 && address <= 0xFDFF)
 			{
-				return wram[address & (wramSize - 1)];
+				if ((address & 0x1000) == 0)
+					return wram[address & 0x0FFF];
+				else
+					return wram[(wramBank << 12) | address & 0x0FFF];
 			}
 			else if (address >= 0xFE00 && address <= 0xFE9F)
 			{
@@ -601,7 +620,7 @@ namespace Essgee.Emulation.Machines
 
 		private byte ReadIo(ushort address)
 		{
-			if ((address & 0xFFF0) == 0xFF40)
+			if ((address & 0xFFF0) == 0xFF40 || (address >= 0xFF51 && address <= 0xFF55) || (address >= 0xFF68 && address <= 0xFF6B))
 				return video.ReadPort((byte)(address & 0xFF));
 			else if ((address & 0xFFF0) == 0xFF10 || (address & 0xFFF0) == 0xFF20 || (address & 0xFFF0) == 0xFF30)
 				return audio.ReadPort((byte)(address & 0xFF));
@@ -659,6 +678,12 @@ namespace Essgee.Emulation.Machines
 							0xFE |
 							(bootstrapDisabled ? (1 << 0) : 0));
 
+					case 0xFF70:
+						// SVBK
+						return (byte)(
+							0xF8 |
+							(wramBank & 0b111));
+
 					default:
 						return 0xFF;// throw new NotImplementedException();
 				}
@@ -681,7 +706,10 @@ namespace Essgee.Emulation.Machines
 			}
 			else if (address >= 0xC000 && address <= 0xFDFF)
 			{
-				wram[address & (wramSize - 1)] = value;
+				if ((address & 0x1000) == 0)
+					wram[address & 0x0FFF] = value;
+				else
+					wram[(wramBank << 12) | address & 0x0FFF] = value;
 			}
 			else if (address >= 0xFE00 && address <= 0xFE9F)
 			{
@@ -703,7 +731,7 @@ namespace Essgee.Emulation.Machines
 
 		private void WriteIo(ushort address, byte value)
 		{
-			if ((address & 0xFFF0) == 0xFF40)
+			if ((address & 0xFFF0) == 0xFF40 || (address >= 0xFF51 && address <= 0xFF55) || (address >= 0xFF68 && address <= 0xFF6B))
 				video.WritePort((byte)(address & 0xFF), value);
 			else if ((address & 0xFFF0) == 0xFF10 || (address & 0xFFF0) == 0xFF20 || (address & 0xFFF0) == 0xFF30)
 				audio.WritePort((byte)(address & 0xFF), value);
@@ -778,6 +806,10 @@ namespace Essgee.Emulation.Machines
 					case 0xFF50:
 						if (!bootstrapDisabled)
 							bootstrapDisabled = (value & (1 << 0)) != 0;
+						break;
+
+					case 0xFF70:
+						wramBank = (byte)(value & 0b111);
 						break;
 				}
 			}

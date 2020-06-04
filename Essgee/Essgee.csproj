@@ -67,6 +67,9 @@
   <ItemGroup>
     <Compile Include="BuildInformation.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\IGameBoyCartridge.cs" />
+    <Compile Include="Emulation\Configuration\GameBoyColor.cs" />
+    <Compile Include="Emulation\Machines\GameBoyColor.cs" />
+    <Compile Include="Emulation\Video\Nintendo\CGBVideo.cs" />
     <Compile Include="Utilities\XInput\Controller.cs" />
     <Compile Include="Utilities\XInput\ControllerManager.cs" />
     <Compile Include="Utilities\XInput\ControllerState.cs" />
@@ -84,7 +87,16 @@
     <EmbeddedResource Include="Sound\WaveformControl.resx">
       <DependentUpon>WaveformControl.cs</DependentUpon>
     </EmbeddedResource>
+    <None Include="Assets\No-Intro\Nintendo - Game Boy Color.dat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Assets\No-Intro\Nintendo - Game Boy.dat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Shaders\Dot-Matrix Color\Fragment.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Shaders\Dot-Matrix Color\Manifest.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Assets\Shaders\Dot-Matrix\Fragment.glsl">
@@ -142,7 +154,7 @@
     <Compile Include="Emulation\ExtDevices\Nintendo\GBPrinter.cs" />
     <Compile Include="Emulation\ExtDevices\Nintendo\ISerialDevice.cs" />
     <Compile Include="Emulation\SaveStateHandler.cs" />
-    <Compile Include="Emulation\Video\DMGVideo.cs" />
+    <Compile Include="Emulation\Video\Nintendo\DMGVideo.cs" />
     <Compile Include="Emulation\Video\IVideo.cs" />
     <Compile Include="EventArguments\SaveExtraDataEventArgs.cs" />
     <Compile Include="EventArguments\SendLogMessageEventArgs.cs" />

@@ -30,5 +30,15 @@ namespace Essgee.Emulation
 			buffer[address + 2] = (byte)((r << 4) | r);
 			buffer[address + 3] = 0xFF;
 		}
+
+		public static void RGB555toBGRA8888(int color, ref byte[] buffer, int address)
+		{
+			// TODO improve
+			byte r = (byte)((color >> 0) & 0x1F), g = (byte)((color >> 5) & 0x1F), b = (byte)((color >> 10) & 0x1F);
+			buffer[address + 0] = (byte)((b << 3) | 0);
+			buffer[address + 1] = (byte)((g << 3) | 0);
+			buffer[address + 2] = (byte)((r << 3) | 0);
+			buffer[address + 3] = 0xFF;
+		}
 	}
 }

@@ -10,20 +10,19 @@ using Essgee.Exceptions;
 using Essgee.EventArguments;
 using Essgee.Utilities;
 
-using static Essgee.Emulation.Machines.GameBoy;
 using static Essgee.Emulation.CPU.SM83;
 
-namespace Essgee.Emulation.Video
+namespace Essgee.Emulation.Video.Nintendo
 {
 	public class DMGVideo : IVideo
 	{
-		const int numOamSlots = 40;
+		protected const int numOamSlots = 40;
 
-		const int mode2Boundary = 80;
-		const int mode3Boundary = mode2Boundary + 168;
+		protected const int mode2Boundary = 80;
+		protected const int mode3Boundary = mode2Boundary + 168;
 
-		readonly MemoryReadDelegate memoryReadDelegate;
-		readonly RequestInterruptDelegate requestInterruptDelegate;
+		protected readonly MemoryReadDelegate memoryReadDelegate;
+		protected readonly RequestInterruptDelegate requestInterruptDelegate;
 
 		public virtual (int X, int Y, int Width, int Height) Viewport => (0, 0, 160, 144);
 
@@ -513,19 +512,19 @@ namespace Essgee.Emulation.Video
 			WriteColorToFramebuffer(b, g, r, ((y * 160) + (x % 160)) * 4);
 		}
 
-		protected virtual void WriteColorToFramebuffer(byte b, byte g, byte r, int address)
-		{
-			outputFramebuffer[address + 0] = b;
-			outputFramebuffer[address + 1] = g;
-			outputFramebuffer[address + 2] = r;
-			outputFramebuffer[address + 3] = 0xFF;
-		}
-
 		protected virtual void WriteColorToFramebuffer(byte c, int address)
 		{
 			outputFramebuffer[address + 0] = colorValuesBgr[c & 0x03][0];
 			outputFramebuffer[address + 1] = colorValuesBgr[c & 0x03][1];
 			outputFramebuffer[address + 2] = colorValuesBgr[c & 0x03][2];
+			outputFramebuffer[address + 3] = 0xFF;
+		}
+
+		protected virtual void WriteColorToFramebuffer(byte b, byte g, byte r, int address)
+		{
+			outputFramebuffer[address + 0] = b;
+			outputFramebuffer[address + 1] = g;
+			outputFramebuffer[address + 2] = r;
 			outputFramebuffer[address + 3] = 0xFF;
 		}
 
