@@ -832,6 +832,7 @@ namespace Essgee.Emulation.Machines
 
 					case 0xFF70:
 						wramBank = (byte)(value & 0b111);
+						if (wramBank == 0x00) wramBank = 0x01;
 						break;
 				}
 			}
