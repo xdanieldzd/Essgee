@@ -232,7 +232,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 				if (value >= 0x00 && value <= 0x07)
 				{
 					rtc.IsSelected = false;
-					ramBank = (byte)(value & 0x03);
+					ramBank = (byte)(value & 0x07);
 				}
 				else if (value >= 0x08 && value <= 0x0C)
 				{

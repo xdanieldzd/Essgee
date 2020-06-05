@@ -18,10 +18,8 @@ void main(void)
     }
 
     // Gamma correction
-    float gamma = 1.2;
+    float gamma = 2.0;
     output_color.rgb = pow(output_color.rgb, vec3(1.0 / gamma));
-
-    // TODO: color correction
 
     fragColor = output_color;
 }

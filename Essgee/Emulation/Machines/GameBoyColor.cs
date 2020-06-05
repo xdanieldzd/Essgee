@@ -76,7 +76,7 @@ namespace Essgee.Emulation.Machines
 		IGameBoyCartridge cartridge;
 		byte[] wram, hram;
 		byte ie;
-		SM83 cpu;
+		SM83CGB cpu;
 		CGBVideo video;
 		DMGAudio audio;
 		ISerialDevice serialDevice;
@@ -111,7 +111,7 @@ namespace Essgee.Emulation.Machines
 		// FF4C
 
 		// FF4D - KEY1
-		bool speedIsDouble, speedPrepareSwitch;
+		bool speedIsDouble, speedSwitchPending;
 
 		// FF50
 		bool bootstrapDisabled;
@@ -162,7 +162,7 @@ namespace Essgee.Emulation.Machines
 
 			wram = new byte[wramSize];
 			hram = new byte[hramSize];
-			cpu = new SM83(ReadMemory, WriteMemory);
+			cpu = new SM83CGB(ReadMemory, WriteMemory);
 			video = new CGBVideo(ReadMemory, cpu.RequestInterrupt);
 			audio = new DMGAudio();
 
@@ -441,15 +441,23 @@ namespace Essgee.Emulation.Machines
 
 		public void RunStep()
 		{
+			// TODO: verify CGB double speed mode stuffs, implement HDMA stuffs, etc
+
 			var clockCyclesInStep = cpu.Step();
+
+			var clockCyclesCGBSpeed = cpu.IsDoubleSpeed ? clockCyclesInStep >> 1 : clockCyclesInStep;
+			var clockCyclesCGBDivider = cpu.IsDoubleSpeed ? 2 : 4;
+
+			for (var s = 0; s < clockCyclesCGBSpeed / clockCyclesCGBDivider; s++)
+			{
+				HandleTimerOverflow();
+				UpdateCycleCounter((ushort)(clockCycleCount + clockCyclesCGBDivider));
+
+				HandleSerialIO(clockCyclesCGBDivider);
+			}
 
 			for (var s = 0; s < clockCyclesInStep / 4; s++)
 			{
-				HandleTimerOverflow();
-				UpdateCycleCounter((ushort)(clockCycleCount + 4));
-
-				HandleSerialIO(4);
-
 				video.Step(4);
 				audio.Step(4);
 				cartridge?.Step(4);
@@ -577,8 +585,10 @@ namespace Essgee.Emulation.Machines
 		{
 			if (address >= 0x0000 && address <= 0x7FFF)
 			{
-				if (configuration.UseBootstrap && address < 0x0100 && !bootstrapDisabled)
-					return bootstrap[address & 0x00FF];
+				// TODO: bootstrap enabled breaks Pokemon GS?? why??
+
+				if (configuration.UseBootstrap && (address <= 0x00FF || (address >= 0x0200 && address <= 0x08FF)) && !bootstrapDisabled)
+					return bootstrap[address];
 				else
 					return (cartridge != null ? cartridge.Read(address) : (byte)0xFF);
 			}
@@ -671,6 +681,13 @@ namespace Essgee.Emulation.Machines
 							(irqTimerOverflow ? (1 << 2) : 0) |
 							(irqSerialIO ? (1 << 3) : 0) |
 							(irqKeypad ? (1 << 4) : 0));
+
+					case 0xFF4D:
+						// KEY1
+						return (byte)(
+							0x7E |
+							(speedSwitchPending ? (1 << 0) : 0) |
+							(speedIsDouble ? (1 << 7) : 0));
 
 					case 0xFF50:
 						// Bootstrap disable
@@ -801,6 +818,11 @@ namespace Essgee.Emulation.Machines
 						irqTimerOverflow = (value & (1 << 2)) != 0;
 						irqSerialIO = (value & (1 << 3)) != 0;
 						irqKeypad = (value & (1 << 4)) != 0;
+						break;
+
+					case 0xFF4D:
+						speedSwitchPending = (value & (1 << 0)) != 0;
+						speedIsDouble = (value & (1 << 7)) != 0;
 						break;
 
 					case 0xFF50:

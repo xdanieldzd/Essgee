@@ -21,6 +21,8 @@ namespace Essgee.Emulation.Video.Nintendo
 		protected const int mode2Boundary = 80;
 		protected const int mode3Boundary = mode2Boundary + 168;
 
+		protected Action[] modeFunctions;
+
 		protected readonly MemoryReadDelegate memoryReadDelegate;
 		protected readonly RequestInterruptDelegate requestInterruptDelegate;
 
@@ -113,6 +115,8 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			//
 
+			modeFunctions = new Action[] { StepHBlank, StepVBlank, StepOAMSearch, StepLCDTransfer };
+
 			memoryReadDelegate = memoryRead;
 			requestInterruptDelegate = requestInterrupt;
 		}
@@ -139,7 +143,10 @@ namespace Essgee.Emulation.Video.Nintendo
 			for (var i = 0; i < oam.Length; i++) oam[i] = 0;
 
 			for (var i = (byte)0x40; i < 0x4C; i++)
-				WritePort(i, 0x00);
+			{
+				// skip OAM dma
+				if (i != 0x46) WritePort(i, 0x00);
+			}
 
 			numSpritesOnLine = skipFrames = 0;
 			statIrqSignal = vBlankReady = false;
@@ -190,132 +197,7 @@ namespace Essgee.Emulation.Video.Nintendo
 				if (lcdEnable)
 				{
 					/* LCD enabled, handle LCD modes */
-
-					if (modeNumber == 1)
-					{
-						// TODO: *should* be 4, but Altered Space hangs w/ any value lower than 8?
-						if (cycleCount == 8 && vBlankReady)
-						{
-							requestInterruptDelegate(InterruptSource.VBlank);
-							vBlankReady = false;
-						}
-
-						/* V-blank */
-						cycleCount++;
-						if (cycleCount == clockCyclesPerLine)
-						{
-							/* End of scanline reached */
-							OnEndOfScanline(EventArgs.Empty);
-							currentScanline++;
-							ly = (byte)currentScanline;
-
-							/* Check for & request STAT interrupts */
-							CheckAndRequestStatInterupt();
-
-							if (currentScanline == 153)
-							{
-								// TODO: specific cycle this happens?
-
-								/* LY reports as 0 on line 153 */
-								ly = 0;
-
-								CheckAndRequestStatInterupt();
-							}
-							else if (currentScanline == 154)
-							{
-								/* End of V-blank reached */
-								modeNumber = 2;
-								currentScanline = 0;
-								ly = 0;
-
-								CheckAndRequestStatInterupt();
-
-								ClearScreenUsage();
-								ClearSpriteUsage();
-							}
-
-							cycleCount = 0;
-						}
-					}
-					else
-					{
-						switch (modeNumber)
-						{
-							/* OAM search */
-							case 2:
-								/* Get object Y coord */
-								var objIndex = cycleCount >> 1;
-								var objY = oam[(objIndex << 2) + 0] - 16;
-
-								/* Check if object is on current scanline & maximum number of objects was not exceeded, then increment counter */
-								if (currentScanline >= objY && currentScanline < (objY + (objSize ? 16 : 8)) && numSpritesOnLine < 10)
-									numSpritesOnLine++;
-
-								/* Increment cycle count & check for next LCD mode */
-								cycleCount++;
-								if (cycleCount == mode2Boundary)
-								{
-									modeNumber = 3;
-									CheckAndRequestStatInterupt();
-
-									cyclePenaltyMode3 += (8 * numSpritesOnLine);    // TODO: more details
-								}
-								break;
-
-							/* Data transfer to LCD */
-							case 3:
-								/* Render pixels */
-								RenderPixel(currentScanline, cycleCount - mode2Boundary);
-
-								/* Increment cycle count & check for next LCD mode */
-								cycleCount++;
-								if (cycleCount == mode3Boundary + cyclePenaltyMode3)
-								{
-									modeNumber = 0;
-									CheckAndRequestStatInterupt();
-								}
-								break;
-
-							/* H-blank */
-							case 0:
-								/* Increment cycle count & check for next LCD mode */
-								cycleCount++;
-								if (cycleCount == clockCyclesPerLine)
-								{
-									/* End of scanline reached */
-									OnEndOfScanline(EventArgs.Empty);
-									currentScanline++;
-									ly = (byte)currentScanline;
-
-									CheckAndRequestStatInterupt();
-
-									numSpritesOnLine = 0;
-									cyclePenaltyMode3 = (scrollX % 8);
-
-									if (currentScanline == 144)
-									{
-										modeNumber = 1;
-										CheckAndRequestStatInterupt();
-
-										/* Reached V-blank, request V-blank interrupt */
-										vBlankReady = true;
-
-										if (skipFrames > 0) skipFrames--;
-
-										/* Submit screen for rendering */
-										OnRenderScreen(new RenderScreenEventArgs(160, 144, outputFramebuffer.Clone() as byte[]));
-									}
-									else
-									{
-										modeNumber = 2;
-										CheckAndRequestStatInterupt();
-									}
-
-									cycleCount = 0;
-								}
-								break;
-						}
-					}
+					modeFunctions[modeNumber]();
 				}
 				else
 				{
@@ -326,6 +208,133 @@ namespace Essgee.Emulation.Video.Nintendo
 					currentScanline = 0;
 					ly = 0;
 				}
+			}
+		}
+
+		protected virtual void StepVBlank()
+		{
+			// TODO: *should* be 4, but Altered Space hangs w/ any value lower than 8?
+			if (cycleCount == 8 && vBlankReady)
+			{
+				requestInterruptDelegate(InterruptSource.VBlank);
+				vBlankReady = false;
+			}
+
+			/* V-blank */
+			cycleCount++;
+			if (cycleCount == clockCyclesPerLine)
+			{
+				/* End of scanline reached */
+				OnEndOfScanline(EventArgs.Empty);
+				currentScanline++;
+				ly = (byte)currentScanline;
+
+				/* Check for & request STAT interrupts */
+				CheckAndRequestStatInterupt();
+
+				if (currentScanline == 153)
+				{
+					// TODO: specific cycle this happens?
+
+					/* LY reports as 0 on line 153 */
+					ly = 0;
+
+					CheckAndRequestStatInterupt();
+				}
+				else if (currentScanline == 154)
+				{
+					/* End of V-blank reached */
+					modeNumber = 2;
+					currentScanline = 0;
+					ly = 0;
+
+					CheckAndRequestStatInterupt();
+
+					ClearScreenUsage();
+					ClearSpriteUsage();
+				}
+
+				cycleCount = 0;
+			}
+		}
+
+		protected virtual void StepOAMSearch()
+		{
+			/* OAM search */
+
+			/* Get object Y coord */
+			var objIndex = cycleCount >> 1;
+			var objY = oam[(objIndex << 2) + 0] - 16;
+
+			/* Check if object is on current scanline & maximum number of objects was not exceeded, then increment counter */
+			if (currentScanline >= objY && currentScanline < (objY + (objSize ? 16 : 8)) && numSpritesOnLine < 10)
+				numSpritesOnLine++;
+
+			/* Increment cycle count & check for next LCD mode */
+			cycleCount++;
+			if (cycleCount == mode2Boundary)
+			{
+				modeNumber = 3;
+				CheckAndRequestStatInterupt();
+
+				cyclePenaltyMode3 += (8 * numSpritesOnLine);    // TODO: more details
+			}
+		}
+
+		protected virtual void StepLCDTransfer()
+		{
+			/* Data transfer to LCD */
+
+			/* Render pixels */
+			RenderPixel(currentScanline, cycleCount - mode2Boundary);
+
+			/* Increment cycle count & check for next LCD mode */
+			cycleCount++;
+			if (cycleCount == mode3Boundary + cyclePenaltyMode3)
+			{
+				modeNumber = 0;
+				CheckAndRequestStatInterupt();
+			}
+		}
+
+		protected virtual void StepHBlank()
+		{
+			/* H-blank */
+
+			/* Increment cycle count & check for next LCD mode */
+			cycleCount++;
+			if (cycleCount == clockCyclesPerLine)
+			{
+				/* End of scanline reached */
+				OnEndOfScanline(EventArgs.Empty);
+				currentScanline++;
+				ly = (byte)currentScanline;
+
+				CheckAndRequestStatInterupt();
+
+				numSpritesOnLine = 0;
+				cyclePenaltyMode3 = (scrollX % 8);
+
+				if (currentScanline == 144)
+				{
+					modeNumber = 1;
+					CheckAndRequestStatInterupt();
+
+					/* Reached V-blank, request V-blank interrupt */
+					vBlankReady = true;
+
+					if (skipFrames > 0) skipFrames--;
+
+					/* Submit screen for rendering */
+					OnRenderScreen(new RenderScreenEventArgs(160, 144, outputFramebuffer.Clone() as byte[]));
+				}
+				else
+				{
+					modeNumber = 2;
+					CheckAndRequestStatInterupt();
+				}
+
+				cycleCount = 0;
 			}
 		}
 

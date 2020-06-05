@@ -33,11 +33,11 @@ namespace Essgee.Emulation
 
 		public static void RGB555toBGRA8888(int color, ref byte[] buffer, int address)
 		{
-			// TODO improve
+			/* https://byuu.net/video/color-emulation -- "LCD emulation: Game Boy Color" */
 			byte r = (byte)((color >> 0) & 0x1F), g = (byte)((color >> 5) & 0x1F), b = (byte)((color >> 10) & 0x1F);
-			buffer[address + 0] = (byte)((b << 3) | 0);
-			buffer[address + 1] = (byte)((g << 3) | 0);
-			buffer[address + 2] = (byte)((r << 3) | 0);
+			buffer[address + 0] = (byte)(Math.Min(960, (r * 6) + (g * 4) + (b * 22)) >> 2);
+			buffer[address + 1] = (byte)(Math.Min(960, (g * 24) + (b * 8)) >> 2);
+			buffer[address + 2] = (byte)(Math.Min(960, (r * 26) + (g * 4) + (b * 2)) >> 2);
 			buffer[address + 3] = 0xFF;
 		}
 	}

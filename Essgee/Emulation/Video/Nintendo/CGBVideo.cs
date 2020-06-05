@@ -89,6 +89,9 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			vramBank = 0;
 
+			dmaTransferLength = 0;
+			dmaTransferType = false;
+
 			for (var i = 0; i < bgPaletteData.Length; i += 2)
 			{
 				bgPaletteData[i + 0] = 0x7F;
@@ -99,6 +102,18 @@ namespace Essgee.Emulation.Video.Nintendo
 				objPaletteData[i + 0] = 0x7F;
 				objPaletteData[i + 1] = 0xFF;
 			}
+		}
+
+		//
+
+		protected override void StepHBlank()
+		{
+			if (dmaTransferType)
+			{
+				// TODO implement hdma w/ timing and stuffs
+			}
+
+			base.StepHBlank();
 		}
 
 		//
@@ -287,9 +302,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 				case 0x55:
 					// HDMA5
-					return (byte)(
-						(dmaTransferLength & 0x7F) |
-						(dmaTransferType ? (1 << 7) : 0));
+					return (byte)(dmaTransferLength & 0xFF);
 
 				case 0x68:
 					// BCPS
@@ -350,8 +363,6 @@ namespace Essgee.Emulation.Video.Nintendo
 					// HDMA5
 					dmaTransferLength = (byte)(value & 0x7F);
 					dmaTransferType = ((value >> 7) & 0b1) == 0b1;
-
-					// TODO make Hblank DMA run
 
 					if (!dmaTransferType)
 					{

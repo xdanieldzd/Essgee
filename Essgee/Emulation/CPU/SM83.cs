@@ -43,8 +43,8 @@ namespace Essgee.Emulation.CPU
 
 		delegate void SimpleOpcodeDelegate(SM83 c);
 
-		MemoryReadDelegate memoryReadDelegate;
-		MemoryWriteDelegate memoryWriteDelegate;
+		protected MemoryReadDelegate memoryReadDelegate;
+		protected MemoryWriteDelegate memoryWriteDelegate;
 
 		[StateRequired]
 		protected Register af, bc, de, hl;
@@ -943,7 +943,7 @@ namespace Essgee.Emulation.CPU
 			ClearFlag(Flags.Carry);
 		}
 
-		protected void Stop()
+		protected virtual void Stop()
 		{
 			pc++;
 		}
