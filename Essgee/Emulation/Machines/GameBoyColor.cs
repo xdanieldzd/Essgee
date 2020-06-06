@@ -25,8 +25,11 @@ namespace Essgee.Emulation.Machines
 		const double masterClock = 4194304;
 		const double refreshRate = 59.727500569606;
 
-		const int wramSize = 8 * 8 * 1024;
+		const int wramSize = 8 * 1024;
 		const int hramSize = 0x7F;
+
+		const int serialCycleCount = 512;
+		const int serialCycleCountFast = 16;
 
 		public event EventHandler<SendLogMessageEventArgs> SendLogMessage;
 		protected virtual void OnSendLogMessage(SendLogMessageEventArgs e) { SendLogMessage?.Invoke(this, e); }
@@ -74,7 +77,8 @@ namespace Essgee.Emulation.Machines
 
 		byte[] bootstrap;
 		IGameBoyCartridge cartridge;
-		byte[] wram, hram;
+		byte[,] wram;
+		byte[] hram;
 		byte ie;
 		SM83CGB cpu;
 		CGBVideo video;
@@ -160,7 +164,7 @@ namespace Essgee.Emulation.Machines
 			bootstrap = null;
 			cartridge = null;
 
-			wram = new byte[wramSize];
+			wram = new byte[8, wramSize];
 			hram = new byte[hramSize];
 			cpu = new SM83CGB(ReadMemory, WriteMemory);
 			video = new CGBVideo(ReadMemory, cpu.RequestInterrupt);
@@ -253,9 +257,9 @@ namespace Essgee.Emulation.Machines
 				cpu.SetProgramCounter(0x0100);
 				cpu.SetStackPointer(0xFFFE);
 				cpu.SetRegisterAF(0x11B0);
-				cpu.SetRegisterBC(0x0013);
-				cpu.SetRegisterDE(0x00D8);
-				cpu.SetRegisterHL(0x014D);
+				cpu.SetRegisterBC(0x0000);
+				cpu.SetRegisterDE(0xFF56);
+				cpu.SetRegisterHL(0x000D);
 
 				video.WritePort(0x40, 0x91);
 				video.WritePort(0x42, 0x00);
@@ -443,17 +447,17 @@ namespace Essgee.Emulation.Machines
 		{
 			// TODO: verify CGB double speed mode stuffs, implement HDMA stuffs, etc
 
-			var clockCyclesInStep = cpu.Step();
+			var clockCyclesInStep = RunCpuStep();
 
 			var clockCyclesCGBSpeed = cpu.IsDoubleSpeed ? clockCyclesInStep >> 1 : clockCyclesInStep;
-			var clockCyclesCGBDivider = cpu.IsDoubleSpeed ? 2 : 4;
+			var cycleLength = cpu.IsDoubleSpeed ? 2 : 4;
 
-			for (var s = 0; s < clockCyclesCGBSpeed / clockCyclesCGBDivider; s++)
+			for (var s = 0; s < clockCyclesCGBSpeed / cycleLength; s++)
 			{
 				HandleTimerOverflow();
-				UpdateCycleCounter((ushort)(clockCycleCount + clockCyclesCGBDivider));
+				UpdateCycleCounter((ushort)(clockCycleCount + cycleLength));
 
-				HandleSerialIO(clockCyclesCGBDivider);
+				HandleSerialIO(cycleLength);
 			}
 
 			for (var s = 0; s < clockCyclesInStep / 4; s++)
@@ -464,6 +468,18 @@ namespace Essgee.Emulation.Machines
 
 				currentMasterClockCyclesInFrame += 4;
 			}
+		}
+
+		private int RunCpuStep()
+		{
+			if (video.GDMAWaitCycles > 0)
+			{
+				var cycleLength = cpu.IsDoubleSpeed ? 2 : 4;
+				video.GDMAWaitCycles -= cycleLength;
+				return cycleLength;
+			}
+			else
+				return cpu.Step();
 		}
 
 		private void IncrementTimer()
@@ -512,6 +528,8 @@ namespace Essgee.Emulation.Machines
 
 		private void HandleSerialIO(int clockCyclesInStep)
 		{
+			var cycleCount = cpu.IsDoubleSpeed ? serialCycleCountFast : serialCycleCount;
+
 			if (serialTransferInProgress)
 			{
 				if (serialUseInternalClock)
@@ -519,7 +537,7 @@ namespace Essgee.Emulation.Machines
 					/* If using internal clock... */
 
 					serialCycles += clockCyclesInStep;
-					if (serialCycles >= 512)
+					if (serialCycles >= cycleCount)
 					{
 						serialBitsCounter++;
 						if (serialBitsCounter == 8)
@@ -530,7 +548,7 @@ namespace Essgee.Emulation.Machines
 							serialTransferInProgress = false;
 							serialBitsCounter = 0;
 						}
-						serialCycles -= 512;
+						serialCycles -= cycleCount;
 					}
 				}
 				else if (serialDevice.ProvidesClock())
@@ -538,7 +556,7 @@ namespace Essgee.Emulation.Machines
 					/* If other devices provides clock... */
 
 					serialCycles += clockCyclesInStep;
-					if (serialCycles >= 512)
+					if (serialCycles >= cycleCount)
 					{
 						serialBitsCounter++;
 						if (serialBitsCounter == 8)
@@ -549,7 +567,7 @@ namespace Essgee.Emulation.Machines
 							serialTransferInProgress = false;
 							serialBitsCounter = 0;
 						}
-						serialCycles -= 512;
+						serialCycles -= cycleCount;
 					}
 				}
 			}
@@ -603,9 +621,9 @@ namespace Essgee.Emulation.Machines
 			else if (address >= 0xC000 && address <= 0xFDFF)
 			{
 				if ((address & 0x1000) == 0)
-					return wram[address & 0x0FFF];
+					return wram[0, address & 0x0FFF];
 				else
-					return wram[(wramBank << 12) | address & 0x0FFF];
+					return wram[wramBank, address & 0x0FFF];
 			}
 			else if (address >= 0xFE00 && address <= 0xFE9F)
 			{
@@ -724,9 +742,9 @@ namespace Essgee.Emulation.Machines
 			else if (address >= 0xC000 && address <= 0xFDFF)
 			{
 				if ((address & 0x1000) == 0)
-					wram[address & 0x0FFF] = value;
+					wram[0, address & 0x0FFF] = value;
 				else
-					wram[(wramBank << 12) | address & 0x0FFF] = value;
+					wram[wramBank, address & 0x0FFF] = value;
 			}
 			else if (address >= 0xFE00 && address <= 0xFE9F)
 			{

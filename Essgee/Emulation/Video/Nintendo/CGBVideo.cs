@@ -33,8 +33,8 @@ namespace Essgee.Emulation.Video.Nintendo
 		byte dmaDestinationLo;
 
 		// FF55 - HDMA5
-		byte dmaTransferLength;
-		bool dmaTransferType;   // 0=General purpose, 1=Hblank
+		byte dmaTransferBlockLength;
+		bool dmaTransferIsHDMA;
 
 		// FF68 - BCPS
 		byte bgPaletteIndex;
@@ -52,30 +52,19 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		byte[] bgPaletteData, objPaletteData;
 
-		protected const byte screenUsageBackgroundHighPriority = (1 << 3);
+		ushort dmaSourceAddress, dmaDestinationAddress;
+		int dmaTransferByteLength;
 
-		ushort dmaSourceAddress
-		{
-			get { return (ushort)((dmaSourceHi << 8) | dmaSourceLo); }
-			set
-			{
-				dmaSourceHi = (byte)((value >> 8) & 0xFF);
-				dmaSourceLo = (byte)((value >> 0) & 0xFF);
-			}
-		}
-		ushort dmaDestinationAddress
-		{
-			get { return (ushort)((dmaDestinationHi << 8) | dmaDestinationLo); }
-			set
-			{
-				dmaDestinationHi = (byte)((value >> 8) & 0xFF);
-				dmaDestinationLo = (byte)((value >> 0) & 0xFF);
-			}
-		}
+		bool hdmaIsActive;
+		byte hdmaBytesLeft;
+
+		public int GDMAWaitCycles { get; set; }
+
+		protected const byte screenUsageBackgroundHighPriority = (1 << 3);
 
 		public CGBVideo(MemoryReadDelegate memoryRead, RequestInterruptDelegate requestInterrupt) : base(memoryRead, requestInterrupt)
 		{
-			vram = new byte[0x4000];
+			vram = new byte[2, 0x2000];
 
 			//
 
@@ -89,31 +78,64 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			vramBank = 0;
 
-			dmaTransferLength = 0;
-			dmaTransferType = false;
+			dmaTransferBlockLength = 0;
+			dmaTransferIsHDMA = false;
+
+			bgPaletteAutoIncrement = true;
+			objPaletteAutoIncrement = true;
 
 			for (var i = 0; i < bgPaletteData.Length; i += 2)
 			{
-				bgPaletteData[i + 0] = 0x7F;
-				bgPaletteData[i + 1] = 0xFF;
+				bgPaletteData[i + 1] = 0x7F;
+				bgPaletteData[i + 0] = 0xFF;
 			}
 			for (var i = 0; i < objPaletteData.Length; i += 2)
 			{
-				objPaletteData[i + 0] = 0x7F;
-				objPaletteData[i + 1] = 0xFF;
+				objPaletteData[i + 1] = 0x7F;
+				objPaletteData[i + 0] = 0xFF;
 			}
+
+			dmaSourceAddress = dmaDestinationAddress = 0;
+			dmaTransferByteLength = 0;
+
+			hdmaIsActive = false;
+			hdmaBytesLeft = 0;
 		}
 
 		//
 
 		protected override void StepHBlank()
 		{
-			if (dmaTransferType)
+			/* Check and perform HDMA */
+			if (hdmaIsActive && dmaTransferIsHDMA)
 			{
-				// TODO implement hdma w/ timing and stuffs
+				if (hdmaBytesLeft > 0 && (cycleCount % 2) == 0)
+				{
+					WriteVram(dmaDestinationAddress, memoryReadDelegate(dmaSourceAddress));
+					dmaDestinationAddress++;
+					dmaSourceAddress++;
+
+					dmaDestinationAddress &= 0x1FFF;
+
+					dmaTransferByteLength--;
+					hdmaBytesLeft--;
+
+					if (dmaTransferByteLength == 0)
+						hdmaIsActive = false;
+
+					UpdateDMAStatus();
+				}
 			}
 
-			base.StepHBlank();
+			/* Increment cycle count & check for next LCD mode */
+			cycleCount++;
+			if (cycleCount == clockCyclesPerLine)
+			{
+				if (hdmaIsActive)
+					hdmaBytesLeft = (byte)Math.Min(0x10, 0x10 - (dmaTransferByteLength % 16));
+
+				EndHBlank();
+			}
 		}
 
 		//
@@ -127,9 +149,9 @@ namespace Essgee.Emulation.Video.Nintendo
 			var xTransformed = (byte)(scrollX + x);
 
 			var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
-			var tileNumber = vram[mapAddress];
+			var tileNumber = vram[0, mapAddress];
 
-			var tileAttribs = vram[0x2000 | mapAddress];
+			var tileAttribs = vram[1, mapAddress];
 			var tileBgPalette = tileAttribs & 0b111;
 			var tileVramBank = (tileAttribs >> 3) & 0b1;
 			var tileHorizontalFlip = ((tileAttribs >> 5) & 0b1) == 0b1;
@@ -142,10 +164,10 @@ namespace Essgee.Emulation.Video.Nintendo
 			if (!bgWndTileSelect)
 				tileNumber = (byte)(tileNumber ^ 0x80);
 
-			var tileAddress = (tileVramBank << 13) + tileBase + (tileNumber << 4) + (yShift << 1);
+			var tileAddress = tileBase + (tileNumber << 4) + (yShift << 1);
 
-			var ba = (vram[tileAddress + 0] >> xShift) & 0b1;
-			var bb = (vram[tileAddress + 1] >> xShift) & 0b1;
+			var ba = (vram[tileVramBank, tileAddress + 0] >> xShift) & 0b1;
+			var bb = (vram[tileVramBank, tileAddress + 1] >> xShift) & 0b1;
 			var c = (byte)((bb << 1) | ba);
 
 			if (c != 0)
@@ -167,9 +189,9 @@ namespace Essgee.Emulation.Video.Nintendo
 			var xTransformed = (byte)((7 - windowX) + x);
 
 			var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
-			var tileNumber = vram[mapAddress];
+			var tileNumber = vram[0, mapAddress];
 
-			var tileAttribs = vram[0x2000 | mapAddress];
+			var tileAttribs = vram[1, mapAddress];
 			var tileBgPalette = tileAttribs & 0b111;
 			var tileVramBank = (tileAttribs >> 3) & 0b1;
 			var tileHorizontalFlip = ((tileAttribs >> 5) & 0b1) == 0b1;
@@ -182,10 +204,10 @@ namespace Essgee.Emulation.Video.Nintendo
 			if (!bgWndTileSelect)
 				tileNumber = (byte)(tileNumber ^ 0x80);
 
-			var tileAddress = (tileVramBank << 13) + tileBase + (tileNumber << 4) + (yShift << 1);
+			var tileAddress = +tileBase + (tileNumber << 4) + (yShift << 1);
 
-			var ba = (vram[tileAddress + 0] >> xShift) & 0b1;
-			var bb = (vram[tileAddress + 1] >> xShift) & 0b1;
+			var ba = (vram[tileVramBank, tileAddress + 0] >> xShift) & 0b1;
+			var bb = (vram[tileVramBank, tileAddress + 1] >> xShift) & 0b1;
 			var c = (byte)((bb << 1) | ba);
 
 			if (c != 0)
@@ -245,11 +267,11 @@ namespace Essgee.Emulation.Video.Nintendo
 						if ((objFlipY && y < (objY + 8)) || (!objFlipY && y >= (objY + 8)))
 							objTileNumber |= 0x01;
 					}
-					var tileAddress = (objVramBank << 13) + (objTileNumber << 4) + (yShift << 1);
+					var tileAddress = (objTileNumber << 4) + (yShift << 1);
 
 					// Get palette & bitplanes
-					var ba = (vram[tileAddress + 0] >> xShift) & 0b1;
-					var bb = (vram[tileAddress + 1] >> xShift) & 0b1;
+					var ba = (vram[objVramBank, tileAddress + 0] >> xShift) & 0b1;
+					var bb = (vram[objVramBank, tileAddress + 1] >> xShift) & 0b1;
 
 					// Combine to color index, draw if color is not 0
 					var c = (byte)((bb << 1) | ba);
@@ -275,19 +297,51 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		private void WriteColorToFramebuffer(ushort c, int address)
 		{
-			RGB555toBGRA8888(c, ref outputFramebuffer, address);
+			RGBCGBtoBGRA8888(c, ref outputFramebuffer, address);
+		}
+
+		//
+
+		private void RunGDMA()
+		{
+			while (--dmaTransferByteLength >= 0)
+			{
+				if ((dmaSourceAddress >= 0x0000 && dmaSourceAddress <= 0x7FFF) || (dmaSourceAddress >= 0xA000 && dmaSourceAddress <= 0xDFFF))
+					WriteVram(dmaDestinationAddress, memoryReadDelegate(dmaSourceAddress));
+
+				dmaDestinationAddress++;
+				dmaSourceAddress++;
+
+				dmaDestinationAddress &= 0x1FFF;
+			}
+
+			UpdateDMAStatus();
+		}
+
+		private void UpdateDMAStatus()
+		{
+			dmaTransferBlockLength = (byte)((dmaTransferByteLength >> 4) & 0xFF);
+
+			dmaSourceHi = (byte)((dmaSourceAddress >> 8) & 0x1F);
+			dmaSourceLo = (byte)((dmaSourceAddress >> 0) & 0xF0);
+			dmaDestinationHi = (byte)((dmaDestinationAddress >> 8) & 0xFF);
+			dmaDestinationLo = (byte)((dmaDestinationAddress >> 0) & 0xF0);
 		}
 
 		//
 
 		public override byte ReadVram(ushort address)
 		{
-			return base.ReadVram((ushort)(vramBank << 13 | address));
+			if (modeNumber != 3)
+				return vram[vramBank, address & 0x1FFF];
+			else
+				return 0xFF;
 		}
 
 		public override void WriteVram(ushort address, byte value)
 		{
-			base.WriteVram((ushort)(vramBank << 13 | address), value);
+			if (modeNumber != 3)
+				vram[vramBank, address & 0x1FFF] = value;
 		}
 
 		public override byte ReadPort(byte port)
@@ -302,11 +356,12 @@ namespace Essgee.Emulation.Video.Nintendo
 
 				case 0x55:
 					// HDMA5
-					return (byte)(dmaTransferLength & 0xFF);
+					return dmaTransferBlockLength;
 
 				case 0x68:
 					// BCPS
 					return (byte)(
+						0x40 |
 						(bgPaletteIndex & 0x3F) |
 						(bgPaletteAutoIncrement ? (1 << 7) : 0));
 
@@ -318,6 +373,7 @@ namespace Essgee.Emulation.Video.Nintendo
 				case 0x6A:
 					// OCPS
 					return (byte)(
+						0x40 |
 						(objPaletteIndex & 0x3F) |
 						(objPaletteAutoIncrement ? (1 << 7) : 0));
 
@@ -361,16 +417,27 @@ namespace Essgee.Emulation.Video.Nintendo
 
 				case 0x55:
 					// HDMA5
-					dmaTransferLength = (byte)(value & 0x7F);
-					dmaTransferType = ((value >> 7) & 0b1) == 0b1;
+					dmaTransferBlockLength = (byte)(value & 0x7F);
+					dmaTransferIsHDMA = ((value >> 7) & 0b1) == 0b1;
 
-					if (!dmaTransferType)
+					// Check for HDMA cancellation
+					if (!dmaTransferIsHDMA && hdmaIsActive)
+						hdmaIsActive = false;
+					else
 					{
-						// General purpose DMA
-						// TODO accuracy?
-						for (int i = 0; i < (dmaTransferLength << 4); i++)
-							vram[(vramBank << 13) | dmaDestinationAddress++] = memoryReadDelegate(dmaSourceAddress++);
-						dmaTransferLength = 0xFF;
+						// Calculate DMA addresses & length
+						dmaTransferByteLength = (dmaTransferBlockLength + 1) << 4;
+						dmaSourceAddress = (ushort)((dmaSourceHi << 8 | dmaSourceLo) & 0xFFF0);
+						dmaDestinationAddress = (ushort)((dmaDestinationHi << 8 | dmaDestinationLo) & 0x1FF0);
+
+						// Run General-Purpose DMA
+						if (!dmaTransferIsHDMA)
+						{
+							GDMAWaitCycles = 8 * (dmaTransferBlockLength + 1);
+							RunGDMA();
+						}
+						else
+							hdmaIsActive = true;
 					}
 					break;
 
@@ -382,7 +449,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 				case 0x69:
 					// BCPD
-					if (modeNumber != 3) bgPaletteData[bgPaletteIndex] = value;
+					if (modeNumber != 3) bgPaletteData[bgPaletteIndex] = value;     // TODO: limiting access in mode3 causes glitches in ex. SMDX? timing issues?
 					if (bgPaletteAutoIncrement)
 					{
 						bgPaletteIndex++;
@@ -398,7 +465,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 				case 0x6B:
 					// OCPD
-					if (modeNumber != 3) objPaletteData[objPaletteIndex] = value;
+					if (modeNumber != 3) objPaletteData[objPaletteIndex] = value;   // TODO: see above
 					if (objPaletteAutoIncrement)
 					{
 						objPaletteIndex++;

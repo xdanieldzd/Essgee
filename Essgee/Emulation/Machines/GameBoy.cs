@@ -26,6 +26,8 @@ namespace Essgee.Emulation.Machines
 		const int wramSize = 8 * 1024;
 		const int hramSize = 0x7F;
 
+		const int serialCycleCount = 512;
+
 		public event EventHandler<SendLogMessageEventArgs> SendLogMessage;
 		protected virtual void OnSendLogMessage(SendLogMessageEventArgs e) { SendLogMessage?.Invoke(this, e); }
 
@@ -495,7 +497,7 @@ namespace Essgee.Emulation.Machines
 					/* If using internal clock... */
 
 					serialCycles += clockCyclesInStep;
-					if (serialCycles >= 512)
+					if (serialCycles >= serialCycleCount)
 					{
 						serialBitsCounter++;
 						if (serialBitsCounter == 8)
@@ -506,7 +508,7 @@ namespace Essgee.Emulation.Machines
 							serialTransferInProgress = false;
 							serialBitsCounter = 0;
 						}
-						serialCycles -= 512;
+						serialCycles -= serialCycleCount;
 					}
 				}
 				else if (serialDevice.ProvidesClock())
@@ -514,7 +516,7 @@ namespace Essgee.Emulation.Machines
 					/* If other devices provides clock... */
 
 					serialCycles += clockCyclesInStep;
-					if (serialCycles >= 512)
+					if (serialCycles >= serialCycleCount)
 					{
 						serialBitsCounter++;
 						if (serialBitsCounter == 8)
@@ -525,7 +527,7 @@ namespace Essgee.Emulation.Machines
 							serialTransferInProgress = false;
 							serialBitsCounter = 0;
 						}
-						serialCycles -= 512;
+						serialCycles -= serialCycleCount;
 					}
 				}
 			}

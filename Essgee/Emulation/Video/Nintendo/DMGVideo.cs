@@ -44,7 +44,9 @@ namespace Essgee.Emulation.Video.Nintendo
 		//
 
 		[StateRequired]
-		protected byte[] vram, oam;
+		protected byte[,] vram;
+		[StateRequired]
+		protected byte[] oam;
 
 		// FF40 - LCDC
 		protected bool lcdEnable, wndMapSelect, wndEnable, bgWndTileSelect, bgMapSelect, objSize, objEnable, bgEnable;
@@ -80,8 +82,8 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		//
 
-		int numSpritesOnLine, skipFrames;
-		bool statIrqSignal, vBlankReady;
+		protected int numSpritesOnLine, skipFrames;
+		protected bool statIrqSignal, vBlankReady;
 
 		readonly byte[][] colorValuesBgr = new byte[][]
 		{
@@ -110,7 +112,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		public DMGVideo(MemoryReadDelegate memoryRead, RequestInterruptDelegate requestInterrupt)
 		{
-			vram = new byte[0x2000];
+			vram = new byte[1, 0x2000];
 			oam = new byte[0xA0];
 
 			//
@@ -139,7 +141,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		public virtual void Reset()
 		{
-			for (var i = 0; i < vram.Length; i++) vram[i] = 0;
+			for (var i = 0; i < vram.GetLength(0); i++) vram[0, i] = 0;
 			for (var i = 0; i < oam.Length; i++) oam[i] = 0;
 
 			for (var i = (byte)0x40; i < 0x4C; i++)
@@ -222,40 +224,42 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			/* V-blank */
 			cycleCount++;
-			if (cycleCount == clockCyclesPerLine)
-			{
-				/* End of scanline reached */
-				OnEndOfScanline(EventArgs.Empty);
-				currentScanline++;
-				ly = (byte)currentScanline;
+			if (cycleCount == clockCyclesPerLine) EndVBlank();
+		}
 
-				/* Check for & request STAT interrupts */
+		protected virtual void EndVBlank()
+		{
+			/* End of scanline reached */
+			OnEndOfScanline(EventArgs.Empty);
+			currentScanline++;
+			ly = (byte)currentScanline;
+
+			/* Check for & request STAT interrupts */
+			CheckAndRequestStatInterupt();
+
+			if (currentScanline == 153)
+			{
+				// TODO: specific cycle this happens?
+
+				/* LY reports as 0 on line 153 */
+				ly = 0;
+
+				CheckAndRequestStatInterupt();
+			}
+			else if (currentScanline == 154)
+			{
+				/* End of V-blank reached */
+				modeNumber = 2;
+				currentScanline = 0;
+				ly = 0;
+
 				CheckAndRequestStatInterupt();
 
-				if (currentScanline == 153)
-				{
-					// TODO: specific cycle this happens?
-
-					/* LY reports as 0 on line 153 */
-					ly = 0;
-
-					CheckAndRequestStatInterupt();
-				}
-				else if (currentScanline == 154)
-				{
-					/* End of V-blank reached */
-					modeNumber = 2;
-					currentScanline = 0;
-					ly = 0;
-
-					CheckAndRequestStatInterupt();
-
-					ClearScreenUsage();
-					ClearSpriteUsage();
-				}
-
-				cycleCount = 0;
+				ClearScreenUsage();
+				ClearSpriteUsage();
 			}
+
+			cycleCount = 0;
 		}
 
 		protected virtual void StepOAMSearch()
@@ -272,13 +276,15 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			/* Increment cycle count & check for next LCD mode */
 			cycleCount++;
-			if (cycleCount == mode2Boundary)
-			{
-				modeNumber = 3;
-				CheckAndRequestStatInterupt();
+			if (cycleCount == mode2Boundary) EndOAMSearch();
+		}
 
-				cyclePenaltyMode3 += (8 * numSpritesOnLine);    // TODO: more details
-			}
+		protected virtual void EndOAMSearch()
+		{
+			modeNumber = 3;
+			CheckAndRequestStatInterupt();
+
+			cyclePenaltyMode3 += 8 * numSpritesOnLine;      // TODO: more details
 		}
 
 		protected virtual void StepLCDTransfer()
@@ -290,11 +296,13 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			/* Increment cycle count & check for next LCD mode */
 			cycleCount++;
-			if (cycleCount == mode3Boundary + cyclePenaltyMode3)
-			{
-				modeNumber = 0;
-				CheckAndRequestStatInterupt();
-			}
+			if (cycleCount == mode3Boundary + cyclePenaltyMode3) EndLCDTransfer();
+		}
+
+		protected virtual void EndLCDTransfer()
+		{
+			modeNumber = 0;
+			CheckAndRequestStatInterupt();
 		}
 
 		protected virtual void StepHBlank()
@@ -303,42 +311,44 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			/* Increment cycle count & check for next LCD mode */
 			cycleCount++;
-			if (cycleCount == clockCyclesPerLine)
-			{
-				/* End of scanline reached */
-				OnEndOfScanline(EventArgs.Empty);
-				currentScanline++;
-				ly = (byte)currentScanline;
-
-				CheckAndRequestStatInterupt();
-
-				numSpritesOnLine = 0;
-				cyclePenaltyMode3 = (scrollX % 8);
-
-				if (currentScanline == 144)
-				{
-					modeNumber = 1;
-					CheckAndRequestStatInterupt();
-
-					/* Reached V-blank, request V-blank interrupt */
-					vBlankReady = true;
-
-					if (skipFrames > 0) skipFrames--;
-
-					/* Submit screen for rendering */
-					OnRenderScreen(new RenderScreenEventArgs(160, 144, outputFramebuffer.Clone() as byte[]));
-				}
-				else
-				{
-					modeNumber = 2;
-					CheckAndRequestStatInterupt();
-				}
-
-				cycleCount = 0;
-			}
+			if (cycleCount == clockCyclesPerLine) EndHBlank();
 		}
 
-		private void CheckAndRequestStatInterupt()
+		protected virtual void EndHBlank()
+		{
+			/* End of scanline reached */
+			OnEndOfScanline(EventArgs.Empty);
+			currentScanline++;
+			ly = (byte)currentScanline;
+
+			CheckAndRequestStatInterupt();
+
+			numSpritesOnLine = 0;
+			cyclePenaltyMode3 = scrollX % 8;
+
+			if (currentScanline == 144)
+			{
+				modeNumber = 1;
+				CheckAndRequestStatInterupt();
+
+				/* Reached V-blank, request V-blank interrupt */
+				vBlankReady = true;
+
+				if (skipFrames > 0) skipFrames--;
+
+				/* Submit screen for rendering */
+				OnRenderScreen(new RenderScreenEventArgs(160, 144, outputFramebuffer.Clone() as byte[]));
+			}
+			else
+			{
+				modeNumber = 2;
+				CheckAndRequestStatInterupt();
+			}
+
+			cycleCount = 0;
+		}
+
+		protected void CheckAndRequestStatInterupt()
 		{
 			if (!lcdEnable) return;
 
@@ -384,15 +394,15 @@ namespace Essgee.Emulation.Video.Nintendo
 			var xTransformed = (byte)(scrollX + x);
 
 			var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
-			var tileNumber = vram[mapAddress];
+			var tileNumber = vram[0, mapAddress];
 
 			if (!bgWndTileSelect)
 				tileNumber = (byte)(tileNumber ^ 0x80);
 
 			var tileAddress = tileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
 
-			var ba = (vram[tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
-			var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
+			var ba = (vram[0, tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
+			var bb = (vram[0, tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
 			var c = (byte)((bb << 1) | ba);
 
 			if (c != 0)
@@ -413,15 +423,15 @@ namespace Essgee.Emulation.Video.Nintendo
 			var xTransformed = (byte)((7 - windowX) + x);
 
 			var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
-			var tileNumber = vram[mapAddress];
+			var tileNumber = vram[0, mapAddress];
 
 			if (!bgWndTileSelect)
 				tileNumber = (byte)(tileNumber ^ 0x80);
 
 			var tileAddress = tileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
 
-			var ba = (vram[tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
-			var bb = (vram[tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
+			var ba = (vram[0, tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
+			var bb = (vram[0, tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
 			var c = (byte)((bb << 1) | ba);
 
 			if (c != 0)
@@ -481,8 +491,8 @@ namespace Essgee.Emulation.Video.Nintendo
 
 					// Get palette & bitplanes
 					var pal = (objPalNumber == 0 ? obPalette0 : obPalette1);
-					var ba = (vram[tileAddress + 0] >> xShift) & 0b1;
-					var bb = (vram[tileAddress + 1] >> xShift) & 0b1;
+					var ba = (vram[0, tileAddress + 0] >> xShift) & 0b1;
+					var bb = (vram[0, tileAddress + 1] >> xShift) & 0b1;
 
 					// Combine to color index, draw if color is not 0
 					var c = (byte)((bb << 1) | ba);
@@ -589,7 +599,7 @@ namespace Essgee.Emulation.Video.Nintendo
 		public virtual byte ReadVram(ushort address)
 		{
 			if (modeNumber != 3)
-				return vram[address & (vram.Length - 1)];
+				return vram[0, address & (vram.Length - 1)];
 			else
 				return 0xFF;
 		}
@@ -597,7 +607,7 @@ namespace Essgee.Emulation.Video.Nintendo
 		public virtual void WriteVram(ushort address, byte value)
 		{
 			if (modeNumber != 3)
-				vram[address & (vram.Length - 1)] = value;
+				vram[0, address & (vram.Length - 1)] = value;
 		}
 
 		public virtual byte ReadOam(ushort address)
