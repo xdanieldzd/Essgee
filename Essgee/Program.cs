@@ -52,6 +52,7 @@ namespace Essgee
 		public static string ExtraDataPath = Path.Combine(programDataDirectory, extraDataDirectoryName);
 
 		public static TextWriter Logger { get; private set; }
+		public static Random Random { get; private set; }
 
 		[STAThread]
 		static void Main()
@@ -60,6 +61,8 @@ namespace Essgee
 			{
 				Logger = new StreamWriter(@"D:\Temp\Essgee\slowlog.txt", false);
 			}
+
+			Random = new Random();
 
 			System.Threading.Thread.CurrentThread.CurrentCulture = System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
 

@@ -29,7 +29,6 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			File
 		}
 
-		Random random;
 		ImageSources imageSourceType;
 		Bitmap scaledImage;
 
@@ -49,7 +48,6 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 
 		public GBCameraCartridge(int romSize, int ramSize)
 		{
-			random = new Random();
 			imageSourceType = ImageSources.Noise;
 			scaledImage = new Bitmap(camSensorWidth, camSensorHeight);
 
@@ -276,7 +274,7 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 					switch (imageSourceType)
 					{
 						case ImageSources.File: value = webcamOutput[i, j]; break;
-						case ImageSources.Noise: value = random.Next(255); break;
+						case ImageSources.Noise: value = Program.Random.Next(255); break;
 					}
 
 					value = (value * exposureBits) / 0x0300;

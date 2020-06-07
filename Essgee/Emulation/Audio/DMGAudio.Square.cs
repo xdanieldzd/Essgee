@@ -8,7 +8,7 @@ namespace Essgee.Emulation.Audio
 {
 	public partial class DMGAudio
 	{
-		public class Square
+		public class Square : IDMGAudioChannel
 		{
 			static readonly bool[,] dutyCycleTable = new bool[,]
 			{
@@ -240,6 +240,7 @@ namespace Essgee.Emulation.Audio
 
 					case 1:
 						return (byte)(
+							0x3F |
 							(dutyCycle << 6));
 
 					case 2:
@@ -250,12 +251,22 @@ namespace Essgee.Emulation.Audio
 
 					case 4:
 						return (byte)(
-							0x38 |
+							0xBF |
 							(lengthEnable ? (1 << 6) : 0));
 
 					default:
 						return 0xFF;
 				}
+			}
+
+			public void WriteWaveRam(byte offset, byte value)
+			{
+				throw new Exception("Channel type does have Wave RAM");
+			}
+
+			public byte ReadWaveRam(byte offset)
+			{
+				throw new Exception("Channel type does have Wave RAM");
 			}
 		}
 	}

@@ -18,9 +18,7 @@ namespace Essgee.Emulation.Audio
 
 		protected const int numChannels = 4;
 
-		Square channel1, channel2;
-		Wave channel3;
-		Noise channel4;
+		protected IDMGAudioChannel channel1, channel2, channel3, channel4;
 
 		// FF24 - NR50
 		byte[] volumeRightLeft;
@@ -44,7 +42,7 @@ namespace Essgee.Emulation.Audio
 		//
 
 		double clockRate, refreshRate;
-		int samplesPerFrame, cyclesPerFrame, cyclesPerSample;
+		protected int samplesPerFrame, cyclesPerFrame, cyclesPerSample;
 		[StateRequired]
 		int sampleCycleCount, frameCycleCount;
 
@@ -311,8 +309,8 @@ namespace Essgee.Emulation.Audio
 						return (byte)(
 							0x70 |
 							(isSoundHwEnabled ? (1 << 7) : 0) |
-							(false ? (1 << 3) : 0) |
-							(false ? (1 << 2) : 0) |
+							(channel4.IsActive ? (1 << 3) : 0) |
+							(channel3.IsActive ? (1 << 2) : 0) |
 							(channel2.IsActive ? (1 << 1) : 0) |
 							(channel1.IsActive ? (1 << 0) : 0));
 

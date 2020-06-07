@@ -204,7 +204,7 @@ namespace Essgee.Emulation.Video.Nintendo
 			if (!bgWndTileSelect)
 				tileNumber = (byte)(tileNumber ^ 0x80);
 
-			var tileAddress = +tileBase + (tileNumber << 4) + (yShift << 1);
+			var tileAddress = tileBase + (tileNumber << 4) + (yShift << 1);
 
 			var ba = (vram[tileVramBank, tileAddress + 0] >> xShift) & 0b1;
 			var bb = (vram[tileVramBank, tileAddress + 1] >> xShift) & 0b1;

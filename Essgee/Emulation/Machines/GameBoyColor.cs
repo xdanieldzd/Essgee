@@ -82,7 +82,7 @@ namespace Essgee.Emulation.Machines
 		byte ie;
 		SM83CGB cpu;
 		CGBVideo video;
-		DMGAudio audio;
+		CGBAudio audio;
 		ISerialDevice serialDevice;
 
 		// FF00 - P1/JOYP
@@ -168,7 +168,7 @@ namespace Essgee.Emulation.Machines
 			hram = new byte[hramSize];
 			cpu = new SM83CGB(ReadMemory, WriteMemory);
 			video = new CGBVideo(ReadMemory, cpu.RequestInterrupt);
-			audio = new DMGAudio();
+			audio = new CGBAudio();
 
 			video.EndOfScanline += (s, e) =>
 			{
@@ -449,32 +449,26 @@ namespace Essgee.Emulation.Machines
 
 		public void RunStep()
 		{
-			// TODO: verify CGB double speed mode stuffs, verify HDMA stuffs, etc
-
-			// TODO: LCDC timing *should* be affected at double speed???
-			// https://github.com/LIJI32/GBVideoPlayer/blob/master/How%20It%20Works.md#hblank-and-sub-hblank-tricks -- implies fewer pixels rendered when double speed
-			// https://gbdev.io/pandocs/#ff4d-key1-cgb-mode-only-prepare-speed-switch -- implies LCDC *not* affected by double speed!
+			// TODO: verify if current handling of CGB double speed mode is correct! seems to work but is probably wrong??
+			// NOTES:
+			//  https://github.com/LIJI32/GBVideoPlayer/blob/master/How%20It%20Works.md#hblank-and-sub-hblank-tricks
+			//  https://gbdev.io/pandocs/#ff4d-key1-cgb-mode-only-prepare-speed-switch
 
 			var clockCyclesInStep = RunCpuStep();
-
-			var clockCyclesCGBSpeed = cpu.IsDoubleSpeed ? clockCyclesInStep >> 1 : clockCyclesInStep;
 			var cycleLength = cpu.IsDoubleSpeed ? 2 : 4;
-
-			for (var s = 0; s < clockCyclesCGBSpeed / cycleLength; s++)
-			{
-				HandleTimerOverflow();
-				UpdateCycleCounter((ushort)(clockCycleCount + cycleLength));
-
-				HandleSerialIO(cycleLength);
-			}
 
 			for (var s = 0; s < clockCyclesInStep / 4; s++)
 			{
-				video.Step(4);
-				audio.Step(4);
-				cartridge?.Step(4);
+				HandleTimerOverflow();
+				UpdateCycleCounter((ushort)(clockCycleCount + 4));
 
-				currentMasterClockCyclesInFrame += 4;
+				HandleSerialIO(4);
+
+				video.Step(cycleLength);
+				audio.Step(cycleLength);
+				cartridge?.Step(cycleLength);
+
+				currentMasterClockCyclesInFrame += cycleLength;
 			}
 		}
 
@@ -711,7 +705,7 @@ namespace Essgee.Emulation.Machines
 						return (byte)(
 							0x7E |
 							(speedSwitchPending ? (1 << 0) : 0) |
-							(speedIsDouble ? (1 << 7) : 0));
+							((speedIsDouble = cpu.IsDoubleSpeed) ? (1 << 7) : 0));
 
 					case 0xFF50:
 						// Bootstrap disable

@@ -8,7 +8,7 @@ namespace Essgee.Emulation.Audio
 {
 	public partial class DMGAudio
 	{
-		public class Wave
+		public class Wave : IDMGAudioChannel
 		{
 			// NR30
 			bool isDacEnabled;
@@ -27,7 +27,7 @@ namespace Essgee.Emulation.Audio
 			byte frequencyMSB;
 
 			// Wave
-			byte[] sampleBuffer;
+			protected byte[] sampleBuffer;
 			int frequencyCounter, positionCounter, volume;
 
 			// Misc
@@ -43,9 +43,9 @@ namespace Essgee.Emulation.Audio
 				sampleBuffer = new byte[16];
 			}
 
-			public void Reset()
+			public virtual void Reset()
 			{
-				for (var i = 0; i < sampleBuffer.Length; i++) sampleBuffer[i] = 0;
+				for (var i = 0; i < sampleBuffer.Length; i++) sampleBuffer[i] = (byte)Program.Random.Next(255);
 				frequencyCounter = positionCounter = volume = 0;
 
 				isChannelEnabled = isDacEnabled = false;
@@ -59,6 +59,16 @@ namespace Essgee.Emulation.Audio
 				lengthCounter--;
 				if (lengthCounter == 0)
 					isChannelEnabled = false;
+			}
+
+			public void SweepClock()
+			{
+				throw new Exception("Channel type does not support sweep");
+			}
+
+			public void VolumeEnvelopeClock()
+			{
+				throw new Exception("Channel type does not support envelope");
 			}
 
 			public void Step()
@@ -147,7 +157,7 @@ namespace Essgee.Emulation.Audio
 
 					case 4:
 						return (byte)(
-							0x38 |
+							0xBF |
 							(lengthEnable ? (1 << 6) : 0));
 
 					default:
@@ -159,12 +169,18 @@ namespace Essgee.Emulation.Audio
 
 			public void WriteWaveRam(byte offset, byte value)
 			{
-				sampleBuffer[offset & (sampleBuffer.Length - 1)] = value;
+				if (!isDacEnabled)
+					sampleBuffer[offset & (sampleBuffer.Length - 1)] = value;
+				else
+					sampleBuffer[positionCounter & (sampleBuffer.Length - 1)] = value;
 			}
 
 			public byte ReadWaveRam(byte offset)
 			{
-				return sampleBuffer[offset & (sampleBuffer.Length - 1)];
+				if (!isDacEnabled)
+					return sampleBuffer[offset & (sampleBuffer.Length - 1)];
+				else
+					return 0xFF;
 			}
 		}
 	}
