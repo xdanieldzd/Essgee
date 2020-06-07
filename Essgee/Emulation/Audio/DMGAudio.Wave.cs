@@ -36,7 +36,7 @@ namespace Essgee.Emulation.Audio
 
 			public int OutputVolume { get; private set; }
 
-			public bool IsActive { get { return lengthCounter != 0; } }
+			public bool IsActive { get { return isDacEnabled; } }   // TODO: correct? lengthCounter check makes Zelda Oracle games hang
 
 			public Wave()
 			{
@@ -165,7 +165,7 @@ namespace Essgee.Emulation.Audio
 				}
 			}
 
-			// TODO: behavior on access w/ channel enabled
+			// TODO: more details on behavior on access w/ channel enabled
 
 			public void WriteWaveRam(byte offset, byte value)
 			{
