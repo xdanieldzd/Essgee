@@ -269,10 +269,14 @@ namespace Essgee.Emulation.Video.Nintendo
 			/* Get object Y coord */
 			var objIndex = cycleCount >> 1;
 			var objY = oam[(objIndex << 2) + 0] - 16;
+			var objX = oam[(objIndex << 2) + 1] - 8;
 
 			/* Check if object is on current scanline & maximum number of objects was not exceeded, then increment counter */
 			if (currentScanline >= objY && currentScanline < (objY + (objSize ? 16 : 8)) && numSpritesOnLine < 10)
+			{
+				cyclePenaltyMode3 += 11 - Math.Min(5, (objX + scrollX) % 8);    // TODO: more details
 				numSpritesOnLine++;
+			}
 
 			/* Increment cycle count & check for next LCD mode */
 			cycleCount++;
@@ -283,8 +287,6 @@ namespace Essgee.Emulation.Video.Nintendo
 		{
 			modeNumber = 3;
 			CheckAndRequestStatInterupt();
-
-			cyclePenaltyMode3 += 8 * numSpritesOnLine;      // TODO: more details
 		}
 
 		protected virtual void StepLCDTransfer()
@@ -324,7 +326,7 @@ namespace Essgee.Emulation.Video.Nintendo
 			CheckAndRequestStatInterupt();
 
 			numSpritesOnLine = 0;
-			cyclePenaltyMode3 = scrollX % 8;
+			cyclePenaltyMode3 = (scrollX % 8) + (wndEnable ? 12 : 0);   // TODO: more details; wndEnable +12 fixes snorpung/pocket -- https://gbdev.io/pandocs/#properties-of-stat-modes
 
 			if (currentScanline == 144)
 			{
