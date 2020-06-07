@@ -391,7 +391,18 @@ namespace Essgee.Emulation.Video.Nintendo
 		{
 			switch (port)
 			{
+				case 0x41:
+					// STAT
+					lycLyInterrupt = ((value >> 6) & 0b1) == 0b1;
+					m2OamInterrupt = ((value >> 5) & 0b1) == 0b1;
+					m1VBlankInterrupt = ((value >> 4) & 0b1) == 0b1;
+					m0HBlankInterrupt = ((value >> 3) & 0b1) == 0b1;
+
+					CheckAndRequestStatInterupt();
+					break;
+
 				case 0x4F:
+					// VBK
 					vramBank = (byte)(value & 0b1);
 					break;
 

@@ -58,7 +58,7 @@ namespace Essgee.Emulation.CPU
 		protected byte op;
 
 		[StateRequired]
-		int currentCycles;
+		protected int currentCycles;
 
 		string logFile;
 		int numLogEntries;
@@ -276,7 +276,7 @@ namespace Essgee.Emulation.CPU
 			return false;
 		}
 
-		private void EnterHaltState()
+		protected virtual void EnterHaltState()
 		{
 			if (ime)
 			{

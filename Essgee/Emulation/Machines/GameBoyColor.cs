@@ -412,6 +412,10 @@ namespace Essgee.Emulation.Machines
 			if (mapperType == null)
 				mapperType = mapperTypeFromHeader;
 
+			var romSizePadded = 1;
+			while (romSizePadded < romData.Length) romSizePadded <<= 1;
+			romSize = Math.Max(romSizePadded, romData.Length);
+
 			cartridge = (IGameBoyCartridge)Activator.CreateInstance(mapperType, new object[] { romSize, ramSize });
 			cartridge.LoadRom(romData);
 			cartridge.LoadRam(ramData);
@@ -445,7 +449,11 @@ namespace Essgee.Emulation.Machines
 
 		public void RunStep()
 		{
-			// TODO: verify CGB double speed mode stuffs, implement HDMA stuffs, etc
+			// TODO: verify CGB double speed mode stuffs, verify HDMA stuffs, etc
+
+			// TODO: LCDC timing *should* be affected at double speed???
+			// https://github.com/LIJI32/GBVideoPlayer/blob/master/How%20It%20Works.md#hblank-and-sub-hblank-tricks -- implies fewer pixels rendered when double speed
+			// https://gbdev.io/pandocs/#ff4d-key1-cgb-mode-only-prepare-speed-switch -- implies LCDC *not* affected by double speed!
 
 			var clockCyclesInStep = RunCpuStep();
 
@@ -603,8 +611,6 @@ namespace Essgee.Emulation.Machines
 		{
 			if (address >= 0x0000 && address <= 0x7FFF)
 			{
-				// TODO: bootstrap enabled breaks Pokemon GS?? why??
-
 				if (configuration.UseBootstrap && (address <= 0x00FF || (address >= 0x0200 && address <= 0x08FF)) && !bootstrapDisabled)
 					return bootstrap[address];
 				else
@@ -648,7 +654,7 @@ namespace Essgee.Emulation.Machines
 
 		private byte ReadIo(ushort address)
 		{
-			if ((address & 0xFFF0) == 0xFF40 || (address >= 0xFF51 && address <= 0xFF55) || (address >= 0xFF68 && address <= 0xFF6B))
+			if (((address & 0xFFF0) == 0xFF40 && address != 0xFF4C && address != 0xFF4D) || (address >= 0xFF51 && address <= 0xFF55) || (address >= 0xFF68 && address <= 0xFF6B))
 				return video.ReadPort((byte)(address & 0xFF));
 			else if ((address & 0xFFF0) == 0xFF10 || (address & 0xFFF0) == 0xFF20 || (address & 0xFFF0) == 0xFF30)
 				return audio.ReadPort((byte)(address & 0xFF));
@@ -766,7 +772,7 @@ namespace Essgee.Emulation.Machines
 
 		private void WriteIo(ushort address, byte value)
 		{
-			if ((address & 0xFFF0) == 0xFF40 || (address >= 0xFF51 && address <= 0xFF55) || (address >= 0xFF68 && address <= 0xFF6B))
+			if (((address & 0xFFF0) == 0xFF40 && address != 0xFF4C && address != 0xFF4D) || (address >= 0xFF51 && address <= 0xFF55) || (address >= 0xFF68 && address <= 0xFF6B))
 				video.WritePort((byte)(address & 0xFF), value);
 			else if ((address & 0xFFF0) == 0xFF10 || (address & 0xFFF0) == 0xFF20 || (address & 0xFFF0) == 0xFF30)
 				audio.WritePort((byte)(address & 0xFF), value);
@@ -840,7 +846,6 @@ namespace Essgee.Emulation.Machines
 
 					case 0xFF4D:
 						speedSwitchPending = (value & (1 << 0)) != 0;
-						speedIsDouble = (value & (1 << 7)) != 0;
 						break;
 
 					case 0xFF50:

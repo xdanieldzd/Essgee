@@ -13,6 +13,22 @@ namespace Essgee.Emulation.CPU
 
 		public SM83CGB(MemoryReadDelegate memoryRead, MemoryWriteDelegate memoryWrite) : base(memoryRead, memoryWrite) { }
 
+		protected override void EnterHaltState()
+		{
+			if (ime)
+			{
+				halt = true;
+				pc--;
+			}
+			else
+			{
+				if ((memoryReadDelegate(0xFF0F) & memoryReadDelegate(0xFFFF) & 0x1F) != 0)
+					currentCycles += 8;
+				else
+					halt = true;
+			}
+		}
+
 		protected override void Stop()
 		{
 			pc++;
