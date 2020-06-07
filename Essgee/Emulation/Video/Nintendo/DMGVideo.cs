@@ -17,6 +17,7 @@ namespace Essgee.Emulation.Video.Nintendo
 	public class DMGVideo : IVideo
 	{
 		protected const int numOamSlots = 40;
+		protected const int maxSpritesPerLine = 10;
 
 		protected const int mode2Boundary = 80;
 		protected const int mode3Boundary = mode2Boundary + 168;
@@ -84,6 +85,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		protected int numSpritesOnLine, skipFrames;
 		protected bool statIrqSignal, vBlankReady;
+		protected int[] spritesOnLine;
 
 		readonly byte[][] colorValuesBgr = new byte[][]
 		{
@@ -119,6 +121,8 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			modeFunctions = new Action[] { StepHBlank, StepVBlank, StepOAMSearch, StepLCDTransfer };
 
+			spritesOnLine = new int[maxSpritesPerLine];
+
 			memoryReadDelegate = memoryRead;
 			requestInterruptDelegate = requestInterrupt;
 		}
@@ -152,6 +156,8 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			numSpritesOnLine = skipFrames = 0;
 			statIrqSignal = vBlankReady = false;
+
+			for (var i = 0; i < spritesOnLine.Length; i++) spritesOnLine[i] = -1;
 
 			ClearScreenUsage();
 			ClearSpriteUsage();
@@ -244,7 +250,8 @@ namespace Essgee.Emulation.Video.Nintendo
 				/* LY reports as 0 on line 153 */
 				ly = 0;
 
-				CheckAndRequestStatInterupt();
+				// TODO: verify if STAT/LYC interrupt is supposed to happen here? currently breaks Shantae's sprites if done
+				//CheckAndRequestStatInterupt();
 			}
 			else if (currentScanline == 154)
 			{
@@ -266,16 +273,19 @@ namespace Essgee.Emulation.Video.Nintendo
 		{
 			/* OAM search */
 
-			/* Get object Y coord */
-			var objIndex = cycleCount >> 1;
-			var objY = oam[(objIndex << 2) + 0] - 16;
-			var objX = oam[(objIndex << 2) + 1] - 8;
-
-			/* Check if object is on current scanline & maximum number of objects was not exceeded, then increment counter */
-			if (currentScanline >= objY && currentScanline < (objY + (objSize ? 16 : 8)) && numSpritesOnLine < 10)
+			if ((cycleCount % 2) == 0)
 			{
-				cyclePenaltyMode3 += 11 - Math.Min(5, (objX + scrollX) % 8);    // TODO: more details
-				numSpritesOnLine++;
+				/* Get object Y coord */
+				var objIndex = cycleCount >> 1;
+				var objY = oam[(objIndex << 2) + 0] - 16;
+
+				/* Check if object is on current scanline & maximum number of objects was not exceeded, then increment counter */
+				if (currentScanline >= objY && currentScanline < (objY + (objSize ? 16 : 8)) && numSpritesOnLine < maxSpritesPerLine)
+				{
+					var objX = oam[(objIndex << 2) + 1] - 8;
+					cyclePenaltyMode3 += 11 - Math.Min(5, (objX + scrollX) % 8);    // TODO: more details
+					spritesOnLine[numSpritesOnLine++] = objIndex;
+				}
 			}
 
 			/* Increment cycle count & check for next LCD mode */
@@ -325,6 +335,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			CheckAndRequestStatInterupt();
 
+			for (var i = 0; i < spritesOnLine.Length; i++) spritesOnLine[i] = -1;
 			numSpritesOnLine = 0;
 			cyclePenaltyMode3 = (scrollX % 8) + (wndEnable ? 12 : 0);   // TODO: more details; wndEnable +12 fixes snorpung/pocket -- https://gbdev.io/pandocs/#properties-of-stat-modes
 
@@ -379,11 +390,13 @@ namespace Essgee.Emulation.Video.Nintendo
 			}
 
 			if (bgEnable)
+			{
 				RenderBackground(y, x);
+				if (wndEnable) RenderWindow(y, x);
+			}
 			else
 				SetPixel(y, x, 0xFF, 0xFF, 0xFF);
 
-			if (wndEnable) RenderWindow(y, x);
 			if (objEnable) RenderSprites(y, x);
 		}
 
@@ -445,11 +458,12 @@ namespace Essgee.Emulation.Video.Nintendo
 		protected virtual void RenderSprites(int y, int x)
 		{
 			var objHeight = (objSize ? 16 : 8);
-			var numObjDisplayed = 0;
 
-			// Iterate over sprite slots
-			for (var i = (byte)0; i < numOamSlots; i++)
+			// Iterate over sprite on line
+			for (var s = 0; s < numSpritesOnLine; s++)
 			{
+				var i = spritesOnLine[s];
+
 				// Get sprite Y coord & if sprite is not on current scanline, continue to next slot
 				var objY = (short)(oam[(i * 4) + 0] - 16);
 				if (y < objY || y >= (objY + objHeight)) continue;
@@ -476,10 +490,6 @@ namespace Essgee.Emulation.Video.Nintendo
 					var prevObjSlot = GetSpriteUsageSlot(y, x);
 					if (prevObjX < objX || (prevObjX == objX && prevObjSlot < i)) continue;
 
-					// If sprite priority is not above background -and- BG/window pixel was already drawn, continue to next pixel
-					if (!objPrioAboveBg &&
-						(IsScreenUsageFlagSet(y, x, screenUsageBackground) || IsScreenUsageFlagSet(y, x, screenUsageWindow))) continue;
-
 					// Calculate tile address
 					var xShift = objFlipX ? (px % 8) : (7 - (px % 8));
 					var yShift = objFlipY ? (7 - ((y - objY) % 8)) : ((y - objY) % 8);
@@ -500,14 +510,15 @@ namespace Essgee.Emulation.Video.Nintendo
 					var c = (byte)((bb << 1) | ba);
 					if (c != 0)
 					{
+						// If sprite priority is not above background -and- BG/window pixel was already drawn, continue to next pixel
+						if (!objPrioAboveBg &&
+							(IsScreenUsageFlagSet(y, x, screenUsageBackground) || IsScreenUsageFlagSet(y, x, screenUsageWindow))) continue;
+
 						SetScreenUsageFlag(y, x, screenUsageSprite);
-						SetSpriteUsage(y, x, objX, i);
+						SetSpriteUsage(y, x, objX, (byte)i);
 						SetPixel(y, x, (byte)((pal >> (c << 1)) & 0x03));
 					}
 				}
-
-				// If sprites per line limit was exceeded, stop drawing sprites
-				if (numObjDisplayed++ >= 10) break;
 			}
 		}
 

@@ -140,6 +140,22 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		//
 
+		protected override void RenderPixel(int y, int x)
+		{
+			if (x < 0 || x >= 160 || y < 0 || y >= 144) return;
+
+			if (skipFrames > 0)
+			{
+				SetPixel(y, x, 0xFF, 0xFF, 0xFF);
+				return;
+			}
+
+			RenderBackground(y, x);
+
+			if (wndEnable) RenderWindow(y, x);
+			if (objEnable) RenderSprites(y, x);
+		}
+
 		protected override void RenderBackground(int y, int x)
 		{
 			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
@@ -222,11 +238,12 @@ namespace Essgee.Emulation.Video.Nintendo
 			// TODO: more GBC sprite specifics! (priority etc)
 
 			var objHeight = (objSize ? 16 : 8);
-			var numObjDisplayed = 0;
 
-			// Iterate over sprite slots
-			for (var i = (byte)0; i < numOamSlots; i++)
+			// Iterate over sprite on line
+			for (var s = numSpritesOnLine - 1; s >= 0; s--)
 			{
+				var i = spritesOnLine[s];
+
 				// Get sprite Y coord & if sprite is not on current scanline, continue to next slot
 				var objY = (short)(oam[(i * 4) + 0] - 16);
 				if (y < objY || y >= (objY + objHeight)) continue;
@@ -249,14 +266,9 @@ namespace Essgee.Emulation.Video.Nintendo
 					// If sprite pixel X coord does not equal current rendering X coord, continue to next pixel
 					if (x != (byte)(objX + px)) continue;
 
-					// If sprite of lower X coord already exists -or- sprite of same X coord BUT lower slot exists, continue to next pixel
+					// If sprite of same X coord already exists, continue to next pixel
 					var prevObjX = GetSpriteUsageCoord(y, x);
-					var prevObjSlot = GetSpriteUsageSlot(y, x);
-					if (prevObjX < objX || (prevObjX == objX && prevObjSlot < i)) continue;
-
-					// If priority BG was already drawn /or/ sprite priority is not above background -and- BG/window pixel was already drawn, continue to next pixel
-					if (IsScreenUsageFlagSet(y, x, screenUsageBackgroundHighPriority) ||
-						(!objPrioAboveBg && (IsScreenUsageFlagSet(y, x, screenUsageBackground) || IsScreenUsageFlagSet(y, x, screenUsageWindow)))) continue;
+					if (prevObjX == objX) continue;
 
 					// Calculate tile address
 					var xShift = objFlipX ? (px % 8) : (7 - (px % 8));
@@ -277,16 +289,21 @@ namespace Essgee.Emulation.Video.Nintendo
 					var c = (byte)((bb << 1) | ba);
 					if (c != 0)
 					{
+						// If BG and window have priority, check further conditions
+						if (bgEnable)
+						{
+							// If priority BG was already drawn /or/ sprite priority is not above background -and- BG/window pixel was already drawn, continue to next pixel
+							if (IsScreenUsageFlagSet(y, x, screenUsageBackgroundHighPriority) ||
+								(!objPrioAboveBg && (IsScreenUsageFlagSet(y, x, screenUsageBackground) || IsScreenUsageFlagSet(y, x, screenUsageWindow)))) continue;
+						}
+
 						SetScreenUsageFlag(y, x, screenUsageSprite);
-						SetSpriteUsage(y, x, objX, i);
+						SetSpriteUsage(y, x, objX, (byte)i);
 
 						var paletteAddress = (objPalNumber << 3) + ((c & 0b11) << 1);
 						SetPixel(y, x, (ushort)((objPaletteData[paletteAddress + 1] << 8) | objPaletteData[paletteAddress + 0]));
 					}
 				}
-
-				// If sprites per line limit was exceeded, stop drawing sprites
-				if (numObjDisplayed++ >= 10) break;
 			}
 		}
 
