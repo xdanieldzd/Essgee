@@ -24,7 +24,7 @@ namespace Essgee.Emulation.Video.Nintendo
 		protected const int maxSpritesPerLine = 10;
 
 		protected const int mode2Boundary = 80;
-		protected const int mode3Boundary = mode2Boundary + 168;
+		protected const int mode3Boundary = mode2Boundary + 172;
 
 		protected Action[] modeFunctions;
 
@@ -304,7 +304,7 @@ namespace Essgee.Emulation.Video.Nintendo
 			/* Data transfer to LCD */
 
 			/* Render pixels */
-			RenderPixel(currentScanline, cycleCount - mode2Boundary);
+			RenderPixel(currentScanline, cycleCount - mode2Boundary - 12);
 
 			/* Increment cycle count & check for next LCD mode */
 			cycleCount++;
