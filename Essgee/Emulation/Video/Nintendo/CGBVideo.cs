@@ -142,7 +142,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		protected override void RenderPixel(int y, int x)
 		{
-			if (x < 0 || x >= 160 || y < 0 || y >= 144) return;
+			if (x < 0 || x >= displayActiveWidth || y < 0 || y >= displayActiveHeight) return;
 
 			if (skipFrames > 0)
 			{
@@ -158,15 +158,19 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		protected override void RenderBackground(int y, int x)
 		{
+			// Get base addresses
 			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
 			var mapBase = (ushort)(bgMapSelect ? 0x1C00 : 0x1800);
 
+			// Calculate tilemap address & get tile
 			var yTransformed = (byte)(scrollY + y);
 			var xTransformed = (byte)(scrollX + x);
-
 			var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
 			var tileNumber = vram[0, mapAddress];
+			if (!bgWndTileSelect)
+				tileNumber = (byte)(tileNumber ^ 0x80);
 
+			// Get & extract tile attributes
 			var tileAttribs = vram[1, mapAddress];
 			var tileBgPalette = tileAttribs & 0b111;
 			var tileVramBank = (tileAttribs >> 3) & 0b1;
@@ -174,39 +178,42 @@ namespace Essgee.Emulation.Video.Nintendo
 			var tileVerticalFlip = ((tileAttribs >> 6) & 0b1) == 0b1;
 			var tileBgHasPriority = ((tileAttribs >> 7) & 0b1) == 0b1;
 
+			// Calculate tile address & get pixel color index
 			var xShift = tileHorizontalFlip ? (xTransformed % 8) : (7 - (xTransformed % 8));
 			var yShift = tileVerticalFlip ? (7 - (yTransformed & 7)) : (yTransformed & 7);
-
-			if (!bgWndTileSelect)
-				tileNumber = (byte)(tileNumber ^ 0x80);
-
 			var tileAddress = tileBase + (tileNumber << 4) + (yShift << 1);
-
 			var ba = (vram[tileVramBank, tileAddress + 0] >> xShift) & 0b1;
 			var bb = (vram[tileVramBank, tileAddress + 1] >> xShift) & 0b1;
 			var c = (byte)((bb << 1) | ba);
 
+			// If color is not 0, note that a BG pixel (normal or high-priority) exists here
 			if (c != 0)
-				SetScreenUsageFlag(y, x, tileBgHasPriority ? screenUsageBackgroundHighPriority : screenUsageBackground);
+				screenUsageFlags[x, y] |= tileBgHasPriority ? screenUsageBackgroundHighPriority : screenUsageBackground;
 
+			// Calculate color address in palette & draw pixel
 			var paletteAddress = (tileBgPalette << 3) + ((c & 0b11) << 1);
 			SetPixel(y, x, (ushort)((bgPaletteData[paletteAddress + 1] << 8) | bgPaletteData[paletteAddress + 0]));
 		}
 
 		protected override void RenderWindow(int y, int x)
 		{
-			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
-			var mapBase = (ushort)(wndMapSelect ? 0x1C00 : 0x1800);
-
+			// Check if current coords are inside window
 			if (y < windowY) return;
 			if (x < (windowX - 7)) return;
 
+			// Get base addresses
+			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
+			var mapBase = (ushort)(wndMapSelect ? 0x1C00 : 0x1800);
+
+			// Calculate tilemap address & get tile
 			var yTransformed = (byte)(y - windowY);
 			var xTransformed = (byte)((7 - windowX) + x);
-
 			var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
 			var tileNumber = vram[0, mapAddress];
+			if (!bgWndTileSelect)
+				tileNumber = (byte)(tileNumber ^ 0x80);
 
+			// Get & extract tile attributes
 			var tileAttribs = vram[1, mapAddress];
 			var tileBgPalette = tileAttribs & 0b111;
 			var tileVramBank = (tileAttribs >> 3) & 0b1;
@@ -214,32 +221,28 @@ namespace Essgee.Emulation.Video.Nintendo
 			var tileVerticalFlip = ((tileAttribs >> 6) & 0b1) == 0b1;
 			var tileBgHasPriority = ((tileAttribs >> 7) & 0b1) == 0b1;
 
+			// Calculate tile address & get pixel color index
 			var xShift = tileHorizontalFlip ? (xTransformed % 8) : (7 - (xTransformed % 8));
 			var yShift = tileVerticalFlip ? (7 - (yTransformed & 7)) : (yTransformed & 7);
-
-			if (!bgWndTileSelect)
-				tileNumber = (byte)(tileNumber ^ 0x80);
-
 			var tileAddress = tileBase + (tileNumber << 4) + (yShift << 1);
-
 			var ba = (vram[tileVramBank, tileAddress + 0] >> xShift) & 0b1;
 			var bb = (vram[tileVramBank, tileAddress + 1] >> xShift) & 0b1;
 			var c = (byte)((bb << 1) | ba);
 
+			// If color is not 0, note that a Window pixel (normal or high-priority) exists here
 			if (c != 0)
-				SetScreenUsageFlag(y, x, tileBgHasPriority ? screenUsageBackgroundHighPriority : screenUsageWindow);    // TODO correct?
+				screenUsageFlags[x, y] |= tileBgHasPriority ? screenUsageBackgroundHighPriority : screenUsageWindow;    // TODO correct?
 
+			// Calculate color address in palette & draw pixel
 			var paletteAddress = (tileBgPalette << 3) + ((c & 0b11) << 1);
 			SetPixel(y, x, (ushort)((bgPaletteData[paletteAddress + 1] << 8) | bgPaletteData[paletteAddress + 0]));
 		}
 
 		protected override void RenderSprites(int y, int x)
 		{
-			// TODO: more GBC sprite specifics! (priority etc)
+			var objHeight = objSize ? 16 : 8;
 
-			var objHeight = (objSize ? 16 : 8);
-
-			// Iterate over sprite on line
+			// Iterate over sprite on line backwards
 			for (var s = numSpritesOnLine - 1; s >= 0; s--)
 			{
 				var i = spritesOnLine[s];
@@ -254,7 +257,6 @@ namespace Essgee.Emulation.Video.Nintendo
 				var objAttributes = oam[(i * 4) + 3];
 
 				// Extract attributes
-				var objPrioAboveBg = ((objAttributes >> 7) & 0b1) != 0b1;
 				var objFlipY = ((objAttributes >> 6) & 0b1) == 0b1;
 				var objFlipX = ((objAttributes >> 5) & 0b1) == 0b1;
 				var objVramBank = (objAttributes >> 3) & 0b1;
@@ -265,10 +267,6 @@ namespace Essgee.Emulation.Video.Nintendo
 				{
 					// If sprite pixel X coord does not equal current rendering X coord, continue to next pixel
 					if (x != (byte)(objX + px)) continue;
-
-					// If sprite of same X coord already exists, continue to next pixel
-					var prevObjX = GetSpriteUsageCoord(y, x);
-					if (prevObjX == objX) continue;
 
 					// Calculate tile address
 					var xShift = objFlipX ? (px % 8) : (7 - (px % 8));
@@ -285,21 +283,18 @@ namespace Essgee.Emulation.Video.Nintendo
 					var ba = (vram[objVramBank, tileAddress + 0] >> xShift) & 0b1;
 					var bb = (vram[objVramBank, tileAddress + 1] >> xShift) & 0b1;
 
-					// Combine to color index, draw if color is not 0
+					// Combine to color index, continue drawing if color is not 0
 					var c = (byte)((bb << 1) | ba);
 					if (c != 0)
 					{
-						// If BG and window have priority, check further conditions
-						if (bgEnable)
-						{
-							// If priority BG was already drawn /or/ sprite priority is not above background -and- BG/window pixel was already drawn, continue to next pixel
-							if (IsScreenUsageFlagSet(y, x, screenUsageBackgroundHighPriority) ||
-								(!objPrioAboveBg && (IsScreenUsageFlagSet(y, x, screenUsageBackground) || IsScreenUsageFlagSet(y, x, screenUsageWindow)))) continue;
-						}
+						// If sprite does not have priority i.e. if sprite should not be drawn, continue to next pixel
+						if (!HasSpritePriority(y, x, i)) continue;
 
-						SetScreenUsageFlag(y, x, screenUsageSprite);
-						SetSpriteUsage(y, x, objX, (byte)i);
+						screenUsageFlags[x, y] |= screenUsageSprite;
+						screenUsageSpriteSlots[x, y] = (byte)i;
+						screenUsageSpriteXCoords[x, y] = objX;
 
+						// Calculate color address in palette & draw pixel
 						var paletteAddress = (objPalNumber << 3) + ((c & 0b11) << 1);
 						SetPixel(y, x, (ushort)((objPaletteData[paletteAddress + 1] << 8) | objPaletteData[paletteAddress + 0]));
 					}
@@ -307,9 +302,26 @@ namespace Essgee.Emulation.Video.Nintendo
 			}
 		}
 
+		protected override bool HasSpritePriority(int y, int x, int objSlot)
+		{
+			// If BG and window have priority, check further conditions
+			if (bgEnable)
+			{
+				// Get new sprite OBJ-to-BG priority attribute
+				var objIsBehindBg = ((oam[(objSlot * 4) + 3] >> 7) & 0b1) == 0b1;
+
+				// If high-priority BG pixel has already been drawn, -or- new sprite is shown behind BG/Window -and- a BG/Window pixel has already been drawn, new sprite does not have priority
+				if (IsScreenUsageFlagSet(y, x, screenUsageBackgroundHighPriority) ||
+					(objIsBehindBg && (IsScreenUsageFlagSet(y, x, screenUsageBackground) || IsScreenUsageFlagSet(y, x, screenUsageWindow)))) return false;
+			}
+
+			// New sprite has priority
+			return true;
+		}
+
 		protected void SetPixel(int y, int x, ushort c)
 		{
-			WriteColorToFramebuffer(c, ((y * 160) + (x % 160)) * 4);
+			WriteColorToFramebuffer(c, ((y * displayActiveWidth) + (x % displayActiveWidth)) * 4);
 		}
 
 		private void WriteColorToFramebuffer(ushort c, int address)

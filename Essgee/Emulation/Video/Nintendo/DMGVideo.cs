@@ -16,6 +16,10 @@ namespace Essgee.Emulation.Video.Nintendo
 {
 	public class DMGVideo : IVideo
 	{
+		protected const int displayActiveWidth = 160;
+		protected const int displayActiveHeight = 144;
+		protected const int numDisplayPixels = displayActiveWidth * displayActiveHeight;
+
 		protected const int numOamSlots = 40;
 		protected const int maxSpritesPerLine = 10;
 
@@ -27,7 +31,7 @@ namespace Essgee.Emulation.Video.Nintendo
 		protected readonly MemoryReadDelegate memoryReadDelegate;
 		protected readonly RequestInterruptDelegate requestInterruptDelegate;
 
-		public virtual (int X, int Y, int Width, int Height) Viewport => (0, 0, 160, 144);
+		public virtual (int X, int Y, int Width, int Height) Viewport => (0, 0, displayActiveWidth, displayActiveHeight);
 
 		public virtual event EventHandler<SizeScreenEventArgs> SizeScreen;
 		public virtual void OnSizeScreen(SizeScreenEventArgs e) { SizeScreen?.Invoke(this, e); }
@@ -97,13 +101,10 @@ namespace Essgee.Emulation.Video.Nintendo
 		};
 
 		protected const byte screenUsageEmpty = 0;
-		protected const byte screenUsageBackground = (1 << 0);
-		protected const byte screenUsageWindow = (1 << 1);
-		protected const byte screenUsageSprite = (1 << 2);
-		protected byte[] screenUsage;
-
-		protected const ushort spriteUsageEmpty = 0xFFFF;
-		protected ushort[] spriteUsage;
+		protected const byte screenUsageBackground = 1 << 0;
+		protected const byte screenUsageWindow = 1 << 1;
+		protected const byte screenUsageSprite = 1 << 2;
+		protected byte[,] screenUsageFlags, screenUsageSpriteXCoords, screenUsageSpriteSlots;
 
 		protected int cycleCount, cyclePenaltyMode3, currentScanline;
 		protected byte[] outputFramebuffer;
@@ -160,7 +161,6 @@ namespace Essgee.Emulation.Video.Nintendo
 			for (var i = 0; i < spritesOnLine.Length; i++) spritesOnLine[i] = -1;
 
 			ClearScreenUsage();
-			ClearSpriteUsage();
 
 			cycleCount = cyclePenaltyMode3 = currentScanline = 0;
 		}
@@ -190,11 +190,12 @@ namespace Essgee.Emulation.Video.Nintendo
 			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / 154);
 
 			/* Create arrays */
-			screenUsage = new byte[160 * 144];
-			spriteUsage = new ushort[160 * 144];
-			outputFramebuffer = new byte[(160 * 144) * 4];
+			screenUsageFlags = new byte[displayActiveWidth, displayActiveHeight];
+			screenUsageSpriteXCoords = new byte[displayActiveWidth, displayActiveHeight];
+			screenUsageSpriteSlots = new byte[displayActiveWidth, displayActiveHeight];
+			outputFramebuffer = new byte[numDisplayPixels * 4];
 
-			for (var y = 0; y < 144; y++)
+			for (var y = 0; y < displayActiveHeight; y++)
 				SetLine(y, 0xFF, 0xFF, 0xFF);
 		}
 
@@ -263,7 +264,6 @@ namespace Essgee.Emulation.Video.Nintendo
 				CheckAndRequestStatInterupt();
 
 				ClearScreenUsage();
-				ClearSpriteUsage();
 			}
 
 			cycleCount = 0;
@@ -339,7 +339,7 @@ namespace Essgee.Emulation.Video.Nintendo
 			numSpritesOnLine = 0;
 			cyclePenaltyMode3 = (scrollX % 8) + (wndEnable ? 12 : 0);   // TODO: more details; wndEnable +12 fixes snorpung/pocket -- https://gbdev.io/pandocs/#properties-of-stat-modes
 
-			if (currentScanline == 144)
+			if (currentScanline == displayActiveHeight)
 			{
 				modeNumber = 1;
 				CheckAndRequestStatInterupt();
@@ -350,7 +350,7 @@ namespace Essgee.Emulation.Video.Nintendo
 				if (skipFrames > 0) skipFrames--;
 
 				/* Submit screen for rendering */
-				OnRenderScreen(new RenderScreenEventArgs(160, 144, outputFramebuffer.Clone() as byte[]));
+				OnRenderScreen(new RenderScreenEventArgs(displayActiveWidth, displayActiveHeight, outputFramebuffer.Clone() as byte[]));
 			}
 			else
 			{
@@ -381,7 +381,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		protected virtual void RenderPixel(int y, int x)
 		{
-			if (x < 0 || x >= 160 || y < 0 || y >= 144) return;
+			if (x < 0 || x >= displayActiveWidth || y < 0 || y >= displayActiveHeight) return;
 
 			if (skipFrames > 0)
 			{
@@ -402,62 +402,67 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		protected virtual void RenderBackground(int y, int x)
 		{
+			// Get base addresses
 			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
 			var mapBase = (ushort)(bgMapSelect ? 0x1C00 : 0x1800);
 
+			// Calculate tilemap address & get tile
 			var yTransformed = (byte)(scrollY + y);
 			var xTransformed = (byte)(scrollX + x);
-
 			var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
 			var tileNumber = vram[0, mapAddress];
-
 			if (!bgWndTileSelect)
 				tileNumber = (byte)(tileNumber ^ 0x80);
 
+			// Calculate tile address & get pixel color index
 			var tileAddress = tileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
-
 			var ba = (vram[0, tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
 			var bb = (vram[0, tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
 			var c = (byte)((bb << 1) | ba);
 
+			// If color is not 0, note that a BG pixel exists here
 			if (c != 0)
-				SetScreenUsageFlag(y, x, screenUsageBackground);
+				screenUsageFlags[x, y] |= screenUsageBackground;
 
+			// Draw pixel
 			SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
 		}
 
 		protected virtual void RenderWindow(int y, int x)
 		{
-			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
-			var mapBase = (ushort)(wndMapSelect ? 0x1C00 : 0x1800);
-
+			// Check if current coords are inside window
 			if (y < windowY) return;
 			if (x < (windowX - 7)) return;
 
+			// Get base addresses
+			var tileBase = (ushort)(bgWndTileSelect ? 0x0000 : 0x0800);
+			var mapBase = (ushort)(wndMapSelect ? 0x1C00 : 0x1800);
+
+			// Calculate tilemap address & get tile
 			var yTransformed = (byte)(y - windowY);
 			var xTransformed = (byte)((7 - windowX) + x);
-
 			var mapAddress = mapBase + ((yTransformed >> 3) << 5) + (xTransformed >> 3);
 			var tileNumber = vram[0, mapAddress];
-
 			if (!bgWndTileSelect)
 				tileNumber = (byte)(tileNumber ^ 0x80);
 
+			// Calculate tile address & get pixel color index
 			var tileAddress = tileBase + (tileNumber << 4) + ((yTransformed & 7) << 1);
-
 			var ba = (vram[0, tileAddress + 0] >> (7 - (xTransformed % 8))) & 0b1;
 			var bb = (vram[0, tileAddress + 1] >> (7 - (xTransformed % 8))) & 0b1;
 			var c = (byte)((bb << 1) | ba);
 
+			// If color is not 0, note that a Window pixel exists here
 			if (c != 0)
-				SetScreenUsageFlag(y, x, screenUsageWindow);
+				screenUsageFlags[x, y] |= screenUsageWindow;
 
+			// Draw pixel
 			SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
 		}
 
 		protected virtual void RenderSprites(int y, int x)
 		{
-			var objHeight = (objSize ? 16 : 8);
+			var objHeight = objSize ? 16 : 8;
 
 			// Iterate over sprite on line
 			for (var s = 0; s < numSpritesOnLine; s++)
@@ -474,21 +479,15 @@ namespace Essgee.Emulation.Video.Nintendo
 				var objAttributes = oam[(i * 4) + 3];
 
 				// Extract attributes
-				var objPrioAboveBg = ((objAttributes >> 7) & 0b1) != 0b1;
 				var objFlipY = ((objAttributes >> 6) & 0b1) == 0b1;
 				var objFlipX = ((objAttributes >> 5) & 0b1) == 0b1;
-				var objPalNumber = ((objAttributes >> 4) & 0b1);
+				var objPalNumber = (objAttributes >> 4) & 0b1;
 
 				// Iterate over pixels
 				for (var px = 0; px < 8; px++)
 				{
 					// If sprite pixel X coord does not equal current rendering X coord, continue to next pixel
 					if (x != (byte)(objX + px)) continue;
-
-					// If sprite of lower X coord already exists -or- sprite of same X coord BUT lower slot exists, continue to next pixel
-					var prevObjX = GetSpriteUsageCoord(y, x);
-					var prevObjSlot = GetSpriteUsageSlot(y, x);
-					if (prevObjX < objX || (prevObjX == objX && prevObjSlot < i)) continue;
 
 					// Calculate tile address
 					var xShift = objFlipX ? (px % 8) : (7 - (px % 8));
@@ -502,46 +501,72 @@ namespace Essgee.Emulation.Video.Nintendo
 					var tileAddress = (objTileNumber << 4) + (yShift << 1);
 
 					// Get palette & bitplanes
-					var pal = (objPalNumber == 0 ? obPalette0 : obPalette1);
+					var pal = objPalNumber == 0 ? obPalette0 : obPalette1;
 					var ba = (vram[0, tileAddress + 0] >> xShift) & 0b1;
 					var bb = (vram[0, tileAddress + 1] >> xShift) & 0b1;
 
-					// Combine to color index, draw if color is not 0
+					// Combine to color index, continue drawing if color is not 0
 					var c = (byte)((bb << 1) | ba);
 					if (c != 0)
 					{
-						// If sprite priority is not above background -and- BG/window pixel was already drawn, continue to next pixel
-						if (!objPrioAboveBg &&
-							(IsScreenUsageFlagSet(y, x, screenUsageBackground) || IsScreenUsageFlagSet(y, x, screenUsageWindow))) continue;
+						// If sprite does not have priority i.e. if sprite should not be drawn, continue to next pixel
+						if (!HasSpritePriority(y, x, i)) continue;
 
-						SetScreenUsageFlag(y, x, screenUsageSprite);
-						SetSpriteUsage(y, x, objX, (byte)i);
+						screenUsageFlags[x, y] |= screenUsageSprite;
+						screenUsageSpriteSlots[x, y] = (byte)i;
+						screenUsageSpriteXCoords[x, y] = objX;
+
+						// Draw pixel
 						SetPixel(y, x, (byte)((pal >> (c << 1)) & 0x03));
 					}
 				}
 			}
 		}
 
+		protected virtual bool HasSpritePriority(int y, int x, int objSlot)
+		{
+			// Get new sprite X coord
+			var objX = (byte)(oam[(objSlot * 4) + 1] - 8);
+
+			// Get potentially existing sprite X coord and slot
+			var prevX = screenUsageSpriteXCoords[x, y];
+			var prevSlot = screenUsageSpriteSlots[x, y];
+
+			// If existing sprite has lower X coord -or- both sprites have same X coord BUT existing sprite has lower slot, new sprite does not have priority
+			if (prevX < objX || (prevX == objX && prevSlot < objSlot))
+				return false;
+
+			// Get new sprite OBJ-to-BG priority attribute
+			var objIsBehindBg = ((oam[(objSlot * 4) + 3] >> 7) & 0b1) == 0b1;
+
+			// If new sprite is shown behind BG/Window -and- a BG/Window pixel has already been drawn, new sprite does not have priority
+			if (objIsBehindBg &&
+				(IsScreenUsageFlagSet(y, x, screenUsageBackground) || IsScreenUsageFlagSet(y, x, screenUsageWindow))) return false;
+
+			// New sprite has priority
+			return true;
+		}
+
 		protected void SetLine(int y, byte c)
 		{
-			for (int x = 0; x < 160; x++)
+			for (int x = 0; x < displayActiveWidth; x++)
 				SetPixel(y, x, c);
 		}
 
 		protected void SetLine(int y, byte b, byte g, byte r)
 		{
-			for (int x = 0; x < 160; x++)
+			for (int x = 0; x < displayActiveWidth; x++)
 				SetPixel(y, x, b, g, r);
 		}
 
 		protected void SetPixel(int y, int x, byte c)
 		{
-			WriteColorToFramebuffer(c, ((y * 160) + (x % 160)) * 4);
+			WriteColorToFramebuffer(c, ((y * displayActiveWidth) + (x % displayActiveWidth)) * 4);
 		}
 
 		protected void SetPixel(int y, int x, byte b, byte g, byte r)
 		{
-			WriteColorToFramebuffer(b, g, r, ((y * 160) + (x % 160)) * 4);
+			WriteColorToFramebuffer(b, g, r, ((y * displayActiveWidth) + (x % displayActiveWidth)) * 4);
 		}
 
 		protected virtual void WriteColorToFramebuffer(byte c, int address)
@@ -562,52 +587,21 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		protected virtual void ClearScreenUsage()
 		{
-			for (var i = 0; i < screenUsage.Length; i++)
-				screenUsage[i] = screenUsageEmpty;
-		}
-
-		protected virtual void ClearSpriteUsage()
-		{
-			for (var i = 0; i < spriteUsage.Length; i++)
-				spriteUsage[i] = spriteUsageEmpty;
-		}
-
-		protected ushort GetScreenUsageFlag(int y, int x)
-		{
-			return screenUsage[(y * 160) + (x % 160)];
+			for (var y = 0; y < displayActiveHeight; y++)
+			{
+				for (var x = 0; x < displayActiveWidth; x++)
+				{
+					screenUsageFlags[x, y] = screenUsageEmpty;
+					screenUsageSpriteXCoords[x, y] = 255;
+					screenUsageSpriteSlots[x, y] = numOamSlots;
+				}
+			}
 		}
 
 		protected bool IsScreenUsageFlagSet(int y, int x, byte flag)
 		{
-			return ((GetScreenUsageFlag(y, x) & flag) == flag);
+			return (screenUsageFlags[x, y] & flag) == flag;
 		}
-
-		protected void SetScreenUsageFlag(int y, int x, byte flag)
-		{
-			screenUsage[(y * 160) + (x % 160)] |= flag;
-		}
-
-		protected void ClearScreenUsageFlag(int y, int x, byte flag)
-		{
-			screenUsage[(y * 160) + (x % 160)] &= (byte)~flag;
-		}
-
-		protected void SetSpriteUsage(int y, int x, byte objX, byte objSlot)
-		{
-			spriteUsage[(y * 160) + (x % 160)] = (ushort)((objX << 8) | objSlot);
-		}
-
-		protected byte GetSpriteUsageCoord(int y, int x)
-		{
-			return (byte)((spriteUsage[(y * 160) + (x % 160)] >> 8) & 0xFF);
-		}
-
-		protected byte GetSpriteUsageSlot(int y, int x)
-		{
-			return (byte)((spriteUsage[(y * 160) + (x % 160)] >> 0) & 0xFF);
-		}
-
-		//
 
 		public virtual byte ReadVram(ushort address)
 		{
