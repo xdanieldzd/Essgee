@@ -46,7 +46,8 @@ namespace Essgee.Emulation.Audio
 			public virtual void Reset()
 			{
 				for (var i = 0; i < sampleBuffer.Length; i++) sampleBuffer[i] = (byte)Program.Random.Next(255);
-				frequencyCounter = positionCounter = volume = 0;
+				frequencyCounter = positionCounter = 0;
+				volume = 15;
 
 				isChannelEnabled = isDacEnabled = false;
 				lengthCounter = 0;
@@ -90,7 +91,7 @@ namespace Essgee.Emulation.Audio
 						volume = 0;
 				}
 
-				if (isChannelEnabled && isDacEnabled)
+				if (isDacEnabled)
 					OutputVolume = volume;
 				else
 					OutputVolume = 0;

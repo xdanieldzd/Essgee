@@ -71,7 +71,8 @@ namespace Essgee.Emulation.Audio
 
 				frequencyCounter = 0;
 
-				volume = envelopeCounter = 0;
+				volume = 15;
+				envelopeCounter = 0;
 				isEnvelopeUpdateEnabled = false;
 
 				isChannelEnabled = isDacEnabled = false;
@@ -141,7 +142,7 @@ namespace Essgee.Emulation.Audio
 					dutyCounter %= 8;
 				}
 
-				if (isChannelEnabled && isDacEnabled)
+				if (isDacEnabled)
 					OutputVolume = volume;
 				else
 					OutputVolume = 0;

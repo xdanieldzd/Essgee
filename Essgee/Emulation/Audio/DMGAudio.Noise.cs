@@ -49,19 +49,20 @@ namespace Essgee.Emulation.Audio
 
 			public Noise()
 			{
-				noiseCounter = 0;
-				lfsr = 0;
-
-				volume = envelopeCounter = 0;
-				isEnvelopeUpdateEnabled = false;
-
-				isChannelEnabled = isDacEnabled = false;
-				lengthCounter = 0;
+				//
 			}
 
 			public void Reset()
 			{
-				//
+				noiseCounter = 0;
+				lfsr = 0;
+
+				volume = 15;
+				envelopeCounter = 0;
+				isEnvelopeUpdateEnabled = false;
+
+				isChannelEnabled = isDacEnabled = false;
+				lengthCounter = 0;
 			}
 
 			public void LengthCounterClock()
@@ -113,7 +114,7 @@ namespace Essgee.Emulation.Audio
 						lfsr = (ushort)((lfsr & 0b10111111) | (result << 6));
 				}
 
-				if (isChannelEnabled && isDacEnabled && ((lfsr & 0b1) == 0))
+				if (isDacEnabled && ((lfsr & 0b1) == 0))
 					OutputVolume = volume;
 				else
 					OutputVolume = 0;
