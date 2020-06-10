@@ -124,8 +124,12 @@ namespace Essgee
 			muteToolStripMenuItem.DataBindings.Add(nameof(muteToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.Mute), false, DataSourceUpdateMode.OnPropertyChanged);
 			muteToolStripMenuItem.CheckedChanged += (s, e) => { soundHandler?.SetMute(Program.Configuration.Mute); };
 
-			lowPassFilterToolStripMenuItem.DataBindings.Add(nameof(loadStateToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.LowPassFilter), false, DataSourceUpdateMode.OnPropertyChanged);
+			lowPassFilterToolStripMenuItem.DataBindings.Add(nameof(lowPassFilterToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.LowPassFilter), false, DataSourceUpdateMode.OnPropertyChanged);
 			lowPassFilterToolStripMenuItem.CheckedChanged += (s, e) => { soundHandler?.SetLowPassFilter(Program.Configuration.LowPassFilter); };
+
+			useXInputControllerToolStripMenuItem.DataBindings.Add(nameof(useXInputControllerToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.EnableXInput), false, DataSourceUpdateMode.OnPropertyChanged);
+
+			enableXInputVibrationToolStripMenuItem.DataBindings.Add(nameof(enableXInputVibrationToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.EnableRumble), false, DataSourceUpdateMode.OnPropertyChanged);
 
 			foreach (ToolStripMenuItem sizeMenuItem in screenSizeToolStripMenuItem.DropDownItems)
 				sizeMenuItem.Click += (s, e) => { Program.Configuration.ScreenSize = (int)(s as ToolStripMenuItem).Tag; SizeAndPositionWindow(); };
@@ -1158,7 +1162,8 @@ namespace Essgee
 				var dvy = renderControl.ClientSize.Height / (currentViewport.height - (double)currentViewport.y);
 				e.MousePosition = ((int)(mousePosition.x / dvx) - vx, (int)(mousePosition.y / dvy) - currentViewport.y);
 
-				e.ControllerState = ControllerManager.GetController(0).GetControllerState();
+				if (Program.Configuration.EnableXInput)
+					e.ControllerState = ControllerManager.GetController(0).GetControllerState();
 			}
 		}
 
@@ -1204,7 +1209,8 @@ namespace Essgee
 
 		private void EmulatorHandler_EnableRumble(object sender, EventArgs e)
 		{
-			ControllerManager.GetController(0).Vibrate(0.0f, 0.5f, TimeSpan.FromSeconds(0.1f));
+			if (Program.Configuration.EnableXInput && Program.Configuration.EnableRumble)
+				ControllerManager.GetController(0).Vibrate(0.0f, 0.5f, TimeSpan.FromSeconds(0.1f));
 		}
 
 		private void EmulatorHandler_PauseChanged(object sender, EventArgs e)

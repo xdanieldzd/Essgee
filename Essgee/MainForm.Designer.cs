@@ -56,6 +56,9 @@
 			this.sampleRateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem11 = new System.Windows.Forms.ToolStripSeparator();
 			this.enableChannelsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.inputToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.useXInputControllerToolStripMenuItem = new Essgee.Utilities.BindableToolStripMenuItem();
+			this.enableXInputVibrationToolStripMenuItem = new Essgee.Utilities.BindableToolStripMenuItem();
 			this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
 			this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.debugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -237,6 +240,7 @@
             this.toolStripMenuItem7,
             this.graphicsToolStripMenuItem,
             this.soundToolStripMenuItem,
+            this.inputToolStripMenuItem,
             this.toolStripMenuItem5,
             this.settingsToolStripMenuItem});
 			this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
@@ -247,20 +251,20 @@
 			// 
 			this.limitFPSToolStripMenuItem.CheckOnClick = true;
 			this.limitFPSToolStripMenuItem.Name = "limitFPSToolStripMenuItem";
-			this.limitFPSToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+			this.limitFPSToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.limitFPSToolStripMenuItem.Text = "Limit &FPS";
 			// 
 			// showFPSToolStripMenuItem
 			// 
 			this.showFPSToolStripMenuItem.CheckOnClick = true;
 			this.showFPSToolStripMenuItem.Name = "showFPSToolStripMenuItem";
-			this.showFPSToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+			this.showFPSToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.showFPSToolStripMenuItem.Text = "Show F&PS";
 			// 
 			// toolStripMenuItem7
 			// 
 			this.toolStripMenuItem7.Name = "toolStripMenuItem7";
-			this.toolStripMenuItem7.Size = new System.Drawing.Size(126, 6);
+			this.toolStripMenuItem7.Size = new System.Drawing.Size(177, 6);
 			// 
 			// graphicsToolStripMenuItem
 			// 
@@ -271,36 +275,36 @@
             this.toolStripMenuItem3,
             this.toggleLayersToolStripMenuItem});
 			this.graphicsToolStripMenuItem.Name = "graphicsToolStripMenuItem";
-			this.graphicsToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+			this.graphicsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.graphicsToolStripMenuItem.Text = "&Graphics...";
 			// 
 			// screenSizeToolStripMenuItem
 			// 
 			this.screenSizeToolStripMenuItem.Name = "screenSizeToolStripMenuItem";
-			this.screenSizeToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+			this.screenSizeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.screenSizeToolStripMenuItem.Text = "Screen &Size...";
 			// 
 			// sizeModeToolStripMenuItem
 			// 
 			this.sizeModeToolStripMenuItem.Name = "sizeModeToolStripMenuItem";
-			this.sizeModeToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+			this.sizeModeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.sizeModeToolStripMenuItem.Text = "Si&ze Mode...";
 			// 
 			// shadersToolStripMenuItem
 			// 
 			this.shadersToolStripMenuItem.Name = "shadersToolStripMenuItem";
-			this.shadersToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+			this.shadersToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.shadersToolStripMenuItem.Text = "S&haders...";
 			// 
 			// toolStripMenuItem3
 			// 
 			this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-			this.toolStripMenuItem3.Size = new System.Drawing.Size(153, 6);
+			this.toolStripMenuItem3.Size = new System.Drawing.Size(177, 6);
 			// 
 			// toggleLayersToolStripMenuItem
 			// 
 			this.toggleLayersToolStripMenuItem.Name = "toggleLayersToolStripMenuItem";
-			this.toggleLayersToolStripMenuItem.Size = new System.Drawing.Size(156, 22);
+			this.toggleLayersToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.toggleLayersToolStripMenuItem.Text = "Toggle &Layers...";
 			// 
 			// soundToolStripMenuItem
@@ -316,33 +320,33 @@
             this.toolStripMenuItem11,
             this.enableChannelsToolStripMenuItem});
 			this.soundToolStripMenuItem.Name = "soundToolStripMenuItem";
-			this.soundToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+			this.soundToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.soundToolStripMenuItem.Text = "S&ound...";
 			// 
 			// muteToolStripMenuItem
 			// 
 			this.muteToolStripMenuItem.CheckOnClick = true;
 			this.muteToolStripMenuItem.Name = "muteToolStripMenuItem";
-			this.muteToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+			this.muteToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.muteToolStripMenuItem.Text = "&Mute";
 			// 
 			// lowPassFilterToolStripMenuItem
 			// 
 			this.lowPassFilterToolStripMenuItem.CheckOnClick = true;
 			this.lowPassFilterToolStripMenuItem.Name = "lowPassFilterToolStripMenuItem";
-			this.lowPassFilterToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+			this.lowPassFilterToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.lowPassFilterToolStripMenuItem.Text = "&Low-Pass Filter";
 			// 
 			// toolStripMenuItem9
 			// 
 			this.toolStripMenuItem9.Name = "toolStripMenuItem9";
-			this.toolStripMenuItem9.Size = new System.Drawing.Size(169, 6);
+			this.toolStripMenuItem9.Size = new System.Drawing.Size(177, 6);
 			// 
 			// startRecordingToolStripMenuItem
 			// 
 			this.startRecordingToolStripMenuItem.Enabled = false;
 			this.startRecordingToolStripMenuItem.Name = "startRecordingToolStripMenuItem";
-			this.startRecordingToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+			this.startRecordingToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.startRecordingToolStripMenuItem.Text = "Start &Recording";
 			this.startRecordingToolStripMenuItem.Click += new System.EventHandler(this.startRecordingToolStripMenuItem_Click);
 			// 
@@ -350,41 +354,64 @@
 			// 
 			this.stopRecordingToolStripMenuItem.Enabled = false;
 			this.stopRecordingToolStripMenuItem.Name = "stopRecordingToolStripMenuItem";
-			this.stopRecordingToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+			this.stopRecordingToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.stopRecordingToolStripMenuItem.Text = "S&top Recording";
 			this.stopRecordingToolStripMenuItem.Click += new System.EventHandler(this.stopRecordingToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem10
 			// 
 			this.toolStripMenuItem10.Name = "toolStripMenuItem10";
-			this.toolStripMenuItem10.Size = new System.Drawing.Size(169, 6);
+			this.toolStripMenuItem10.Size = new System.Drawing.Size(177, 6);
 			// 
 			// sampleRateToolStripMenuItem
 			// 
 			this.sampleRateToolStripMenuItem.Name = "sampleRateToolStripMenuItem";
-			this.sampleRateToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+			this.sampleRateToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.sampleRateToolStripMenuItem.Text = "&Sample Rate...";
 			// 
 			// toolStripMenuItem11
 			// 
 			this.toolStripMenuItem11.Name = "toolStripMenuItem11";
-			this.toolStripMenuItem11.Size = new System.Drawing.Size(169, 6);
+			this.toolStripMenuItem11.Size = new System.Drawing.Size(177, 6);
 			// 
 			// enableChannelsToolStripMenuItem
 			// 
 			this.enableChannelsToolStripMenuItem.Name = "enableChannelsToolStripMenuItem";
-			this.enableChannelsToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+			this.enableChannelsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.enableChannelsToolStripMenuItem.Text = "Toggle &Channels...";
+			// 
+			// inputToolStripMenuItem
+			// 
+			this.inputToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.useXInputControllerToolStripMenuItem,
+            this.enableXInputVibrationToolStripMenuItem});
+			this.inputToolStripMenuItem.Name = "inputToolStripMenuItem";
+			this.inputToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.inputToolStripMenuItem.Text = "&Input...";
+			// 
+			// useXInputControllerToolStripMenuItem
+			// 
+			this.useXInputControllerToolStripMenuItem.CheckOnClick = true;
+			this.useXInputControllerToolStripMenuItem.Name = "useXInputControllerToolStripMenuItem";
+			this.useXInputControllerToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
+			this.useXInputControllerToolStripMenuItem.Text = "Use &XInput Controller";
+			// 
+			// enableXInputVibrationToolStripMenuItem
+			// 
+			this.enableXInputVibrationToolStripMenuItem.CheckOnClick = true;
+			this.enableXInputVibrationToolStripMenuItem.Name = "enableXInputVibrationToolStripMenuItem";
+			this.enableXInputVibrationToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
+			this.enableXInputVibrationToolStripMenuItem.Text = "Enable XInput &Vibration";
 			// 
 			// toolStripMenuItem5
 			// 
 			this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-			this.toolStripMenuItem5.Size = new System.Drawing.Size(126, 6);
+			this.toolStripMenuItem5.Size = new System.Drawing.Size(177, 6);
 			// 
 			// settingsToolStripMenuItem
 			// 
 			this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-			this.settingsToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+			this.settingsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.settingsToolStripMenuItem.Text = "&Settings...";
 			this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
 			// 
@@ -541,5 +568,8 @@
 		private System.Windows.Forms.ToolStripMenuItem stopRecordingToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem11;
 		private System.Windows.Forms.SaveFileDialog sfdSaveWavRecording;
+		private System.Windows.Forms.ToolStripMenuItem inputToolStripMenuItem;
+		private Utilities.BindableToolStripMenuItem useXInputControllerToolStripMenuItem;
+		private Utilities.BindableToolStripMenuItem enableXInputVibrationToolStripMenuItem;
 	}
 }
