@@ -142,7 +142,7 @@ namespace Essgee.Emulation.Audio
 					dutyCounter %= 8;
 				}
 
-				if (isDacEnabled)
+				if (isChannelEnabled && isDacEnabled)
 					OutputVolume = volume;
 				else
 					OutputVolume = 0;

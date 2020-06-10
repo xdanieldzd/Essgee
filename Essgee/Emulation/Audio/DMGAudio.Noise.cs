@@ -114,7 +114,7 @@ namespace Essgee.Emulation.Audio
 						lfsr = (ushort)((lfsr & 0b10111111) | (result << 6));
 				}
 
-				if (isDacEnabled && ((lfsr & 0b1) == 0))
+				if (isChannelEnabled && isDacEnabled && ((lfsr & 0b1) == 0))
 					OutputVolume = volume;
 				else
 					OutputVolume = 0;
