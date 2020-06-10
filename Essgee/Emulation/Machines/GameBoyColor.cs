@@ -412,9 +412,12 @@ namespace Essgee.Emulation.Machines
 			if (mapperType == null)
 				mapperType = mapperTypeFromHeader;
 
-			var romSizePadded = 1;
-			while (romSizePadded < romData.Length) romSizePadded <<= 1;
-			romSize = Math.Max(romSizePadded, romData.Length);
+			if (romSize != romData.Length)
+			{
+				var romSizePadded = 1;
+				while (romSizePadded < romData.Length) romSizePadded <<= 1;
+				romSize = Math.Max(romSizePadded, romData.Length);
+			}
 
 			cartridge = (IGameBoyCartridge)Activator.CreateInstance(mapperType, new object[] { romSize, ramSize });
 			cartridge.LoadRom(romData);
@@ -456,6 +459,8 @@ namespace Essgee.Emulation.Machines
 
 			var clockCyclesInStep = RunCpuStep();
 			var cycleLength = cpu.IsDoubleSpeed ? 2 : 4;
+
+			video.IsDoubleSpeed = cpu.IsDoubleSpeed;
 
 			for (var s = 0; s < clockCyclesInStep / 4; s++)
 			{

@@ -17,6 +17,8 @@ namespace Essgee.Emulation.Video.Nintendo
 {
 	public class CGBVideo : DMGVideo
 	{
+		protected override int numSkippedFramesLcdOn => 1;
+
 		// FF4F - VBK
 		byte vramBank;
 
@@ -489,7 +491,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 				case 0x69:
 					// BCPD
-					if (modeNumber != 3) bgPaletteData[bgPaletteIndex] = value;     // TODO: limiting access in mode3 causes glitches in ex. SMDX? timing issues?
+					if (modeNumber != 3) bgPaletteData[bgPaletteIndex] = value;
 					if (bgPaletteAutoIncrement)
 					{
 						bgPaletteIndex++;
@@ -505,7 +507,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 				case 0x6B:
 					// OCPD
-					if (modeNumber != 3) objPaletteData[objPaletteIndex] = value;   // TODO: see above
+					if (modeNumber != 3) objPaletteData[objPaletteIndex] = value;
 					if (objPaletteAutoIncrement)
 					{
 						objPaletteIndex++;

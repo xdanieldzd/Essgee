@@ -26,6 +26,8 @@ namespace Essgee.Emulation.Video.Nintendo
 		protected const int mode2Boundary = 80;
 		protected const int mode3Boundary = mode2Boundary + 172;
 
+		protected virtual int numSkippedFramesLcdOn => 4;
+
 		protected Action[] modeFunctions;
 
 		protected readonly MemoryReadDelegate memoryReadDelegate;
@@ -106,10 +108,12 @@ namespace Essgee.Emulation.Video.Nintendo
 		protected const byte screenUsageSprite = 1 << 2;
 		protected byte[,] screenUsageFlags, screenUsageSpriteXCoords, screenUsageSpriteSlots;
 
-		protected int cycleCount, cyclePenaltyMode3, currentScanline;
+		protected int cycleCount, currentScanline;
 		protected byte[] outputFramebuffer;
 
 		protected int clockCyclesPerLine;
+
+		public bool IsDoubleSpeed { get; set; }
 
 		//
 
@@ -162,7 +166,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			ClearScreenUsage();
 
-			cycleCount = cyclePenaltyMode3 = currentScanline = 0;
+			cycleCount = currentScanline = 0;
 		}
 
 		public void SetClockRate(double clock)
@@ -219,6 +223,18 @@ namespace Essgee.Emulation.Video.Nintendo
 				}
 			}
 		}
+
+		/* TODO: dot clock pause! -- https://gbdev.io/pandocs/#properties-of-stat-modes
+		 * - non-zero (SCX % 8) causes pause of that many dots
+		 * - active window causes pause of *at least* 6 dots?
+		 * - sprite dot pauses??
+		 * - influence of CGB double-speed mode on this?
+		 * Required for: 
+		 * - GBVideoPlayer2, pixel column alignment & garbage on left screen edge
+		 * - snorpung/pocket demo, vertical scroller right edge of scroll area
+		 * - Prehistorik Man, scroller alignment (ex. level start "START" text should be centered on screen)
+		 * - ...probably more?
+		*/
 
 		protected virtual void StepVBlank()
 		{
@@ -281,11 +297,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 				/* Check if object is on current scanline & maximum number of objects was not exceeded, then increment counter */
 				if (currentScanline >= objY && currentScanline < (objY + (objSize ? 16 : 8)) && numSpritesOnLine < maxSpritesPerLine)
-				{
-					var objX = oam[(objIndex << 2) + 1] - 8;
-					cyclePenaltyMode3 += 11 - Math.Min(5, (objX + scrollX) % 8);    // TODO: more details
 					spritesOnLine[numSpritesOnLine++] = objIndex;
-				}
 			}
 
 			/* Increment cycle count & check for next LCD mode */
@@ -304,11 +316,11 @@ namespace Essgee.Emulation.Video.Nintendo
 			/* Data transfer to LCD */
 
 			/* Render pixels */
-			RenderPixel(currentScanline, cycleCount - mode2Boundary - 12);
+			RenderPixel(currentScanline, cycleCount - mode2Boundary);
 
 			/* Increment cycle count & check for next LCD mode */
 			cycleCount++;
-			if (cycleCount == mode3Boundary + cyclePenaltyMode3) EndLCDTransfer();
+			if (cycleCount == mode3Boundary) EndLCDTransfer();
 		}
 
 		protected virtual void EndLCDTransfer()
@@ -337,7 +349,6 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			for (var i = 0; i < spritesOnLine.Length; i++) spritesOnLine[i] = -1;
 			numSpritesOnLine = 0;
-			cyclePenaltyMode3 = (scrollX % 8) + (wndEnable ? 12 : 0);   // TODO: more details; wndEnable +12 fixes snorpung/pocket -- https://gbdev.io/pandocs/#properties-of-stat-modes
 
 			if (currentScanline == displayActiveHeight)
 			{
@@ -720,7 +731,7 @@ namespace Essgee.Emulation.Video.Nintendo
 							CheckAndRequestStatInterupt();
 
 							if (newLcdEnable)
-								skipFrames = 4;
+								skipFrames = numSkippedFramesLcdOn;
 						}
 
 						lcdEnable = newLcdEnable;

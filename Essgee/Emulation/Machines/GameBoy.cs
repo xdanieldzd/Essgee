@@ -394,9 +394,12 @@ namespace Essgee.Emulation.Machines
 			if (mapperType == null)
 				mapperType = mapperTypeFromHeader;
 
-			var romSizePadded = 1;
-			while (romSizePadded < romData.Length) romSizePadded <<= 1;
-			romSize = Math.Max(romSizePadded, romData.Length);
+			if (romSize != romData.Length)
+			{
+				var romSizePadded = 1;
+				while (romSizePadded < romData.Length) romSizePadded <<= 1;
+				romSize = Math.Max(romSizePadded, romData.Length);
+			}
 
 			cartridge = (IGameBoyCartridge)Activator.CreateInstance(mapperType, new object[] { romSize, ramSize });
 			cartridge.LoadRom(romData);
