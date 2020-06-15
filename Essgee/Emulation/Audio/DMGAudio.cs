@@ -90,7 +90,7 @@ namespace Essgee.Emulation.Audio
 		private void ConfigureTimings()
 		{
 			samplesPerFrame = (int)(sampleRate / refreshRate);
-			cyclesPerFrame = (int)(clockRate / refreshRate);
+			cyclesPerFrame = (int)Math.Round(clockRate / refreshRate);
 			cyclesPerSample = (cyclesPerFrame / samplesPerFrame);
 
 			volumeRightLeft = new byte[numOutputChannels];
@@ -126,6 +126,17 @@ namespace Essgee.Emulation.Audio
 			channel2.Reset();
 			channel3.Reset();
 			channel4.Reset();
+
+			for (var i = 0; i < numOutputChannels; i++)
+			{
+				volumeRightLeft[i] = 0;
+				vinEnableRightLeft[i] = false;
+
+				channel1Enable[i] = false;
+				channel2Enable[i] = false;
+				channel3Enable[i] = false;
+				channel4Enable[i] = false;
+			}
 
 			frameSequencerReload = (int)(clockRate / 512);
 			frameSequencerCounter = frameSequencerReload;

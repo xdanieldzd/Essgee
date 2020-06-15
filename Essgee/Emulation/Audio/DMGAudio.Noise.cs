@@ -63,15 +63,18 @@ namespace Essgee.Emulation.Audio
 
 				isChannelEnabled = isDacEnabled = false;
 				lengthCounter = 0;
+
+				OutputVolume = volume;
 			}
 
 			public void LengthCounterClock()
 			{
-				if (!lengthEnable) return;
-
-				lengthCounter--;
-				if (lengthCounter == 0)
-					isChannelEnabled = false;
+				if (lengthCounter > 0 && lengthEnable)
+				{
+					lengthCounter--;
+					if (lengthCounter == 0)
+						isChannelEnabled = false;
+				}
 			}
 
 			public void SweepClock()
@@ -102,6 +105,8 @@ namespace Essgee.Emulation.Audio
 
 			public void Step()
 			{
+				if (!isChannelEnabled) return;
+
 				noiseCounter--;
 				if (noiseCounter == 0)
 				{
@@ -114,10 +119,7 @@ namespace Essgee.Emulation.Audio
 						lfsr = (ushort)((lfsr & 0b10111111) | (result << 6));
 				}
 
-				if (isChannelEnabled && isDacEnabled && ((lfsr & 0b1) == 0))
-					OutputVolume = volume;
-				else
-					OutputVolume = 0;
+				OutputVolume = isDacEnabled && ((lfsr & 0b1) == 0) ? volume : 0;
 			}
 
 			private void Trigger()
