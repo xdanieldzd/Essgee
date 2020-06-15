@@ -112,15 +112,13 @@ namespace Essgee.Emulation.Cartridges.Nintendo
 			}
 			else if (address >= 0x2000 && address <= 0x2FFF)
 			{
-				romBank = (byte)((romBank & 0x0100) | value);
-				romBank &= (byte)((romData.Length >> 14) - 1);
-				//if ((romBank & 0x01FF) == 0x00) romBank |= 0x01;    //TODO: verify
+				romBank = (ushort)((romBank & 0x0100) | value);
+				romBank &= (ushort)((romData.Length >> 14) - 1);
 			}
 			else if (address >= 0x3000 && address <= 0x3FFF)
 			{
-				romBank = (byte)((romBank & 0x00FF) | ((value & 0x01) << 8));
-				romBank &= (byte)((romData.Length >> 14) - 1);
-				//if ((romBank & 0x01FF) == 0x00) romBank |= 0x01;    //TODO: verify
+				romBank = (ushort)((romBank & 0x00FF) | ((value & 0x01) << 8));
+				romBank &= (ushort)((romData.Length >> 14) - 1);
 			}
 			else if (address >= 0x4000 && address <= 0x5FFF)
 			{
