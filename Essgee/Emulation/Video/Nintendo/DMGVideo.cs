@@ -19,6 +19,8 @@ namespace Essgee.Emulation.Video.Nintendo
 		protected const int displayActiveHeight = 144;
 		protected const int numDisplayPixels = displayActiveWidth * displayActiveHeight;
 
+		protected const int displayTotalHeight = 154;
+
 		protected const int numOamSlots = 40;
 		protected const int maxSpritesPerLine = 10;
 
@@ -190,7 +192,7 @@ namespace Essgee.Emulation.Video.Nintendo
 		protected virtual void ReconfigureTimings()
 		{
 			/* Calculate cycles/line */
-			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / 154);
+			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / displayTotalHeight);
 
 			/* Create arrays */
 			screenUsageFlags = new byte[displayActiveWidth, displayActiveHeight];
@@ -260,7 +262,7 @@ namespace Essgee.Emulation.Video.Nintendo
 			/* Check for & request STAT interrupts */
 			CheckAndRequestStatInterupt();
 
-			if (currentScanline == 153)
+			if (currentScanline == displayTotalHeight - 1)
 			{
 				// TODO: specific cycle this happens?
 
@@ -270,7 +272,7 @@ namespace Essgee.Emulation.Video.Nintendo
 				// TODO: verify if STAT/LYC interrupt is supposed to happen here? currently breaks Shantae's sprites if done
 				//CheckAndRequestStatInterupt();
 			}
-			else if (currentScanline == 154)
+			else if (currentScanline == displayTotalHeight)
 			{
 				/* End of V-blank reached */
 				modeNumber = 2;
