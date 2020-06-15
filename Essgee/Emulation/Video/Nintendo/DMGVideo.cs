@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
-using Essgee.Emulation.CPU;
 using Essgee.Exceptions;
 using Essgee.EventArguments;
 using Essgee.Utilities;
@@ -24,7 +23,7 @@ namespace Essgee.Emulation.Video.Nintendo
 		protected const int maxSpritesPerLine = 10;
 
 		protected const int mode2Boundary = 80;
-		protected const int mode3Boundary = mode2Boundary + 172;
+		protected const int mode3Boundary = mode2Boundary + 168;
 
 		protected virtual int numSkippedFramesLcdOn => 4;
 
@@ -108,7 +107,7 @@ namespace Essgee.Emulation.Video.Nintendo
 		protected const byte screenUsageSprite = 1 << 2;
 		protected byte[,] screenUsageFlags, screenUsageSpriteXCoords, screenUsageSpriteSlots;
 
-		protected int cycleCount, currentScanline;
+		protected int cycleCount, cycleDotPause, currentScanline;
 		protected byte[] outputFramebuffer;
 
 		protected int clockCyclesPerLine;
@@ -166,7 +165,7 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			ClearScreenUsage();
 
-			cycleCount = currentScanline = 0;
+			cycleCount = cycleDotPause = currentScanline = 0;
 		}
 
 		public void SetClockRate(double clock)
@@ -217,6 +216,7 @@ namespace Essgee.Emulation.Video.Nintendo
 					/* LCD disabled */
 					modeNumber = 0;
 					cycleCount = 0;
+					cycleDotPause = 0;
 
 					currentScanline = 0;
 					ly = 0;
@@ -297,7 +297,11 @@ namespace Essgee.Emulation.Video.Nintendo
 
 				/* Check if object is on current scanline & maximum number of objects was not exceeded, then increment counter */
 				if (currentScanline >= objY && currentScanline < (objY + (objSize ? 16 : 8)) && numSpritesOnLine < maxSpritesPerLine)
+				{
+					var objX = oam[(objIndex << 2) + 1] - 8;
+					cycleDotPause += 11 - Math.Min(5, (objX + (objX >= windowX ? (255 - windowX) : scrollX)) % 8);  // TODO: correct?
 					spritesOnLine[numSpritesOnLine++] = objIndex;
+				}
 			}
 
 			/* Increment cycle count & check for next LCD mode */
@@ -307,6 +311,9 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		protected virtual void EndOAMSearch()
 		{
+			// 1) GBVideoPlayer2 & Prehistorik Man alignment, 2) GBVideoPlayer2 alignment
+			cycleDotPause += (6 << (IsDoubleSpeed ? 1 : 0)) + (scrollX % 8);
+
 			modeNumber = 3;
 			CheckAndRequestStatInterupt();
 		}
@@ -316,11 +323,12 @@ namespace Essgee.Emulation.Video.Nintendo
 			/* Data transfer to LCD */
 
 			/* Render pixels */
-			RenderPixel(currentScanline, cycleCount - mode2Boundary);
+			RenderPixel(currentScanline, cycleCount - mode2Boundary - cycleDotPause);
 
 			/* Increment cycle count & check for next LCD mode */
 			cycleCount++;
-			if (cycleCount == mode3Boundary) EndLCDTransfer();
+			// 3) snorpung/pocket scroller width
+			if (cycleCount == mode3Boundary + cycleDotPause + (wndEnable ? 12 : 0)) EndLCDTransfer();
 		}
 
 		protected virtual void EndLCDTransfer()
@@ -370,6 +378,7 @@ namespace Essgee.Emulation.Video.Nintendo
 			}
 
 			cycleCount = 0;
+			cycleDotPause = 0;
 		}
 
 		protected void CheckAndRequestStatInterupt()
