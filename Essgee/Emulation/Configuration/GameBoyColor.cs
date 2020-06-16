@@ -14,7 +14,7 @@ using Essgee.Utilities;
 
 namespace Essgee.Emulation.Configuration
 {
-	[RootPagePriority(6)]
+	[ElementPriority(6)]
 	public class GameBoyColor : IConfiguration
 	{
 		[CheckBoxControl("General", "Use Bootstrap ROM")]

@@ -28,7 +28,7 @@ namespace Essgee.Emulation.Machines
 		const int wramSize = 8 * 1024;
 		const int hramSize = 0x7F;
 
-		const int serialCycleCount = 512;
+		const int serialCycleCountNormal = 512;
 		const int serialCycleCountFast = 16;
 
 		public event EventHandler<SendLogMessageEventArgs> SendLogMessage;
@@ -91,7 +91,7 @@ namespace Essgee.Emulation.Machines
 		// FF01 - SB
 		byte serialData;
 		// FF02 - SC
-		bool serialUseInternalClock, serialTransferInProgress;
+		bool serialUseInternalClock, serialFastClockSpeed, serialTransferInProgress;
 
 		// FF04 - DIV
 		byte divider;
@@ -138,14 +138,6 @@ namespace Essgee.Emulation.Machines
 			B = (1 << 5),
 			Select = (1 << 6),
 			Start = (1 << 7)
-		}
-
-		public enum SerialDevices
-		{
-			[Description("None")]
-			None = 0,
-			[Description("Game Boy Printer")]
-			GBPrinter = 1
 		}
 
 		JoypadInputs inputsPressed;
@@ -209,10 +201,14 @@ namespace Essgee.Emulation.Machines
 
 			/* Serial */
 			if (serialDevice != null)
+			{
 				serialDevice.SaveExtraData -= SaveExtraData;
+				serialDevice.Shutdown();
+			}
 
 			serialDevice = (ISerialDevice)Activator.CreateInstance(configuration.SerialDevice);
 			serialDevice.SaveExtraData += SaveExtraData;
+			serialDevice.Initialize();
 
 			/* Misc timing */
 			currentMasterClockCyclesInFrame = 0;
@@ -275,7 +271,7 @@ namespace Essgee.Emulation.Machines
 			joypadRegister = 0x0F;
 
 			serialData = 0xFF;
-			serialUseInternalClock = serialTransferInProgress = false;
+			serialUseInternalClock = serialFastClockSpeed = serialTransferInProgress = false;
 
 			timerCounter = 0;
 			clockCycleCount = 0;
@@ -303,8 +299,11 @@ namespace Essgee.Emulation.Machines
 
 		public void Shutdown()
 		{
-			if (serialDevice is GBPrinter gbPrinter)
-				gbPrinter.SaveExtraData -= SaveExtraData;
+			if (serialDevice != null)
+			{
+				serialDevice.SaveExtraData -= SaveExtraData;
+				serialDevice.Shutdown();
+			}
 
 			if (cartridge is MBC5Cartridge mbc5Cartridge)
 				mbc5Cartridge.EnableRumble -= EnableRumble;
@@ -535,7 +534,7 @@ namespace Essgee.Emulation.Machines
 
 		private void HandleSerialIO(int clockCyclesInStep)
 		{
-			var cycleCount = cpu.IsDoubleSpeed ? serialCycleCountFast : serialCycleCount;
+			var cycleCount = (serialFastClockSpeed ? serialCycleCountFast : serialCycleCountNormal) >> (cpu.IsDoubleSpeed ? 1 : 0);
 
 			if (serialTransferInProgress)
 			{
@@ -558,7 +557,7 @@ namespace Essgee.Emulation.Machines
 						serialCycles -= cycleCount;
 					}
 				}
-				else if (serialDevice.ProvidesClock())
+				else if (serialDevice.ProvidesClock)
 				{
 					/* If other devices provides clock... */
 
@@ -674,6 +673,7 @@ namespace Essgee.Emulation.Machines
 						return (byte)(
 							0x7E |
 							(serialUseInternalClock ? (1 << 0) : 0) |
+							(serialFastClockSpeed ? (1 << 1) : 0) |
 							(serialTransferInProgress ? (1 << 7) : 0));
 
 					case 0xFF04:
@@ -795,6 +795,7 @@ namespace Essgee.Emulation.Machines
 
 					case 0xFF02:
 						serialUseInternalClock = (value & (1 << 0)) != 0;
+						serialFastClockSpeed = (value & (1 << 1)) != 0;
 						serialTransferInProgress = (value & (1 << 7)) != 0;
 
 						if (serialTransferInProgress) serialCycles = 0;

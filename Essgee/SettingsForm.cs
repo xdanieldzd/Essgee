@@ -38,7 +38,7 @@ namespace Essgee
 			InitializeComponent();
 
 			Configurations = new Dictionary<string, IConfiguration>();
-			foreach (var currentConfig in configs.OrderBy(x => x.Value.GetType().GetAttribute<RootPagePriorityAttribute>().Priority))
+			foreach (var currentConfig in configs.OrderBy(x => x.Value.GetType().GetAttribute<ElementPriorityAttribute>().Priority))
 			{
 				var configClone = currentConfig.Value.CloneObject();
 
@@ -307,11 +307,11 @@ namespace Essgee
 	}
 
 	[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-	public class RootPagePriorityAttribute : Attribute
+	public class ElementPriorityAttribute : Attribute
 	{
 		public int Priority { get; set; }
 
-		public RootPagePriorityAttribute(int priority)
+		public ElementPriorityAttribute(int priority)
 		{
 			Priority = priority;
 		}
@@ -368,14 +368,18 @@ namespace Essgee
 				}
 				else if (valueType.IsInterface)
 				{
+					var unsortedDict = new Dictionary<string, (int prio, object value)>();
 					foreach (var value in Assembly.GetExecutingAssembly().GetTypes().Where(x => valueType.IsAssignableFrom(x) && !x.IsInterface))
 					{
 						if (value.GetType().GetField(value.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored ?? false) continue;
 						if (ignoredValues?.Contains(value) ?? false) continue;
 
+						var prio = value.GetAttribute<ElementPriorityAttribute>()?.Priority ?? 0;
+
 						var key = value.GetAttribute<DescriptionAttribute>()?.Description ?? value.ToString();
-						if (!dict.ContainsKey(key)) dict.Add(key, value);
+						if (!unsortedDict.ContainsKey(key)) unsortedDict.Add(key, (prio, value));
 					}
+					dict = unsortedDict.OrderBy(x => x.Value.prio).ToDictionary(x => x.Key, y => y.Value.value);
 				}
 				cache[valueType.FullName] = Values = dict.ToList();
 			}

@@ -72,6 +72,7 @@
     <Compile Include="Emulation\Cartridges\Nintendo\IGameBoyCartridge.cs" />
     <Compile Include="Emulation\Configuration\GameBoyColor.cs" />
     <Compile Include="Emulation\CPU\SM83CGB.cs" />
+    <Compile Include="Emulation\ExtDevices\Nintendo\GameBoyIPC.cs" />
     <Compile Include="Emulation\Machines\GameBoyColor.cs" />
     <Compile Include="Emulation\Video\Nintendo\CGBVideo.cs" />
     <Compile Include="Utilities\XInput\Controller.cs" />

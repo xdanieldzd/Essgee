@@ -124,14 +124,6 @@ namespace Essgee.Emulation.Machines
 			Start = (1 << 7)
 		}
 
-		public enum SerialDevices
-		{
-			[Description("None")]
-			None = 0,
-			[Description("Game Boy Printer")]
-			GBPrinter = 1
-		}
-
 		JoypadInputs inputsPressed;
 
 		int serialBitsCounter;
@@ -193,10 +185,14 @@ namespace Essgee.Emulation.Machines
 
 			/* Serial */
 			if (serialDevice != null)
+			{
 				serialDevice.SaveExtraData -= SaveExtraData;
+				serialDevice.Shutdown();
+			}
 
 			serialDevice = (ISerialDevice)Activator.CreateInstance(configuration.SerialDevice);
 			serialDevice.SaveExtraData += SaveExtraData;
+			serialDevice.Initialize();
 
 			/* Misc timing */
 			currentMasterClockCyclesInFrame = 0;
@@ -285,8 +281,11 @@ namespace Essgee.Emulation.Machines
 
 		public void Shutdown()
 		{
-			if (serialDevice is GBPrinter gbPrinter)
-				gbPrinter.SaveExtraData -= SaveExtraData;
+			if (serialDevice != null)
+			{
+				serialDevice.SaveExtraData -= SaveExtraData;
+				serialDevice.Shutdown();
+			}
 
 			if (cartridge is MBC5Cartridge mbc5Cartridge)
 				mbc5Cartridge.EnableRumble -= EnableRumble;
@@ -518,7 +517,7 @@ namespace Essgee.Emulation.Machines
 						serialCycles -= serialCycleCount;
 					}
 				}
-				else if (serialDevice.ProvidesClock())
+				else if (serialDevice.ProvidesClock)
 				{
 					/* If other devices provides clock... */
 

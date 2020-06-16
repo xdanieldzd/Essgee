@@ -12,7 +12,7 @@ using Essgee.Utilities;
 
 namespace Essgee.Emulation.Configuration
 {
-	[RootPagePriority(3)]
+	[ElementPriority(3)]
 	public class GameGear : IConfiguration
 	{
 		[DropDownControl("General", "Region", typeof(Region))]

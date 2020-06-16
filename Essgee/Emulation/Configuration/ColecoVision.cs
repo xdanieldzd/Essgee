@@ -12,7 +12,7 @@ using Essgee.Utilities;
 
 namespace Essgee.Emulation.Configuration
 {
-	[RootPagePriority(4)]
+	[ElementPriorityAttribute(4)]
 	public class ColecoVision : IConfiguration
 	{
 		[IsBootstrapRomPath]

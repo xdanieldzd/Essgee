@@ -125,7 +125,7 @@ namespace Essgee.Sound
 				GenerateBuffer(buffers[i]);
 			AL.SourcePlay(source);
 
-			audioThread = new Thread(ThreadMainLoop) { Name = "EssgeeAudio", Priority = ThreadPriority.AboveNormal, IsBackground = true };
+			audioThread = new Thread(ThreadMainLoop) { Name = "EssgeeAudio", Priority = ThreadPriority.BelowNormal, IsBackground = true };
 			audioThread.Start();
 		}
 
@@ -239,8 +239,12 @@ namespace Essgee.Sound
 		public void ClearSampleBuffer()
 		{
 			sampleQueue.Clear();
-			for (int i = 0; i < lastSamples.Length; i++)
-				lastSamples[i] = 0;
+
+			if (lastSamples != null)
+			{
+				for (int i = 0; i < lastSamples.Length; i++)
+					lastSamples[i] = 0;
+			}
 		}
 
 		private void GenerateBuffer(int buffer)
@@ -248,8 +252,11 @@ namespace Essgee.Sound
 			if (sampleQueue.Count > 0)
 				lastSamples = sampleQueue.Dequeue();
 
-			AL.BufferData(buffer, ALFormat.Stereo16, lastSamples, lastSamples.Length * sizeof(short), SampleRate);
-			AL.SourceQueueBuffer(source, buffer);
+			if (lastSamples != null)
+			{
+				AL.BufferData(buffer, ALFormat.Stereo16, lastSamples, lastSamples.Length * sizeof(short), SampleRate);
+				AL.SourceQueueBuffer(source, buffer);
+			}
 		}
 
 		class WaveHeader

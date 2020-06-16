@@ -12,6 +12,7 @@ using Essgee.EventArguments;
 namespace Essgee.Emulation.ExtDevices.Nintendo
 {
 	[Description("Game Boy Printer")]
+	[ElementPriority(2)]
 	public class GBPrinter : ISerialDevice
 	{
 		readonly Color[] defaultPalette = new Color[]
@@ -67,7 +68,14 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
 		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
 
+		public bool ProvidesClock => false;
+
 		public GBPrinter()
+		{
+			imageData = new List<byte>();
+		}
+
+		public void Initialize()
 		{
 			ResetPacket();
 
@@ -77,7 +85,6 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 			status = 0;
 			presence = 0;
 
-			imageData = new List<byte>();
 			marginBefore = marginAfter = 0;
 			palette = exposure = 0;
 
@@ -85,14 +92,14 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 			printDelay = 0;
 		}
 
+		public void Shutdown()
+		{
+			//
+		}
+
 		private void ResetPacket()
 		{
 			packet = (0, 0, false, 0, new byte[0], 0);
-		}
-
-		public bool ProvidesClock()
-		{
-			return false;
 		}
 
 		public byte DoSlaveTransfer(byte data)

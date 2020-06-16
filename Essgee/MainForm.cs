@@ -116,6 +116,8 @@ namespace Essgee
 			CreateSampleRateMenu();
 			CreateEnableSoundChannelsMenu();
 
+			automaticPauseToolStripMenuItem.DataBindings.Add(nameof(automaticPauseToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.AutoPause), false, DataSourceUpdateMode.OnPropertyChanged);
+
 			limitFPSToolStripMenuItem.DataBindings.Add(nameof(limitFPSToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.LimitFps), false, DataSourceUpdateMode.OnPropertyChanged);
 			limitFPSToolStripMenuItem.CheckedChanged += (s, e) => { emulatorHandler?.SetFpsLimiting(Program.Configuration.LimitFps); };
 
@@ -348,7 +350,7 @@ namespace Essgee
 
 		private void SetTemporaryPause(bool newTemporaryPauseState)
 		{
-			if (emulatorHandler == null || !emulatorHandler.IsRunning) return;
+			if (emulatorHandler == null || !emulatorHandler.IsRunning || !Program.Configuration.AutoPause) return;
 
 			if (newTemporaryPauseState)
 				emulatorHandler.Pause(true);

@@ -10,7 +10,7 @@ using Newtonsoft.Json.Converters;
 
 namespace Essgee.Emulation.Configuration
 {
-	[RootPagePriority(0)]
+	[ElementPriority(0)]
 	public class SG1000 : IConfiguration
 	{
 		[DropDownControl("General", "TV Standard", typeof(TVStandard))]

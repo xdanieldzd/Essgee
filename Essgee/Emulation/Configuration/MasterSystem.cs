@@ -12,7 +12,7 @@ using Essgee.Utilities;
 
 namespace Essgee.Emulation.Configuration
 {
-	[RootPagePriority(2)]
+	[ElementPriority(2)]
 	public class MasterSystem : IConfiguration
 	{
 		[DropDownControl("General", "TV Standard", typeof(TVStandard))]
