@@ -126,8 +126,7 @@ namespace Essgee.Emulation.Machines
 
 		JoypadInputs inputsPressed;
 
-		int serialBitsCounter;
-		int timerCycles, serialCycles;
+		int serialBitsCounter, serialCycles;
 
 		int currentMasterClockCyclesInFrame, totalMasterClockCyclesInFrame;
 
@@ -273,8 +272,7 @@ namespace Essgee.Emulation.Machines
 
 			inputsPressed = 0;
 
-			serialBitsCounter = 0;
-			timerCycles = serialCycles = 0;
+			serialBitsCounter = serialCycles = 0;
 
 			OnEmulationReset(EventArgs.Empty);
 		}

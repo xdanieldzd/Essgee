@@ -142,8 +142,7 @@ namespace Essgee.Emulation.Machines
 
 		JoypadInputs inputsPressed;
 
-		int serialBitsCounter;
-		int timerCycles, serialCycles;
+		int serialBitsCounter, serialCycles, clockCyclesPerSerialBit;
 
 		int currentMasterClockCyclesInFrame, totalMasterClockCyclesInFrame;
 
@@ -291,8 +290,7 @@ namespace Essgee.Emulation.Machines
 
 			inputsPressed = 0;
 
-			serialBitsCounter = 0;
-			timerCycles = serialCycles = 0;
+			serialBitsCounter = serialCycles = clockCyclesPerSerialBit = 0;
 
 			OnEmulationReset(EventArgs.Empty);
 		}
@@ -534,8 +532,6 @@ namespace Essgee.Emulation.Machines
 
 		private void HandleSerialIO(int clockCyclesInStep)
 		{
-			var cycleCount = (serialFastClockSpeed ? serialCycleCountFast : serialCycleCountNormal) >> (cpu.IsDoubleSpeed ? 1 : 0);
-
 			if (serialTransferInProgress)
 			{
 				if (serialUseInternalClock)
@@ -543,7 +539,7 @@ namespace Essgee.Emulation.Machines
 					/* If using internal clock... */
 
 					serialCycles += clockCyclesInStep;
-					if (serialCycles >= cycleCount)
+					if (serialCycles >= clockCyclesPerSerialBit)
 					{
 						serialBitsCounter++;
 						if (serialBitsCounter == 8)
@@ -554,7 +550,7 @@ namespace Essgee.Emulation.Machines
 							serialTransferInProgress = false;
 							serialBitsCounter = 0;
 						}
-						serialCycles -= cycleCount;
+						serialCycles -= clockCyclesPerSerialBit;
 					}
 				}
 				else if (serialDevice.ProvidesClock)
@@ -562,7 +558,7 @@ namespace Essgee.Emulation.Machines
 					/* If other devices provides clock... */
 
 					serialCycles += clockCyclesInStep;
-					if (serialCycles >= cycleCount)
+					if (serialCycles >= clockCyclesPerSerialBit)
 					{
 						serialBitsCounter++;
 						if (serialBitsCounter == 8)
@@ -573,7 +569,7 @@ namespace Essgee.Emulation.Machines
 							serialTransferInProgress = false;
 							serialBitsCounter = 0;
 						}
-						serialCycles -= cycleCount;
+						serialCycles -= clockCyclesPerSerialBit;
 					}
 				}
 			}
@@ -797,6 +793,8 @@ namespace Essgee.Emulation.Machines
 						serialUseInternalClock = (value & (1 << 0)) != 0;
 						serialFastClockSpeed = (value & (1 << 1)) != 0;
 						serialTransferInProgress = (value & (1 << 7)) != 0;
+
+						clockCyclesPerSerialBit = (serialFastClockSpeed ? serialCycleCountFast : serialCycleCountNormal) >> (cpu.IsDoubleSpeed ? 1 : 0);
 
 						if (serialTransferInProgress) serialCycles = 0;
 						serialBitsCounter = 0;
