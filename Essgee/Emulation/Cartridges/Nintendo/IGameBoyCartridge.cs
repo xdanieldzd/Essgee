@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Essgee.Emulation.Cartridges.Nintendo
 {
-	interface IGameBoyCartridge : ICartridge
+	public interface IGameBoyCartridge : ICartridge
 	{
-void SetCartridgeConfig(bool battery, bool rtc, bool rumble);
+		void SetCartridgeConfig(bool battery, bool rtc, bool rumble);
 	}
 }

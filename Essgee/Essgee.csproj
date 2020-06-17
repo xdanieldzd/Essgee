@@ -69,6 +69,7 @@
     <Compile Include="Emulation\Audio\CGBAudio.cs" />
     <Compile Include="Emulation\Audio\CGBAudio.Wave.cs" />
     <Compile Include="Emulation\Audio\IDMGAudioChannel.cs" />
+    <Compile Include="Emulation\Cartridges\Nintendo\SpecializedLoader.cs" />
     <Compile Include="Emulation\Cartridges\Nintendo\IGameBoyCartridge.cs" />
     <Compile Include="Emulation\Configuration\GameBoyColor.cs" />
     <Compile Include="Emulation\CPU\SM83CGB.cs" />

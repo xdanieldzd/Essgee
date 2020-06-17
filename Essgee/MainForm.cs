@@ -96,7 +96,7 @@ namespace Essgee
 				};
 			}
 
-			currentViewport = (0, 0, 256, 240);
+			currentViewport = (0, 0, 128, 128);
 			currentPixelAspectRatio = 4.0 / 3.0;
 
 			SizeAndPositionWindow();
