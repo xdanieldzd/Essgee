@@ -20,18 +20,17 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 		const string ipcName = "EssgeeGBLink";
 		const int ipcLength = 16;
 
-		const int ipcOffsetSerialData = 0;
+		const int ipcBaseOffsetSerialData = 0;
 		//
 
 		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
 		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
 
-		public bool ProvidesClock { get; private set; }
-
 		MemoryMappedFile mmf;
 		MemoryMappedViewAccessor accessor;
 
 		bool ipcConnectionExists;
+		int ipcOffsetSelf, ipcOffsetRemote;
 
 		public GameBoyIPC()
 		{
@@ -39,6 +38,7 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 			accessor = null;
 
 			ipcConnectionExists = false;
+			ipcOffsetSelf = ipcOffsetRemote = 0;
 		}
 
 		public void Initialize()
@@ -64,43 +64,29 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 
 			try
 			{
-				// Try to open existing mapped file; if it exists, assume other instance provides clock
+				// Try to open existing mapped file; if it exists, assume other instance is first machine
 				mmf = MemoryMappedFile.OpenExisting(ipcName);
-				ProvidesClock = false;
+				ipcOffsetSelf = ipcBaseOffsetSerialData + 1;
+				ipcOffsetRemote = ipcBaseOffsetSerialData + 0;
 			}
 			catch (FileNotFoundException)
 			{
-				// Mapped file does not yet exist, create file and assume this instance provides clock
+				// Mapped file does not yet exist, create file and assume this instance is first machine
 				mmf = MemoryMappedFile.CreateOrOpen(ipcName, ipcLength);
-				ProvidesClock = true;
+				ipcOffsetSelf = ipcBaseOffsetSerialData + 0;
+				ipcOffsetRemote = ipcBaseOffsetSerialData + 1;
 			}
 			accessor = mmf.CreateViewAccessor(0, ipcLength, MemoryMappedFileAccess.ReadWrite);
 
 			ipcConnectionExists = true;
 		}
 
-		public byte DoSlaveTransfer(byte data)
+		public byte ExchangeBit(int left, byte data)
 		{
 			if (!ipcConnectionExists) EstablishIPCConnection();
 
-			var serialDataReceived = accessor.ReadByte(ipcOffsetSerialData);
-			accessor.Write(ipcOffsetSerialData, data);
-
-			Program.Logger?.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().Name}: recv 0x{serialDataReceived:X2}, sent 0x{data:X2}");
-
-			return serialDataReceived;
-		}
-
-		public byte DoMasterTransfer(byte data)
-		{
-			if (!ipcConnectionExists) EstablishIPCConnection();
-
-			var serialDataReceived = accessor.ReadByte(ipcOffsetSerialData);
-			accessor.Write(ipcOffsetSerialData, data);
-
-			Program.Logger?.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().Name}: recv 0x{serialDataReceived:X2}, sent 0x{data:X2}");
-
-			return serialDataReceived;
+			accessor.Write(ipcOffsetSelf, data);
+			return accessor.ReadByte(ipcOffsetRemote);
 		}
 	}
 }

@@ -23,6 +23,20 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 			Color.FromArgb(0x1F, 0x1F, 0x1F)
 		};
 
+		enum PrinterPacketBytes
+		{
+			MagicLSB,
+			MagicMSB,
+			CommandByte,
+			CompressionFlag,
+			DataLengthLSB,
+			DataLengthMSB,
+			DataByte,
+			ChecksumLSB,
+			ChecksumMSB,
+			Execute
+		}
+
 		enum PrinterCommands : byte
 		{
 			Initialize = 0x01,
@@ -53,7 +67,7 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 		};
 
 		(ushort magic, PrinterCommands command, bool isCompressed, ushort dataLen, byte[] data, ushort checksum) packet;
-		int packetBytesReceived;
+		PrinterPacketBytes nextPacketByte;
 		int dataBytesLeft;
 
 		PrinterStatusBits status;
@@ -65,10 +79,10 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 		int imageHeight;
 		int printDelay;
 
+		byte serialData;
+
 		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
 		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
-
-		public bool ProvidesClock => false;
 
 		public GBPrinter()
 		{
@@ -79,7 +93,7 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 		{
 			ResetPacket();
 
-			packetBytesReceived = 0;
+			nextPacketByte = PrinterPacketBytes.MagicLSB;
 			dataBytesLeft = 0;
 
 			status = 0;
@@ -90,6 +104,8 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 
 			imageHeight = 0;
 			printDelay = 0;
+
+			serialData = 0;
 		}
 
 		public void Shutdown()
@@ -102,167 +118,214 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 			packet = (0, 0, false, 0, new byte[0], 0);
 		}
 
-		public byte DoSlaveTransfer(byte data)
+		public byte ExchangeBit(int left, byte data)
+		{
+			var bitToSend = (byte)((serialData >> 7) & 0b1);
+			serialData = (byte)((serialData << 1) | (data & 0b1));
+			if (left == 0) serialData = ProcessReceivedByte(serialData);
+			return bitToSend;
+		}
+
+		public byte ProcessReceivedByte(byte data)
 		{
 			byte ret = 0;
 
-			if (dataBytesLeft == 0)
+			switch (nextPacketByte)
 			{
-				switch (packetBytesReceived)
-				{
-					case 0x00:
-						if (data == 0x88)
-						{
-							/* First magic byte; reset packet */
-							ResetPacket();
-							packet.magic |= (ushort)(data << 8);
-						}
-						break;
+				case PrinterPacketBytes.MagicLSB:
+					/* Received: First magic byte
+					 * Action:   Reset packet
+					 * Send:     Nothing
+					 */
+					if (data == 0x88)
+					{
+						ResetPacket();
+						packet.magic |= (ushort)(data << 8);
+						nextPacketByte = PrinterPacketBytes.MagicMSB;
+					}
+					break;
 
-					case 1:
-						if (data == 0x33)
-						{
-							/* Second magic byte */
-							packet.magic |= data;
-							presence = (PrinterPresenceBits.Present | PrinterPresenceBits.Unknown);
-						}
-						break;
+				case PrinterPacketBytes.MagicMSB:
+					/* Received: Second magic byte
+					 * Action:   Nothing
+					 * Send:     Nothing
+					 */
+					if (data == 0x33)
+					{
+						packet.magic |= data;
+						nextPacketByte = PrinterPacketBytes.CommandByte;
+					}
+					break;
 
-					case 2:
-						/* Command byte */
-						packet.command = (PrinterCommands)data;
-						break;
+				case PrinterPacketBytes.CommandByte:
+					/* Received: Command byte
+					 * Action:   Nothing
+					 * Send:     Nothing
+					 */
+					packet.command = (PrinterCommands)data;
+					nextPacketByte = PrinterPacketBytes.CompressionFlag;
+					break;
 
-					case 3:
-						/* Compression flag */
-						packet.isCompressed = (data & 0x01) != 0;
-						break;
+				case PrinterPacketBytes.CompressionFlag:
+					/* Received: Compression flag
+					 * Action:   Nothing
+					 * Send:     Nothing
+					 */
+					packet.isCompressed = (data & 0x01) != 0;
+					nextPacketByte = PrinterPacketBytes.DataLengthLSB;
+					break;
 
-					case 4:
-						/* Data length LSB */
-						packet.dataLen |= data;
-						break;
+				case PrinterPacketBytes.DataLengthLSB:
+					/* Received: Data length LSB
+					 * Action:   Nothing
+					 * Send:     Nothing
+					 */
+					packet.dataLen |= data;
+					nextPacketByte = PrinterPacketBytes.DataLengthMSB;
+					break;
 
-					case 5:
-						/* Data length MSB */
-						packet.dataLen |= (ushort)(data << 8);
-						packet.data = new byte[packet.dataLen];
-						dataBytesLeft = packet.dataLen;
-						break;
+				case PrinterPacketBytes.DataLengthMSB:
+					/* Received: Data length MSB
+					 * Action:   Prepare to receive data
+					 * Send:     Nothing
+					 */
+					packet.dataLen |= (ushort)(data << 8);
+					packet.data = new byte[packet.dataLen];
+					dataBytesLeft = packet.dataLen;
+					if (dataBytesLeft > 0)
+						nextPacketByte = PrinterPacketBytes.DataByte;
+					else
+						nextPacketByte = PrinterPacketBytes.ChecksumLSB;
+					break;
 
-					case 6:
-						/* Checksum LSB */
-						packet.checksum |= data;
-						break;
+				case PrinterPacketBytes.DataByte:
+					/* Received: Data byte
+					 * Action:   Nothing
+					 * Send:     Nothing
+					 */
+					if (dataBytesLeft > 0)
+					{
+						packet.data[--dataBytesLeft] = data;
+						if (dataBytesLeft == 0)
+							nextPacketByte = PrinterPacketBytes.ChecksumLSB;
+					}
+					break;
 
-					case 7:
-						/* Checksum MSB */
-						packet.checksum |= (ushort)(data << 8);
-						break;
+				case PrinterPacketBytes.ChecksumLSB:
+					/* Received: Checksum LSB
+					 * Action:   Nothing
+					 * Send:     Nothing
+					 */
+					packet.checksum |= data;
+					nextPacketByte = PrinterPacketBytes.ChecksumMSB;
+					break;
 
-					case 8:
-						/* Printer presence */
-						ret = (byte)presence;
-						break;
+				case PrinterPacketBytes.ChecksumMSB:
+					/* Received: Checksum MSB
+					 * Action:   Nothing
+					 * Send:     Printer presence
+					 */
+					packet.checksum |= (ushort)(data << 8);
+					presence = PrinterPresenceBits.Present | PrinterPresenceBits.Unknown;
+					ret = (byte)presence;
+					nextPacketByte = PrinterPacketBytes.Execute;
+					break;
 
-					case 9:
-						/* Printer status */
+				case PrinterPacketBytes.Execute:
+					/* Received: Execute command
+					 * Action:   Nothing
+					 * Send:     Printer status
+					 */
 
-						/* First, we're done with the packet, so check what we need to do now */
-						packet.data = packet.data.Reverse().ToArray();
-						switch (packet.command)
-						{
-							case PrinterCommands.Initialize:
-								/* Reset some data */
-								status = 0;
-								imageData.Clear();
-								imageHeight = 0;
-								printDelay = 0;
-								break;
+					/* First, we're done with the packet, so check what we need to do now */
+					packet.data = packet.data.Reverse().ToArray();
+					switch (packet.command)
+					{
+						case PrinterCommands.Initialize:
+							/* Reset some data */
+							status = 0;
+							imageData.Clear();
+							imageHeight = 0;
+							printDelay = 0;
+							break;
 
-							case PrinterCommands.ImageTransfer:
-								/* Copy packet data for drawing, increase image height & tell GB we're ready to print */
-								if (packet.data.Length > 0)
+						case PrinterCommands.ImageTransfer:
+							/* Copy packet data for drawing, increase image height & tell GB we're ready to print */
+							if (packet.data.Length > 0)
+							{
+								if (packet.isCompressed)
 								{
-									if (packet.isCompressed)
+									/* Decompress RLE first! */
+									List<byte> decomp = new List<byte>();
+									int ofs = 0, numbytes = 0;
+									while (ofs < packet.dataLen)
 									{
-										/* Decompress RLE first! */
-										List<byte> decomp = new List<byte>();
-										int ofs = 0, numbytes = 0;
-										while (ofs < packet.dataLen)
+										if ((packet.data[ofs] & 0x80) != 0)
 										{
-											if ((packet.data[ofs] & 0x80) != 0)
-											{
-												/* Compressed */
-												numbytes = (packet.data[ofs] & 0x7F) + 2;
-												for (int i = 0; i < numbytes; i++) decomp.Add(packet.data[ofs + 1]);
-												ofs += 2;
-											}
-											else
-											{
-												/* Uncompressed */
-												numbytes = (packet.data[ofs] & 0x7F) + 1;
-												for (int i = 0; i < numbytes; i++) decomp.Add(packet.data[ofs + 1 + i]);
-												ofs += (numbytes + 1);
-											}
+											/* Compressed */
+											numbytes = (packet.data[ofs] & 0x7F) + 2;
+											for (int i = 0; i < numbytes; i++) decomp.Add(packet.data[ofs + 1]);
+											ofs += 2;
 										}
-										packet.data = decomp.ToArray();
-										packet.dataLen = (ushort)decomp.Count;
+										else
+										{
+											/* Uncompressed */
+											numbytes = (packet.data[ofs] & 0x7F) + 1;
+											for (int i = 0; i < numbytes; i++) decomp.Add(packet.data[ofs + 1 + i]);
+											ofs += (numbytes + 1);
+										}
 									}
-
-									imageData.AddRange(packet.data);
-									imageHeight += (packet.data.Length / 0x28);
-
-									status |= PrinterStatusBits.ReadyToPrint;
+									packet.data = decomp.ToArray();
+									packet.dataLen = (ushort)decomp.Count;
 								}
-								break;
 
-							case PrinterCommands.StartPrinting:
-								/* Fetch parameters from packet, tell GB that we're about to print & perform printing */
-								marginBefore = (byte)((packet.data[1] >> 4) & 0x0F);
-								marginAfter = (byte)(packet.data[1] & 0x0F);
-								palette = packet.data[2];
-								exposure = (byte)(packet.data[3] & 0x7F);
+								imageData.AddRange(packet.data);
+								imageHeight += (packet.data.Length / 0x28);
 
-								status &= ~PrinterStatusBits.ReadyToPrint;
-								status |= PrinterStatusBits.PrintRequested;
-								PerformPrint();
-								break;
+								status |= PrinterStatusBits.ReadyToPrint;
+							}
+							break;
 
-							case PrinterCommands.ReadStatus:
-								if ((status & PrinterStatusBits.PrintRequested) != 0)
+						case PrinterCommands.StartPrinting:
+							/* Fetch parameters from packet, tell GB that we're about to print & perform printing */
+							marginBefore = (byte)((packet.data[1] >> 4) & 0x0F);
+							marginAfter = (byte)(packet.data[1] & 0x0F);
+							palette = packet.data[2];
+							exposure = (byte)(packet.data[3] & 0x7F);
+
+							status &= ~PrinterStatusBits.ReadyToPrint;
+							status |= PrinterStatusBits.PrintRequested;
+							PerformPrint();
+							break;
+
+						case PrinterCommands.ReadStatus:
+							if ((status & PrinterStatusBits.PrintRequested) != 0)
+							{
+								/* If we said printing has been requested, tell the GB it's in progress now */
+								status &= ~PrinterStatusBits.PrintRequested;
+								status |= PrinterStatusBits.PrintInProgress;
+							}
+							else if ((status & PrinterStatusBits.PrintInProgress) != 0)
+							{
+								/* Delay the process a bit... */
+								printDelay++;
+								if (printDelay >= 16)   // TODO: figure out actual print duration/timing?
 								{
-									/* If we said printing has been requested, tell the GB it's in progress now */
-									status &= ~PrinterStatusBits.PrintRequested;
-									status |= PrinterStatusBits.PrintInProgress;
+									/* If we said printing is in progress, tell the GB we're finished with it */
+									status &= ~PrinterStatusBits.PrintInProgress;
+									printDelay = 0;
 								}
-								else if ((status & PrinterStatusBits.PrintInProgress) != 0)
-								{
-									/* Delay the process a bit... */
-									printDelay++;
-									if (printDelay >= 16)   // TODO: figure out actual print duration/timing?
-									{
-										/* If we said printing is in progress, tell the GB we're finished with it */
-										status &= ~PrinterStatusBits.PrintInProgress;
-										printDelay = 0;
-									}
-								}
-								break;
-						}
+							}
+							break;
+					}
 
-						/* End of packet */
-						DumpPacket();
-						packetBytesReceived = 0;
+					/* End of packet */
+					DumpPacket();
 
-						return (byte)status;
-				}
+					ret = (byte)status;
 
-				packetBytesReceived++;
-			}
-			else
-			{
-				if (dataBytesLeft > 0)
-					packet.data[--dataBytesLeft] = data;
+					nextPacketByte = PrinterPacketBytes.MagicLSB;
+					break;
 			}
 
 			return ret;

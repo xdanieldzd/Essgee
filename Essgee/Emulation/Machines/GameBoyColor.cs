@@ -376,7 +376,7 @@ namespace Essgee.Emulation.Machines
 				HandleTimerOverflow();
 				UpdateCycleCounter((ushort)(clockCycleCount + 4));
 
-				HandleSerialIO(4);
+				HandleSerialIO(cycleLength);
 
 				video.Step(cycleLength);
 				audio.Step(cycleLength);
@@ -446,42 +446,24 @@ namespace Essgee.Emulation.Machines
 		{
 			if (serialTransferInProgress)
 			{
-				if (serialUseInternalClock)
+				for (var c = 0; c < clockCyclesInStep; c++)
 				{
-					/* If using internal clock... */
-
-					serialCycles += clockCyclesInStep;
-					if (serialCycles >= clockCyclesPerSerialBit)
+					serialCycles++;
+					if (serialCycles == clockCyclesPerSerialBit)
 					{
-						serialBitsCounter++;
-						if (serialBitsCounter == 8)
-						{
-							serialData = serialDevice.DoSlaveTransfer(serialData);
+						serialCycles = 0;
 
+						serialBitsCounter--;
+
+						var bitToSend = (byte)((serialData >> 7) & 0b1);
+						var bitReceived = serialDevice.ExchangeBit(serialBitsCounter, bitToSend);
+						serialData = (byte)((serialData << 1) | (bitReceived & 0b1));
+
+						if (serialBitsCounter == 0)
+						{
 							cpu.RequestInterrupt(SM83.InterruptSource.SerialIO);
 							serialTransferInProgress = false;
-							serialBitsCounter = 0;
 						}
-						serialCycles -= clockCyclesPerSerialBit;
-					}
-				}
-				else if (serialDevice.ProvidesClock)
-				{
-					/* If other devices provides clock... */
-
-					serialCycles += clockCyclesInStep;
-					if (serialCycles >= clockCyclesPerSerialBit)
-					{
-						serialBitsCounter++;
-						if (serialBitsCounter == 8)
-						{
-							serialData = serialDevice.DoMasterTransfer(serialData);
-
-							cpu.RequestInterrupt(SM83.InterruptSource.SerialIO);
-							serialTransferInProgress = false;
-							serialBitsCounter = 0;
-						}
-						serialCycles -= clockCyclesPerSerialBit;
 					}
 				}
 			}
@@ -579,7 +561,7 @@ namespace Essgee.Emulation.Machines
 					case 0xFF02:
 						// SC
 						return (byte)(
-							0x7E |
+							0x7C |
 							(serialUseInternalClock ? (1 << 0) : 0) |
 							(serialFastClockSpeed ? (1 << 1) : 0) |
 							(serialTransferInProgress ? (1 << 7) : 0));
@@ -709,7 +691,7 @@ namespace Essgee.Emulation.Machines
 						clockCyclesPerSerialBit = (serialFastClockSpeed ? serialCycleCountFast : serialCycleCountNormal) >> (cpu.IsDoubleSpeed ? 1 : 0);
 
 						if (serialTransferInProgress) serialCycles = 0;
-						serialBitsCounter = 0;
+						serialBitsCounter = 8;
 						break;
 
 					case 0xFF04:

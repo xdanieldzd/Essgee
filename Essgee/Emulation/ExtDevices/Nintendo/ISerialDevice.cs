@@ -12,12 +12,9 @@ namespace Essgee.Emulation.ExtDevices.Nintendo
 	{
 		event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
 
-		bool ProvidesClock { get; }
-
 		void Initialize();
 		void Shutdown();
 
-		byte DoSlaveTransfer(byte data);
-		byte DoMasterTransfer(byte data);
+		byte ExchangeBit(int left, byte data);
 	}
 }

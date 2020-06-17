@@ -412,40 +412,25 @@ namespace Essgee.Emulation.Machines
 			{
 				if (serialUseInternalClock)
 				{
-					/* If using internal clock... */
-
-					serialCycles += clockCyclesInStep;
-					if (serialCycles >= serialCycleCount)
+					for (var c = 0; c < clockCyclesInStep; c++)
 					{
-						serialBitsCounter++;
-						if (serialBitsCounter == 8)
+						serialCycles++;
+						if (serialCycles == serialCycleCount)
 						{
-							serialData = serialDevice.DoSlaveTransfer(serialData);
+							serialCycles = 0;
 
-							cpu.RequestInterrupt(SM83.InterruptSource.SerialIO);
-							serialTransferInProgress = false;
-							serialBitsCounter = 0;
+							serialBitsCounter--;
+
+							var bitToSend = (byte)((serialData >> 7) & 0b1);
+							var bitReceived = serialDevice.ExchangeBit(serialBitsCounter, bitToSend);
+							serialData = (byte)((serialData << 1) | (bitReceived & 0b1));
+
+							if (serialBitsCounter == 0)
+							{
+								cpu.RequestInterrupt(SM83.InterruptSource.SerialIO);
+								serialTransferInProgress = false;
+							}
 						}
-						serialCycles -= serialCycleCount;
-					}
-				}
-				else if (serialDevice.ProvidesClock)
-				{
-					/* If other devices provides clock... */
-
-					serialCycles += clockCyclesInStep;
-					if (serialCycles >= serialCycleCount)
-					{
-						serialBitsCounter++;
-						if (serialBitsCounter == 8)
-						{
-							serialData = serialDevice.DoMasterTransfer(serialData);
-
-							cpu.RequestInterrupt(SM83.InterruptSource.SerialIO);
-							serialTransferInProgress = false;
-							serialBitsCounter = 0;
-						}
-						serialCycles -= serialCycleCount;
 					}
 				}
 			}
@@ -650,7 +635,7 @@ namespace Essgee.Emulation.Machines
 						serialTransferInProgress = (value & (1 << 7)) != 0;
 
 						if (serialTransferInProgress) serialCycles = 0;
-						serialBitsCounter = 0;
+						serialBitsCounter = 8;
 						break;
 
 					case 0xFF04:
