@@ -224,7 +224,9 @@ namespace Essgee.Sound
 			{
 				var samplesToDrop = (sampleQueue.Count - MaxQueueLength);
 				onScreenDisplayHandler.EnqueueMessageDebug($"({GetType().Name}/{DateTime.Now.Second:D2}s) Sample queue overflow; dropping {samplesToDrop} of {sampleQueue.Count} samples.");
-				for (int i = 0; i < samplesToDrop; i++) sampleQueue.Dequeue();
+				for (int i = 0; i < samplesToDrop; i++)
+					if (sampleQueue.Count != 0)
+						sampleQueue.Dequeue();
 			}
 
 			sampleQueue.Enqueue(e.MixedSamples.ToArray());
