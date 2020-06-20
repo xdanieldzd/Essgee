@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using System.IO;
 
 using Essgee.Emulation.Configuration;
 using Essgee.Emulation.CPU;
@@ -119,11 +120,26 @@ namespace Essgee.Emulation.Machines
 		bool bootstrapDisabled;
 
 		// FF56 - RP
-		bool irWriteData, irReadData;
-		byte irReadEnable;
+		bool irSendingSignal, irNotReceivingSignal, irReadEnableA, irReadEnableB;
 
 		// FF70 - SVBK
 		byte wramBank;
+
+		public enum InfraredSources
+		{
+			[Description("None")]
+			None,
+			[Description("Random")]
+			Random,
+			[Description("Constant Light (Lamp)")]
+			ConstantOn,
+			[Description("Pocket Pikachu Color")]
+			PocketPikachuColor
+		}
+		ushort[] irDatabase;
+		int irDatabaseBaseIndex, irDatabaseStep;
+		int irDatabaseCurrentIndex, irCycles;
+		bool irExternalTransferActive;
 
 		[Flags]
 		enum JoypadInputs : byte
@@ -158,6 +174,7 @@ namespace Essgee.Emulation.Machines
 			cpu = new SM83CGB(ReadMemory, WriteMemory);
 			video = new CGBVideo(ReadMemory, cpu.RequestInterrupt);
 			audio = new CGBAudio();
+			serialDevice = null;
 
 			video.EndOfScanline += (s, e) =>
 			{
@@ -206,6 +223,26 @@ namespace Essgee.Emulation.Machines
 			serialDevice = (ISerialDevice)Activator.CreateInstance(configuration.SerialDevice);
 			serialDevice.SaveExtraData += SaveExtraData;
 			serialDevice.Initialize();
+
+			/* Infrared */
+			irDatabaseBaseIndex = 0;
+			irDatabaseStep = 0;
+			irDatabaseCurrentIndex = irCycles = 0;
+			irExternalTransferActive = false;
+
+			if (configuration.InfraredSource == InfraredSources.PocketPikachuColor && File.Exists(configuration.InfraredDatabasePikachu))
+			{
+				using (var reader = new BinaryReader(new FileStream(configuration.InfraredDatabasePikachu, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)))
+				{
+					irDatabase = new ushort[reader.BaseStream.Length / 2];
+					for (var i = 0; i < irDatabase.Length; i++)
+						irDatabase[i] = reader.ReadUInt16();
+
+					irDatabaseStep = 2007;
+					if ((irDatabaseBaseIndex < 0) || (irDatabaseBaseIndex * irDatabaseStep >= irDatabase.Length))
+						irDatabaseBaseIndex = 0;
+				}
+			}
 
 			/* Misc timing */
 			currentMasterClockCyclesInFrame = 0;
@@ -283,6 +320,9 @@ namespace Essgee.Emulation.Machines
 			irqVBlank = irqLCDCStatus = irqTimerOverflow = irqSerialIO = irqKeypad = false;
 
 			bootstrapDisabled = !configuration.UseBootstrap;
+
+			irSendingSignal = irReadEnableA = irReadEnableB = false;
+			irNotReceivingSignal = true;
 
 			wramBank = 0x01;
 
@@ -378,6 +418,8 @@ namespace Essgee.Emulation.Machines
 
 				HandleSerialIO(cycleLength);
 
+				HandleIRCommunication(cycleLength);
+
 				video.Step(cycleLength);
 				audio.Step(cycleLength);
 				cartridge?.Step(cycleLength);
@@ -469,6 +511,48 @@ namespace Essgee.Emulation.Machines
 			}
 		}
 
+		private void HandleIRCommunication(int clockCyclesInStep)
+		{
+			switch (configuration.InfraredSource)
+			{
+				case InfraredSources.None:
+					irNotReceivingSignal = true;
+					break;
+
+				case InfraredSources.Random:
+					irNotReceivingSignal = (Program.Random.Next(256) % 2) == 0;
+					break;
+
+				case InfraredSources.ConstantOn:
+					irNotReceivingSignal = false;
+					break;
+
+				case InfraredSources.PocketPikachuColor:
+					if (irExternalTransferActive)
+					{
+						for (var c = 0; c < clockCyclesInStep; c++)
+						{
+							irCycles++;
+							if (irCycles == irDatabase[(irDatabaseBaseIndex * irDatabaseStep) + irDatabaseCurrentIndex])
+							{
+								irCycles = 0;
+
+								irNotReceivingSignal = !irNotReceivingSignal;
+
+								irDatabaseCurrentIndex++;
+								if (irDatabaseCurrentIndex >= irDatabaseStep)
+								{
+									irDatabaseCurrentIndex = 0;
+									irExternalTransferActive = false;
+									irNotReceivingSignal = true;
+								}
+							}
+						}
+					}
+					break;
+			}
+		}
+
 		private void ParseInput(PollInputEventArgs eventArgs)
 		{
 			inputsPressed = 0;
@@ -493,6 +577,15 @@ namespace Essgee.Emulation.Machines
 			if (eventArgs.Keyboard.Contains(configuration.ControlsB) || eventArgs.ControllerState.IsXPressed() || eventArgs.ControllerState.IsBPressed()) inputsPressed |= JoypadInputs.B;
 			if (eventArgs.Keyboard.Contains(configuration.ControlsSelect) || eventArgs.ControllerState.IsBackPressed()) inputsPressed |= JoypadInputs.Select;
 			if (eventArgs.Keyboard.Contains(configuration.ControlsStart) || eventArgs.ControllerState.IsStartPressed()) inputsPressed |= JoypadInputs.Start;
+
+			if (eventArgs.Keyboard.Contains(configuration.ControlsSendIR))
+			{
+				irExternalTransferActive = true;
+				irDatabaseCurrentIndex = 0;
+				irCycles = 0;
+
+				irNotReceivingSignal = false;
+			}
 		}
 
 		private byte ReadMemory(ushort address)
@@ -607,6 +700,15 @@ namespace Essgee.Emulation.Machines
 						return (byte)(
 							0xFE |
 							(bootstrapDisabled ? (1 << 0) : 0));
+
+					case 0xFF56:
+						// RP
+						return (byte)(
+							0x3C |
+							(irSendingSignal ? (1 << 0) : 0) |
+							(!irReadEnableA || !irReadEnableB || irNotReceivingSignal ? (1 << 1) : 0) |
+							(irReadEnableA ? (1 << 6) : 0) |
+							(irReadEnableB ? (1 << 7) : 0));
 
 					case 0xFF70:
 						// SVBK
@@ -743,6 +845,12 @@ namespace Essgee.Emulation.Machines
 					case 0xFF50:
 						if (!bootstrapDisabled)
 							bootstrapDisabled = (value & (1 << 0)) != 0;
+						break;
+
+					case 0xFF56:
+						irSendingSignal = (value & (1 << 0)) != 0;
+						irReadEnableA = (value & (1 << 6)) != 0;
+						irReadEnableB = (value & (1 << 7)) != 0;
 						break;
 
 					case 0xFF70:

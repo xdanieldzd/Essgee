@@ -32,6 +32,12 @@ namespace Essgee.Emulation.Configuration
 		[FileBrowserControl("GB Camera", "Camera Image", "Image Files (*.png;*.bmp)|*.png;*.bmp")]
 		public string CameraImageFile { get; set; }
 
+		[DropDownControl("Infrared", "Infrared Source", typeof(Machines.GameBoyColor.InfraredSources))]
+		[JsonConverter(typeof(StringEnumConverter))]
+		public Machines.GameBoyColor.InfraredSources InfraredSource { get; set; }
+		[FileBrowserControl("Infrared", "Pokemon Pikachu DB", "Database Binary (*.bin)|*.bin")]
+		public string InfraredDatabasePikachu { get; set; }
+
 		[DropDownControl("Controls", "Up", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys ControlsUp { get; set; }
@@ -56,6 +62,9 @@ namespace Essgee.Emulation.Configuration
 		[DropDownControl("Controls", "Start", typeof(Keys), Keys.F11)]
 		[JsonConverter(typeof(StringEnumConverter))]
 		public Keys ControlsStart { get; set; }
+		[DropDownControl("Controls", "Send IR Signal", typeof(Keys), Keys.F11)]
+		[JsonConverter(typeof(StringEnumConverter))]
+		public Keys ControlsSendIR { get; set; }
 
 		public GameBoyColor()
 		{
@@ -66,6 +75,9 @@ namespace Essgee.Emulation.Configuration
 			CameraSource = GBCameraCartridge.ImageSources.Noise;
 			CameraImageFile = string.Empty;
 
+			InfraredSource = Machines.GameBoyColor.InfraredSources.None;
+			InfraredDatabasePikachu = string.Empty;
+
 			ControlsUp = Keys.Up;
 			ControlsDown = Keys.Down;
 			ControlsLeft = Keys.Left;
@@ -74,6 +86,7 @@ namespace Essgee.Emulation.Configuration
 			ControlsB = Keys.A;
 			ControlsSelect = Keys.Space;
 			ControlsStart = Keys.Enter;
+			ControlsSendIR = Keys.Back;
 		}
 	}
 }
