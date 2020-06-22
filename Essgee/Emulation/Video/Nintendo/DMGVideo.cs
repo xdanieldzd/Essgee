@@ -27,6 +27,10 @@ namespace Essgee.Emulation.Video.Nintendo
 		protected const int mode2Boundary = 80;
 		protected const int mode3Boundary = mode2Boundary + 168;
 
+		protected const string layerBackgroundOptionName = "GraphicsLayersShowBackground";
+		protected const string layerWindowOptionName = "GraphicsLayersShowWindow";
+		protected const string layerSpritesOptionName = "GraphicsLayersShowSprites";
+
 		protected virtual int numSkippedFramesLcdOn => 4;
 
 		protected Action[] modeFunctions;
@@ -118,6 +122,15 @@ namespace Essgee.Emulation.Video.Nintendo
 
 		//
 
+		public (string Name, string Description)[] RuntimeOptions => new (string name, string description)[]
+		{
+			(layerBackgroundOptionName, "Background"),
+			(layerWindowOptionName, "Window"),
+			(layerSpritesOptionName, "Sprites"),
+		};
+
+		protected bool layerBackgroundForceEnable, layerWindowForceEnable, layerSpritesForceEnable;
+
 		public DMGVideo(MemoryReadDelegate memoryRead, RequestInterruptDelegate requestInterrupt)
 		{
 			vram = new byte[1, 0x2000];
@@ -131,6 +144,31 @@ namespace Essgee.Emulation.Video.Nintendo
 
 			memoryReadDelegate = memoryRead;
 			requestInterruptDelegate = requestInterrupt;
+
+			layerBackgroundForceEnable = true;
+			layerWindowForceEnable = true;
+			layerSpritesForceEnable = true;
+		}
+
+		public object GetRuntimeOption(string name)
+		{
+			switch (name)
+			{
+				case layerBackgroundOptionName: return layerBackgroundForceEnable;
+				case layerWindowOptionName: return layerWindowForceEnable;
+				case layerSpritesOptionName: return layerSpritesForceEnable;
+				default: return null;
+			}
+		}
+
+		public void SetRuntimeOption(string name, object value)
+		{
+			switch (name)
+			{
+				case layerBackgroundOptionName: layerBackgroundForceEnable = (bool)value; break;
+				case layerWindowOptionName: layerWindowForceEnable = (bool)value; break;
+				case layerSpritesOptionName: layerSpritesForceEnable = (bool)value; break;
+			}
 		}
 
 		public virtual void Startup()
@@ -447,7 +485,10 @@ namespace Essgee.Emulation.Video.Nintendo
 				screenUsageFlags[x, y] |= screenUsageBackground;
 
 			// Draw pixel
-			SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
+			if (layerBackgroundForceEnable)
+				SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
+			else if (screenUsageFlags[x, y] == screenUsageEmpty)
+				SetPixel(y, x, 0x00, 0x00, 0x00);
 		}
 
 		protected virtual void RenderWindow(int y, int x)
@@ -479,7 +520,10 @@ namespace Essgee.Emulation.Video.Nintendo
 				screenUsageFlags[x, y] |= screenUsageWindow;
 
 			// Draw pixel
-			SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
+			if (layerWindowForceEnable)
+				SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
+			else if (screenUsageFlags[x, y] == screenUsageEmpty)
+				SetPixel(y, x, 0x00, 0x00, 0x00);
 		}
 
 		protected virtual void RenderSprites(int y, int x)
@@ -539,7 +583,10 @@ namespace Essgee.Emulation.Video.Nintendo
 						screenUsageSpriteXCoords[x, y] = objX;
 
 						// Draw pixel
-						SetPixel(y, x, (byte)((pal >> (c << 1)) & 0x03));
+						if (layerSpritesForceEnable)
+							SetPixel(y, x, (byte)((pal >> (c << 1)) & 0x03));
+						else if (screenUsageFlags[x, y] == screenUsageEmpty)
+							SetPixel(y, x, 0x00, 0x00, 0x00);
 					}
 				}
 			}

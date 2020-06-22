@@ -28,10 +28,13 @@ namespace Essgee.Emulation.Machines
 		bool HasBootstrap { get; }
 		double RefreshRate { get; }
 		double PixelAspectRatio { get; }
+		(string Name, string Description)[] RuntimeOptions { get; }
 
 		Dictionary<string, dynamic> GetDebugInformation();
 
 		void SetConfiguration(IConfiguration config);
+
+		object GetRuntimeOption(string name);
 		void SetRuntimeOption(string name, object value);
 
 		void Initialize();

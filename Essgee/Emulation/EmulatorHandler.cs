@@ -99,7 +99,8 @@ namespace Essgee.Emulation
 
 		public bool IsHandlingSaveState => (stateLoadRequested || stateSaveRequested);
 
-		public (string Manufacturer, string Model, string DatFileName, double RefreshRate, double PixelAspectRatio) Information => (emulator.ManufacturerName, emulator.ModelName, emulator.DatFilename, emulator.RefreshRate, emulator.PixelAspectRatio);
+		public (string Manufacturer, string Model, string DatFileName, double RefreshRate, double PixelAspectRatio, (string Name, string Description)[] RuntimeOptions) Information =>
+			(emulator.ManufacturerName, emulator.ModelName, emulator.DatFilename, emulator.RefreshRate, emulator.PixelAspectRatio, emulator.RuntimeOptions);
 
 		public EmulatorHandler(Type type, Action<Exception> exceptionHandler = null)
 		{
@@ -216,14 +217,14 @@ namespace Essgee.Emulation
 			limitFps = value;
 		}
 
-		public void SetGraphicsEnableStates(GraphicsEnableState state)
+		public object GetRuntimeOption(string name)
 		{
-			emulator.SetRuntimeOption(nameof(GraphicsEnableState), state);
+			return emulator.GetRuntimeOption(name);
 		}
 
-		public void SetSoundEnableStates(SoundEnableState state)
+		public void SetRuntimeOption(string name, object value)
 		{
-			emulator.SetRuntimeOption(nameof(SoundEnableState), state);
+			emulator.SetRuntimeOption(name, value);
 		}
 
 		public int FramesPerSecond { get; private set; }

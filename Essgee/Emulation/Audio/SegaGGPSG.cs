@@ -43,10 +43,10 @@ namespace Essgee.Emulation.Audio
 
 				/* Mix samples */
 				var mixed = 0;
-				if (EnableToneChannel1) mixed += ch1;
-				if (EnableToneChannel2) mixed += ch2;
-				if (EnableToneChannel3) mixed += ch3;
-				if (EnableNoiseChannel) mixed += ch4;
+				if (channel1ForceEnable) mixed += ch1;
+				if (channel2ForceEnable) mixed += ch2;
+				if (channel3ForceEnable) mixed += ch3;
+				if (channel4ForceEnable) mixed += ch4;
 				mixed /= numChannels;
 
 				mixedSampleBuffer.Add((short)mixed);

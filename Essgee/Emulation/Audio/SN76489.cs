@@ -19,6 +19,11 @@ namespace Essgee.Emulation.Audio
 
 		protected const int numChannels = 4, numToneChannels = 3, noiseChannelIndex = 3;
 
+		protected const string channel1OptionName = "AudioEnableCh1Square";
+		protected const string channel2OptionName = "AudioEnableCh2Square";
+		protected const string channel3OptionName = "AudioEnableCh3Square";
+		protected const string channel4OptionName = "AudioEnableCh4Noise";
+
 		/* Noise generation constants */
 		protected virtual ushort noiseLfsrMask => 0x7FFF;
 		protected virtual ushort noiseTappedBits => 0x0003;     /* Bits 0 and 1 */
@@ -63,12 +68,15 @@ namespace Essgee.Emulation.Audio
 		int sampleCycleCount, frameCycleCount, dividerCount;
 
 		/* User-facing channel toggles */
-		public SoundEnableState SoundEnableStates { get; set; }
+		protected bool channel1ForceEnable, channel2ForceEnable, channel3ForceEnable, channel4ForceEnable;
 
-		protected bool EnableToneChannel1 { get { return (SoundEnableStates & SoundEnableState.ToneChannel1) == SoundEnableState.ToneChannel1; } }
-		protected bool EnableToneChannel2 { get { return (SoundEnableStates & SoundEnableState.ToneChannel2) == SoundEnableState.ToneChannel2; } }
-		protected bool EnableToneChannel3 { get { return (SoundEnableStates & SoundEnableState.ToneChannel3) == SoundEnableState.ToneChannel3; } }
-		protected bool EnableNoiseChannel { get { return (SoundEnableStates & SoundEnableState.NoiseChannel) == SoundEnableState.NoiseChannel; } }
+		public (string Name, string Description)[] RuntimeOptions => new (string name, string description)[]
+		{
+			(channel1OptionName, "Channel 1 (Square)"),
+			(channel2OptionName, "Channel 2 (Square)"),
+			(channel3OptionName, "Channel 3 (Square)"),
+			(channel4OptionName, "Channel 4 (Noise)")
+		};
 
 		public SN76489()
 		{
@@ -89,6 +97,34 @@ namespace Essgee.Emulation.Audio
 			volumeTable[15] = 0;
 
 			samplesPerFrame = cyclesPerFrame = cyclesPerSample = -1;
+
+			channel1ForceEnable = true;
+			channel2ForceEnable = true;
+			channel3ForceEnable = true;
+			channel4ForceEnable = true;
+		}
+
+		public object GetRuntimeOption(string name)
+		{
+			switch (name)
+			{
+				case channel1OptionName: return channel1ForceEnable;
+				case channel2OptionName: return channel2ForceEnable;
+				case channel3OptionName: return channel3ForceEnable;
+				case channel4OptionName: return channel4ForceEnable;
+				default: return null;
+			}
+		}
+
+		public void SetRuntimeOption(string name, object value)
+		{
+			switch (name)
+			{
+				case channel1OptionName: channel1ForceEnable = (bool)value; break;
+				case channel2OptionName: channel2ForceEnable = (bool)value; break;
+				case channel3OptionName: channel3ForceEnable = (bool)value; break;
+				case channel4OptionName: channel4ForceEnable = (bool)value; break;
+			}
 		}
 
 		public void SetSampleRate(int rate)
@@ -184,7 +220,7 @@ namespace Essgee.Emulation.Audio
 				OnEnqueueSamples(new EnqueueSamplesEventArgs(
 					numChannels,
 					channelSampleBuffer.Select(x => x.ToArray()).ToArray(),
-					new bool[] { !EnableToneChannel1, !EnableToneChannel2, !EnableToneChannel3, !EnableNoiseChannel },
+					new bool[] { !channel1ForceEnable, !channel2ForceEnable, !channel3ForceEnable, !channel4ForceEnable },
 					mixedSampleBuffer.ToArray()));
 
 				FlushSamples();
@@ -261,10 +297,10 @@ namespace Essgee.Emulation.Audio
 
 				/* Mix samples */
 				var mixed = 0;
-				if (EnableToneChannel1) mixed += ch1;
-				if (EnableToneChannel2) mixed += ch2;
-				if (EnableToneChannel3) mixed += ch3;
-				if (EnableNoiseChannel) mixed += ch4;
+				if (channel1ForceEnable) mixed += ch1;
+				if (channel2ForceEnable) mixed += ch2;
+				if (channel3ForceEnable) mixed += ch3;
+				if (channel4ForceEnable) mixed += ch4;
 				mixed /= numChannels;
 
 				mixedSampleBuffer.Add((short)mixed);

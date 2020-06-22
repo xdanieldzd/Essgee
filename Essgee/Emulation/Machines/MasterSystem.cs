@@ -74,6 +74,7 @@ namespace Essgee.Emulation.Machines
 		public bool HasBootstrap => true;
 		public double RefreshRate { get; private set; }
 		public double PixelAspectRatio => 8.0 / 7.0;
+		public (string Name, string Description)[] RuntimeOptions => vdp.RuntimeOptions.Concat(psg.RuntimeOptions).ToArray();
 
 		ICartridge bootstrap, cartridge;
 		byte[] wram;
@@ -170,18 +171,22 @@ namespace Essgee.Emulation.Machines
 			ReconfigureSystem();
 		}
 
+		public object GetRuntimeOption(string name)
+		{
+			if (name.StartsWith("Graphics"))
+				return vdp.GetRuntimeOption(name);
+			else if (name.StartsWith("Audio"))
+				return psg.GetRuntimeOption(name);
+			else
+				return null;
+		}
+
 		public void SetRuntimeOption(string name, object value)
 		{
-			switch (name)
-			{
-				case nameof(GraphicsEnableState):
-					vdp.GraphicsEnableStates = (GraphicsEnableState)value;
-					break;
-
-				case nameof(SoundEnableState):
-					psg.SoundEnableStates = (SoundEnableState)value;
-					break;
-			}
+			if (name.StartsWith("Graphics"))
+				vdp.SetRuntimeOption(name, value);
+			else if (name.StartsWith("Audio"))
+				psg.SetRuntimeOption(name, value);
 		}
 
 		private void ReconfigureSystem()

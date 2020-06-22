@@ -73,6 +73,7 @@ namespace Essgee.Emulation.Machines
 		public bool HasBootstrap => true;
 		public double RefreshRate => refreshRate;
 		public double PixelAspectRatio => 1.0;
+		public (string Name, string Description)[] RuntimeOptions => video.RuntimeOptions.Concat(audio.RuntimeOptions).ToArray();
 
 		byte[] bootstrap;
 		IGameBoyCartridge cartridge;
@@ -191,9 +192,22 @@ namespace Essgee.Emulation.Machines
 			ReconfigureSystem();
 		}
 
+		public object GetRuntimeOption(string name)
+		{
+			if (name.StartsWith("Graphics"))
+				return video.GetRuntimeOption(name);
+			else if (name.StartsWith("Audio"))
+				return audio.GetRuntimeOption(name);
+			else
+				return null;
+		}
+
 		public void SetRuntimeOption(string name, object value)
 		{
-			//TODO layer toggling etc
+			if (name.StartsWith("Graphics"))
+				video.SetRuntimeOption(name, value);
+			else if (name.StartsWith("Audio"))
+				audio.SetRuntimeOption(name, value);
 		}
 
 		private void ReconfigureSystem()

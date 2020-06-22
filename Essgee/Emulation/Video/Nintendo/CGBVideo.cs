@@ -193,8 +193,13 @@ namespace Essgee.Emulation.Video.Nintendo
 				screenUsageFlags[x, y] |= tileBgHasPriority ? screenUsageBackgroundHighPriority : screenUsageBackground;
 
 			// Calculate color address in palette & draw pixel
-			var paletteAddress = (tileBgPalette << 3) + ((c & 0b11) << 1);
-			SetPixel(y, x, (ushort)((bgPaletteData[paletteAddress + 1] << 8) | bgPaletteData[paletteAddress + 0]));
+			if (layerBackgroundForceEnable)
+			{
+				var paletteAddress = (tileBgPalette << 3) + ((c & 0b11) << 1);
+				SetPixel(y, x, (ushort)((bgPaletteData[paletteAddress + 1] << 8) | bgPaletteData[paletteAddress + 0]));
+			}
+			else if (screenUsageFlags[x, y] == screenUsageEmpty)
+				SetPixel(y, x, 0x00, 0x00, 0x00);
 		}
 
 		protected override void RenderWindow(int y, int x)
@@ -236,8 +241,13 @@ namespace Essgee.Emulation.Video.Nintendo
 				screenUsageFlags[x, y] |= tileBgHasPriority ? screenUsageBackgroundHighPriority : screenUsageWindow;    // TODO correct?
 
 			// Calculate color address in palette & draw pixel
-			var paletteAddress = (tileBgPalette << 3) + ((c & 0b11) << 1);
-			SetPixel(y, x, (ushort)((bgPaletteData[paletteAddress + 1] << 8) | bgPaletteData[paletteAddress + 0]));
+			if (layerWindowForceEnable)
+			{
+				var paletteAddress = (tileBgPalette << 3) + ((c & 0b11) << 1);
+				SetPixel(y, x, (ushort)((bgPaletteData[paletteAddress + 1] << 8) | bgPaletteData[paletteAddress + 0]));
+			}
+			else if (screenUsageFlags[x, y] == screenUsageEmpty)
+				SetPixel(y, x, 0x00, 0x00, 0x00);
 		}
 
 		protected override void RenderSprites(int y, int x)
@@ -297,8 +307,13 @@ namespace Essgee.Emulation.Video.Nintendo
 						screenUsageSpriteXCoords[x, y] = objX;
 
 						// Calculate color address in palette & draw pixel
-						var paletteAddress = (objPalNumber << 3) + ((c & 0b11) << 1);
-						SetPixel(y, x, (ushort)((objPaletteData[paletteAddress + 1] << 8) | objPaletteData[paletteAddress + 0]));
+						if (layerSpritesForceEnable)
+						{
+							var paletteAddress = (objPalNumber << 3) + ((c & 0b11) << 1);
+							SetPixel(y, x, (ushort)((objPaletteData[paletteAddress + 1] << 8) | objPaletteData[paletteAddress + 0]));
+						}
+						else if (screenUsageFlags[x, y] == screenUsageEmpty)
+							SetPixel(y, x, 0x00, 0x00, 0x00);
 					}
 				}
 			}

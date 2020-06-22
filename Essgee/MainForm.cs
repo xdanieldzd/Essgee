@@ -63,9 +63,6 @@ namespace Essgee
 
 		EmulatorHandler emulatorHandler;
 
-		GraphicsEnableState graphicsEnableStates;
-		SoundEnableState soundEnableStates;
-
 		SoundDebuggerForm soundDebuggerForm;
 
 		bool lastUserPauseState;
@@ -104,17 +101,12 @@ namespace Essgee
 
 			SetFileFilters();
 
-			graphicsEnableStates = (GraphicsEnableState.Backgrounds | GraphicsEnableState.Sprites | GraphicsEnableState.Borders);
-			soundEnableStates = SoundEnableState.All;
-
 			CreateRecentFilesMenu();
 			CreatePowerOnMenu();
 			CreateShaderMenu();
 			CreateScreenSizeMenu();
 			CreateSizeModeMenu();
-			CreateShowGraphicsLayersMenu();
 			CreateSampleRateMenu();
-			CreateEnableSoundChannelsMenu();
 
 			automaticPauseToolStripMenuItem.DataBindings.Add(nameof(automaticPauseToolStripMenuItem.Checked), Program.Configuration, nameof(Program.Configuration.AutoPause), false, DataSourceUpdateMode.OnPropertyChanged);
 
@@ -329,8 +321,6 @@ namespace Essgee
 			emulatorHandler.EnqueueSamples += soundDebuggerForm.EnqueueSamples;
 
 			emulatorHandler.SetFpsLimiting(Program.Configuration.LimitFps);
-			emulatorHandler.SetGraphicsEnableStates(graphicsEnableStates);
-			emulatorHandler.SetSoundEnableStates(soundEnableStates);
 
 			emulatorHandler.SetConfiguration(Program.Configuration.Machines[machineType.Name]);
 
@@ -369,9 +359,13 @@ namespace Essgee
 
 			ApplyConfigOverrides(machineType);
 
+			CreateToggleGraphicsLayersMenu();
+			CreateToggleSoundChannelsMenu();
+
 			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = true;
 			loadStateToolStripMenuItem.Enabled = saveStateToolStripMenuItem.Enabled = false;
 			startRecordingToolStripMenuItem.Enabled = true;
+			toggleLayersToolStripMenuItem.Enabled = enableChannelsToolStripMenuItem.Enabled = true;
 
 			emulatorHandler.Startup();
 
@@ -401,10 +395,13 @@ namespace Essgee
 				AddToRecentFiles(fileName);
 				CreateRecentFilesMenu();
 				CreateLoadSaveStateMenus();
+				CreateToggleGraphicsLayersMenu();
+				CreateToggleSoundChannelsMenu();
 
 				takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = true;
 				loadStateToolStripMenuItem.Enabled = saveStateToolStripMenuItem.Enabled = true;
 				startRecordingToolStripMenuItem.Enabled = true;
+				toggleLayersToolStripMenuItem.Enabled = enableChannelsToolStripMenuItem.Enabled = true;
 
 				emulatorHandler.Startup();
 
@@ -498,6 +495,8 @@ namespace Essgee
 
 			takeScreenshotToolStripMenuItem.Enabled = pauseToolStripMenuItem.Enabled = resetToolStripMenuItem.Enabled = stopToolStripMenuItem.Enabled = false;
 			loadStateToolStripMenuItem.Enabled = saveStateToolStripMenuItem.Enabled = false;
+			startRecordingToolStripMenuItem.Enabled = false;
+			toggleLayersToolStripMenuItem.Enabled = enableChannelsToolStripMenuItem.Enabled = false;
 
 			SetWindowTitleAndStatus();
 		}
@@ -778,41 +777,28 @@ namespace Essgee
 			}
 		}
 
-		private void CreateShowGraphicsLayersMenu()
+		private void CreateToggleGraphicsLayersMenu()
 		{
 			toggleLayersToolStripMenuItem.DropDownItems.Clear();
 
-			foreach (var layer in Enum.GetValues(typeof(GraphicsEnableState)))
+			foreach (var layer in emulatorHandler.Information.RuntimeOptions.Where(x => x.Name.StartsWith("GraphicsLayersShow")))
 			{
-				var ignore = layer.GetType().GetField(layer.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored;
-				if (ignore ?? false) continue;
-
-				var desc = layer.GetType().GetField(layer.ToString())?.GetAttribute<DescriptionAttribute>()?.Description ?? layer.ToString();
-
-				var menuItem = new ToolStripMenuItem($"{desc}")
+				var menuItem = new ToolStripMenuItem(layer.Description)
 				{
-					Checked = ((graphicsEnableStates & (GraphicsEnableState)layer) == (GraphicsEnableState)layer),
-					Tag = layer
+					Checked = (bool)emulatorHandler.GetRuntimeOption(layer.Name),
+					Tag = layer.Name
 				};
 				menuItem.Click += (s, e) =>
 				{
-					if ((s as ToolStripMenuItem).Tag is object gfxLayer && Enum.IsDefined(typeof(GraphicsEnableState), gfxLayer))
+					if ((s as ToolStripMenuItem).Tag is string layerOptionName)
 					{
-						var enableState = (GraphicsEnableState)gfxLayer;
-
-						if ((graphicsEnableStates & enableState) == enableState)
-							graphicsEnableStates &= ~enableState;
-						else
-							graphicsEnableStates |= enableState;
-
-						emulatorHandler.SetGraphicsEnableStates(graphicsEnableStates);
+						emulatorHandler.SetRuntimeOption(layerOptionName, !(s as ToolStripMenuItem).Checked);
 
 						foreach (ToolStripMenuItem toggleLayersMenuItem in toggleLayersToolStripMenuItem.DropDownItems)
 						{
-							if (toggleLayersMenuItem.Tag is GraphicsEnableState gfxLayerCheck)
-								toggleLayersMenuItem.Checked = (graphicsEnableStates & gfxLayerCheck) == gfxLayerCheck;
+							if (toggleLayersMenuItem.Tag is string layerOptionNameCheck)
+								toggleLayersMenuItem.Checked = (bool)emulatorHandler.GetRuntimeOption(layerOptionNameCheck);
 						}
-
 					}
 				};
 				toggleLayersToolStripMenuItem.DropDownItems.Add(menuItem);
@@ -860,44 +846,30 @@ namespace Essgee
 				};
 				sampleRateToolStripMenuItem.DropDownItems.Add(menuItem);
 			}
-
 		}
 
-		private void CreateEnableSoundChannelsMenu()
+		private void CreateToggleSoundChannelsMenu()
 		{
 			enableChannelsToolStripMenuItem.DropDownItems.Clear();
 
-			foreach (var channel in Enum.GetValues(typeof(SoundEnableState)))
+			foreach (var channel in emulatorHandler.Information.RuntimeOptions.Where(x => x.Name.StartsWith("AudioEnable")))
 			{
-				var ignore = channel.GetType().GetField(channel.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored;
-				if (ignore ?? false) continue;
-
-				var desc = channel.GetType().GetField(channel.ToString())?.GetAttribute<DescriptionAttribute>()?.Description ?? channel.ToString();
-
-				var menuItem = new ToolStripMenuItem($"{desc}")
+				var menuItem = new ToolStripMenuItem(channel.Description)
 				{
-					Checked = ((soundEnableStates & (SoundEnableState)channel) == (SoundEnableState)channel),
-					Tag = channel
+					Checked = (bool)emulatorHandler.GetRuntimeOption(channel.Name),
+					Tag = channel.Name
 				};
 				menuItem.Click += (s, e) =>
 				{
-					if ((s as ToolStripMenuItem).Tag is object sndChannel && Enum.IsDefined(typeof(SoundEnableState), sndChannel))
+					if ((s as ToolStripMenuItem).Tag is string channelOptionName)
 					{
-						var enableState = (SoundEnableState)sndChannel;
-
-						if ((soundEnableStates & enableState) == enableState)
-							soundEnableStates &= ~enableState;
-						else
-							soundEnableStates |= enableState;
-
-						emulatorHandler.SetSoundEnableStates(soundEnableStates);
+						emulatorHandler.SetRuntimeOption(channelOptionName, !(s as ToolStripMenuItem).Checked);
 
 						foreach (ToolStripMenuItem toggleChannelsMenuItem in enableChannelsToolStripMenuItem.DropDownItems)
 						{
-							if (toggleChannelsMenuItem.Tag is SoundEnableState sndChannelCheck)
-								toggleChannelsMenuItem.Checked = (soundEnableStates & sndChannelCheck) == sndChannelCheck;
+							if (toggleChannelsMenuItem.Tag is string channelOptionNameCheck)
+								toggleChannelsMenuItem.Checked = (bool)emulatorHandler.GetRuntimeOption(channelOptionNameCheck);
 						}
-
 					}
 				};
 				enableChannelsToolStripMenuItem.DropDownItems.Add(menuItem);

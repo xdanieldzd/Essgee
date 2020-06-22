@@ -21,6 +21,10 @@ namespace Essgee.Emulation.Video
 		public const int NumActiveScanlines = 192;
 		public const int NumActivePixelsPerScanline = 256;
 
+		protected const string layerBackgroundOptionName = "GraphicsLayersShowBackground";
+		protected const string layerSpritesOptionName = "GraphicsLayersShowSprites";
+		protected const string layerBordersOptionName = "GraphicsLayersShowBorders";
+
 		protected readonly int numTotalPixelsPerScanline = 342;
 		protected virtual int numTotalScanlines => (isPalChip ? NumTotalScanlinesPal : NumTotalScanlinesNtsc);
 
@@ -161,11 +165,14 @@ namespace Essgee.Emulation.Video
 
 		protected int clockCyclesPerLine;
 
-		public GraphicsEnableState GraphicsEnableStates { get; set; }
+		public (string Name, string Description)[] RuntimeOptions => new (string name, string description)[]
+		{
+			(layerBackgroundOptionName, "Background"),
+			(layerSpritesOptionName, "Sprites"),
+			(layerBordersOptionName, "Borders"),
+		};
 
-		protected bool EnableBackgrounds { get { return (GraphicsEnableStates & GraphicsEnableState.Backgrounds) == GraphicsEnableState.Backgrounds; } }
-		protected bool EnableSprites { get { return (GraphicsEnableStates & GraphicsEnableState.Sprites) == GraphicsEnableState.Sprites; } }
-		protected bool EnableBorders { get { return (GraphicsEnableStates & GraphicsEnableState.Borders) == GraphicsEnableState.Borders; } }
+		protected bool layerBackgroundForceEnable, layerSpritesForceEnable, layerBordersForceEnable;
 
 		public TMS99xxA()
 		{
@@ -175,7 +182,30 @@ namespace Essgee.Emulation.Video
 			spriteBuffer = new (int Number, int Y, int X, int Pattern, int Attribute)[NumActiveScanlines][];
 			for (int i = 0; i < spriteBuffer.Length; i++) spriteBuffer[i] = new (int Number, int Y, int X, int Pattern, int Attribute)[NumSpritesPerLine];
 
-			GraphicsEnableStates = GraphicsEnableState.All;
+			layerBackgroundForceEnable = true;
+			layerSpritesForceEnable = true;
+			layerBordersForceEnable = true;
+		}
+
+		public object GetRuntimeOption(string name)
+		{
+			switch (name)
+			{
+				case layerBackgroundOptionName: return layerBackgroundForceEnable;
+				case layerSpritesOptionName: return layerSpritesForceEnable;
+				case layerBordersOptionName: return layerBordersForceEnable;
+				default: return null;
+			}
+		}
+
+		public void SetRuntimeOption(string name, object value)
+		{
+			switch (name)
+			{
+				case layerBackgroundOptionName: layerBackgroundForceEnable = (bool)value; break;
+				case layerSpritesOptionName: layerSpritesForceEnable = (bool)value; break;
+				case layerBordersOptionName: layerBordersForceEnable = (bool)value; break;
+			}
 		}
 
 		public virtual void Startup()
@@ -320,12 +350,12 @@ namespace Essgee.Emulation.Video
 		{
 			if (y >= scanlineTopBorder && y < scanlineActiveDisplay)
 			{
-				if (EnableBorders) SetLine(y, backgroundColor);
+				if (layerBordersForceEnable) SetLine(y, backgroundColor);
 				else SetLine(y, 0x00, 0x00, 0x00);
 			}
 			else if (y >= scanlineActiveDisplay && y < scanlineBottomBorder)
 			{
-				if (EnableBackgrounds)
+				if (layerBackgroundForceEnable)
 				{
 					if (isModeGraphics1)
 						RenderLineGraphics1Background(y);
@@ -339,7 +369,7 @@ namespace Essgee.Emulation.Video
 				else
 					SetLine(y, 0x00, 0x00, 0x00);
 
-				if (EnableSprites)
+				if (layerSpritesForceEnable)
 				{
 					if (!isModeText)
 						RenderLineSprites(y);
@@ -349,7 +379,7 @@ namespace Essgee.Emulation.Video
 			}
 			else if (y >= scanlineBottomBorder && y < numVisibleScanlines)
 			{
-				if (EnableBorders) SetLine(y, backgroundColor);
+				if (layerBordersForceEnable) SetLine(y, backgroundColor);
 				else SetLine(y, 0x00, 0x00, 0x00);
 			}
 		}
@@ -358,12 +388,12 @@ namespace Essgee.Emulation.Video
 		{
 			for (int x = pixelLeftBorder; x < pixelActiveDisplay; x++)
 			{
-				if (EnableBorders) SetPixel(y, x, backgroundColor);
+				if (layerBordersForceEnable) SetPixel(y, x, backgroundColor);
 				else SetPixel(y, x, 0x00, 0x00, 0x00);
 			}
 			for (int x = pixelRightBorder; x < numVisiblePixels; x++)
 			{
-				if (EnableBorders) SetPixel(y, x, backgroundColor);
+				if (layerBordersForceEnable) SetPixel(y, x, backgroundColor);
 				else SetPixel(y, x, 0x00, 0x00, 0x00);
 			}
 		}

@@ -458,12 +458,12 @@ namespace Essgee.Emulation.Video
 		{
 			if (y >= scanlineTopBorder && y < scanlineActiveDisplay)
 			{
-				if (EnableBorders) SetLine(y, 1, backgroundColor);
+				if (layerBordersForceEnable) SetLine(y, 1, backgroundColor);
 				else SetLine(y, 0x00, 0x00, 0x00);
 			}
 			else if (y >= scanlineActiveDisplay && y < scanlineBottomBorder)
 			{
-				if (EnableBackgrounds)
+				if (layerBackgroundForceEnable)
 				{
 					if (isBitM4Set)
 						RenderLineMode4Background(y);
@@ -479,7 +479,7 @@ namespace Essgee.Emulation.Video
 				else
 					SetLine(y, 0x00, 0x00, 0x00);
 
-				if (EnableSprites)
+				if (layerSpritesForceEnable)
 				{
 					if (isBitM4Set)
 						RenderLineMode4Sprites(y);
@@ -491,7 +491,7 @@ namespace Essgee.Emulation.Video
 			}
 			else if (y >= scanlineBottomBorder && y < numVisibleScanlines)
 			{
-				if (EnableBorders) SetLine(y, 1, backgroundColor);
+				if (layerBordersForceEnable) SetLine(y, 1, backgroundColor);
 				else SetLine(y, 0x00, 0x00, 0x00);
 			}
 		}
@@ -500,12 +500,12 @@ namespace Essgee.Emulation.Video
 		{
 			for (int x = pixelLeftBorder; x < pixelActiveDisplay; x++)
 			{
-				if (EnableBorders) SetPixel(y, x, 1, backgroundColor);
+				if (layerBordersForceEnable) SetPixel(y, x, 1, backgroundColor);
 				else SetPixel(y, x, 0x00, 0x00, 0x00);
 			}
 			for (int x = pixelRightBorder; x < numVisiblePixels; x++)
 			{
-				if (EnableBorders) SetPixel(y, x, 1, backgroundColor);
+				if (layerBordersForceEnable) SetPixel(y, x, 1, backgroundColor);
 				else SetPixel(y, x, 0x00, 0x00, 0x00);
 			}
 		}

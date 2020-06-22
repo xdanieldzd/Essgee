@@ -17,6 +17,11 @@ namespace Essgee.Emulation.Video
 		event EventHandler<SizeScreenEventArgs> SizeScreen;
 		void OnSizeScreen(SizeScreenEventArgs e);
 
+		(string Name, string Description)[] RuntimeOptions { get; }
+
+		object GetRuntimeOption(string name);
+		void SetRuntimeOption(string name, object value);
+
 		void Startup();
 		void Shutdown();
 		void Reset();
