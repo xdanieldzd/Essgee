@@ -434,7 +434,7 @@ namespace Essgee.Emulation.Video
 					currentScanline = 0;
 					ClearScreenUsage();
 
-					OnRenderScreen(new RenderScreenEventArgs(numVisiblePixels, numVisibleScanlines, outputFramebuffer.Clone() as byte[]));
+					PrepareRenderScreen();
 				}
 
 				ParseSpriteTable(currentScanline);
@@ -442,6 +442,11 @@ namespace Essgee.Emulation.Video
 				cycleCount -= clockCyclesPerLine;
 				if (cycleCount <= -clockCyclesPerLine) cycleCount = 0;
 			}
+		}
+
+		protected override void PrepareRenderScreen()
+		{
+			OnRenderScreen(new RenderScreenEventArgs(numVisiblePixels, numVisibleScanlines, outputFramebuffer.Clone() as byte[]));
 		}
 
 		protected override byte ReadVram(ushort address)
@@ -516,7 +521,7 @@ namespace Essgee.Emulation.Video
 				SetPixel(y, x, palette, color);
 		}
 
-		protected void SetPixel(int y, int x, int palette, int color)
+		protected virtual void SetPixel(int y, int x, int palette, int color)
 		{
 			WriteColorToFramebuffer(palette, color, ((y * numVisiblePixels) + (x % numVisiblePixels)) * 4);
 		}

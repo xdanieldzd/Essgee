@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Essgee.EventArguments;
 using Essgee.Utilities;
 
 using static Essgee.Emulation.Utilities;
@@ -15,8 +16,7 @@ namespace Essgee.Emulation.Video
 	{
 		protected override int numTotalScanlines => NumTotalScanlinesNtsc;
 
-		public override (int X, int Y, int Width, int Height) Viewport => (85, 64, 160, 144);
-		// y -- ((ScreenHeight / 2) - (144 / 2)) ????
+		public override (int X, int Y, int Width, int Height) Viewport => (0, 0, 160, 144);
 
 		[StateRequired]
 		ushort cramLatch;
@@ -37,6 +37,45 @@ namespace Essgee.Emulation.Video
 		{
 			// TODO: can GG VDP be detected by software? if so, implement diffs as revision
 			base.SetRevision(rev);
+		}
+
+		protected override void ReconfigureTimings()
+		{
+			/* Calculate cycles/line */
+			clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / numTotalScanlines);
+
+			/* Create arrays */
+			screenUsage = new byte[numVisiblePixels * numVisibleScanlines];
+			outputFramebuffer = new byte[Viewport.Width * Viewport.Height * 4];
+
+			/* Update resolution/display timing */
+			UpdateResolution();
+		}
+
+		protected override void PrepareRenderScreen()
+		{
+			OnRenderScreen(new RenderScreenEventArgs(Viewport.Width, Viewport.Height, outputFramebuffer.Clone() as byte[]));
+		}
+
+		private bool ModifyAndVerifyCoordinates(ref int x, ref int y)
+		{
+			// TODO: correctly derive from timing/resolution values
+			x -= 61;
+			y -= 51;
+
+			return x >= 0 && x < Viewport.Width && y >= 0 && y < Viewport.Height;
+		}
+
+		protected override void SetPixel(int y, int x, int palette, int color)
+		{
+			if (!ModifyAndVerifyCoordinates(ref x, ref y)) return;
+			WriteColorToFramebuffer(palette, color, ((y * Viewport.Width) + (x % Viewport.Width)) * 4);
+		}
+
+		protected override void SetPixel(int y, int x, byte b, byte g, byte r)
+		{
+			if (!ModifyAndVerifyCoordinates(ref x, ref y)) return;
+			WriteColorToFramebuffer(b, g, r, ((y * Viewport.Width) + (x % Viewport.Width)) * 4);
 		}
 
 		protected override void WriteColorToFramebuffer(int palette, int color, int address)
