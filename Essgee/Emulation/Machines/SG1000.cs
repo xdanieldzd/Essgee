@@ -330,19 +330,27 @@ namespace Essgee.Emulation.Machines
 			portIoABPressed = 0;
 			portIoBMiscPressed = 0;
 
+			/* Keyboard */
 			if (keysDown.Contains(configuration.Joypad1Up)) portIoABPressed |= PortIoABValues.P1Up;
 			if (keysDown.Contains(configuration.Joypad1Down)) portIoABPressed |= PortIoABValues.P1Down;
 			if (keysDown.Contains(configuration.Joypad1Left)) portIoABPressed |= PortIoABValues.P1Left;
 			if (keysDown.Contains(configuration.Joypad1Right)) portIoABPressed |= PortIoABValues.P1Right;
 			if (keysDown.Contains(configuration.Joypad1Button1)) portIoABPressed |= PortIoABValues.P1Button1;
 			if (keysDown.Contains(configuration.Joypad1Button2)) portIoABPressed |= PortIoABValues.P1Button2;
-
 			if (keysDown.Contains(configuration.Joypad2Up)) portIoABPressed |= PortIoABValues.P2Up;
 			if (keysDown.Contains(configuration.Joypad2Down)) portIoABPressed |= PortIoABValues.P2Down;
 			if (keysDown.Contains(configuration.Joypad2Left)) portIoBMiscPressed |= PortIoBMiscValues.P2Left;
 			if (keysDown.Contains(configuration.Joypad2Right)) portIoBMiscPressed |= PortIoBMiscValues.P2Right;
 			if (keysDown.Contains(configuration.Joypad2Button1)) portIoBMiscPressed |= PortIoBMiscValues.P2Button1;
 			if (keysDown.Contains(configuration.Joypad2Button2)) portIoBMiscPressed |= PortIoBMiscValues.P2Button2;
+
+			/* XInput controller */
+			if (eventArgs.ControllerState.IsAnyUpDirectionPressed() && !eventArgs.ControllerState.IsAnyDownDirectionPressed()) portIoABPressed |= PortIoABValues.P1Up;
+			if (eventArgs.ControllerState.IsAnyDownDirectionPressed() && !eventArgs.ControllerState.IsAnyUpDirectionPressed()) portIoABPressed |= PortIoABValues.P1Down;
+			if (eventArgs.ControllerState.IsAnyLeftDirectionPressed() && !eventArgs.ControllerState.IsAnyRightDirectionPressed()) portIoABPressed |= PortIoABValues.P1Left;
+			if (eventArgs.ControllerState.IsAnyRightDirectionPressed() && !eventArgs.ControllerState.IsAnyLeftDirectionPressed()) portIoABPressed |= PortIoABValues.P1Right;
+			if (eventArgs.ControllerState.IsAPressed()) portIoABPressed |= PortIoABValues.P1Button1;
+			if (eventArgs.ControllerState.IsXPressed() || eventArgs.ControllerState.IsBPressed()) portIoABPressed |= PortIoABValues.P1Button2;
 
 			portIoBMiscPressed |= (PortIoBMiscValues.IC21Pin6 | PortIoBMiscValues.IC21Pin10 | PortIoBMiscValues.IC21Pin13);       /* Unused, always 1 */
 		}

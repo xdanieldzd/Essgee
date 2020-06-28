@@ -358,19 +358,27 @@ namespace Essgee.Emulation.Machines
 
 		private void ParseInput(PollInputEventArgs eventArgs)
 		{
-			var keysDown = eventArgs.Keyboard;
-
 			portAInputsPressed = 0;
 			portBInputsPressed = 0;
 			portCInputsPressed = 0;
 
-			if (keysDown.Contains(configuration.ControlsUp)) portAInputsPressed |= IOPortABInputs.PortAUp;
-			if (keysDown.Contains(configuration.ControlsDown)) portAInputsPressed |= IOPortABInputs.PortADown;
-			if (keysDown.Contains(configuration.ControlsLeft)) portAInputsPressed |= IOPortABInputs.PortALeft;
-			if (keysDown.Contains(configuration.ControlsRight)) portAInputsPressed |= IOPortABInputs.PortARight;
-			if (keysDown.Contains(configuration.ControlsButton1)) portAInputsPressed |= IOPortABInputs.PortATL;
-			if (keysDown.Contains(configuration.ControlsButton2)) portAInputsPressed |= IOPortABInputs.PortATR;
-			if (keysDown.Contains(configuration.ControlsStart)) portCInputsPressed |= IOPortCInputs.Start;
+			/* Keyboard */
+			if (eventArgs.Keyboard.Contains(configuration.ControlsUp)) portAInputsPressed |= IOPortABInputs.PortAUp;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsDown)) portAInputsPressed |= IOPortABInputs.PortADown;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsLeft)) portAInputsPressed |= IOPortABInputs.PortALeft;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsRight)) portAInputsPressed |= IOPortABInputs.PortARight;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsButton1)) portAInputsPressed |= IOPortABInputs.PortATL;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsButton2)) portAInputsPressed |= IOPortABInputs.PortATR;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsStart)) portCInputsPressed |= IOPortCInputs.Start;
+
+			/* XInput controller */
+			if (eventArgs.ControllerState.IsAnyUpDirectionPressed() && !eventArgs.ControllerState.IsAnyDownDirectionPressed()) portAInputsPressed |= IOPortABInputs.PortAUp;
+			if (eventArgs.ControllerState.IsAnyDownDirectionPressed() && !eventArgs.ControllerState.IsAnyUpDirectionPressed()) portAInputsPressed |= IOPortABInputs.PortADown;
+			if (eventArgs.ControllerState.IsAnyLeftDirectionPressed() && !eventArgs.ControllerState.IsAnyRightDirectionPressed()) portAInputsPressed |= IOPortABInputs.PortALeft;
+			if (eventArgs.ControllerState.IsAnyRightDirectionPressed() && !eventArgs.ControllerState.IsAnyLeftDirectionPressed()) portAInputsPressed |= IOPortABInputs.PortARight;
+			if (eventArgs.ControllerState.IsAPressed()) portAInputsPressed |= IOPortABInputs.PortATL;
+			if (eventArgs.ControllerState.IsXPressed() || eventArgs.ControllerState.IsBPressed()) portAInputsPressed |= IOPortABInputs.PortATR;
+			if (eventArgs.ControllerState.IsStartPressed()) portCInputsPressed |= IOPortCInputs.Start;
 
 			portIoAB |= (byte)(IOPortABInputs.PortAUp | IOPortABInputs.PortADown | IOPortABInputs.PortALeft | IOPortABInputs.PortARight | IOPortABInputs.PortATL | IOPortABInputs.PortATR | IOPortABInputs.PortBUp | IOPortABInputs.PortBDown);
 			portIoBMisc |= (byte)(IOPortBMiscInputs.PortBLeft | IOPortBMiscInputs.PortBRight | IOPortBMiscInputs.PortBTL | IOPortBMiscInputs.PortBTR | IOPortBMiscInputs.Reset | IOPortBMiscInputs.CartSlotCONTPin | IOPortBMiscInputs.PortATH | IOPortBMiscInputs.PortBTH);
