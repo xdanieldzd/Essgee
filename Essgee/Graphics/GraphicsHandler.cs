@@ -142,8 +142,12 @@ namespace Essgee.Graphics
 
 		private void CreateTextures()
 		{
+			if (textureSize.Width == 0 || textureSize.Height == 0)
+				return;
+
 			for (int i = 0; i < textures.Length; i++)
 				textures[i] = new Texture(textureSize.Width, textureSize.Height, PixelFormat.Rgba8888, shaderBundle.Manifest.Filter, shaderBundle.Manifest.Wrap);
+
 			lastTextureUpdate = 0;
 		}
 
@@ -175,30 +179,56 @@ namespace Essgee.Graphics
 
 		public void Resize(Rectangle clientRectangle, Size screenSize)
 		{
-			outputViewport = (clientRectangle.X, clientRectangle.Y, clientRectangle.Width, clientRectangle.Height);
+			GL.Viewport(0, 0, clientRectangle.Width, clientRectangle.Height);
 
-			GL.Viewport(0, 0, outputViewport.Width, outputViewport.Height);
+			projectionMatrix = Matrix4.CreateOrthographicOffCenter(0.0f, clientRectangle.Width, clientRectangle.Height, 0.0f, -10.0f, 10.0f);
 
-			projectionMatrix = Matrix4.CreateOrthographicOffCenter(0.0f, outputViewport.Width, outputViewport.Height, 0.0f, -10.0f, 10.0f);
-
-			if (Program.Configuration.ScreenSizeMode == ScreenSizeMode.Scale)
+			switch (Program.Configuration.ScreenSizeMode)
 			{
-				var multiplier = (float)Math.Min(outputViewport.Width / (double)screenSize.Width, outputViewport.Height / (double)screenSize.Height);
-				var adjustedWidth = (screenSize.Width * multiplier);
-				var adjustedHeight = (screenSize.Height * multiplier);
-				modelviewMatrix = Matrix4.CreateScale(adjustedWidth, adjustedHeight, 1.0f) * Matrix4.CreateTranslation((outputViewport.Width - adjustedWidth) / 2.0f, (outputViewport.Height - adjustedHeight) / 2.0f, 1.0f);
-			}
-			else
-			{
-				modelviewMatrix = Matrix4.CreateScale(outputViewport.Width, outputViewport.Height, 1.0f);
+				case ScreenSizeMode.Stretch:
+					{
+						modelviewMatrix = Matrix4.CreateScale(clientRectangle.Width, clientRectangle.Height, 1.0f);
+
+						outputViewport = (clientRectangle.X, clientRectangle.Y, clientRectangle.Width, clientRectangle.Height);
+					}
+					break;
+
+				case ScreenSizeMode.Scale:
+					{
+						var multiplier = (float)Math.Min(clientRectangle.Width / (double)screenSize.Width, clientRectangle.Height / (double)screenSize.Height);
+
+						var adjustedWidth = screenSize.Width * multiplier;
+						var adjustedHeight = screenSize.Height * multiplier;
+						var adjustedX = (float)Math.Floor((clientRectangle.Width - adjustedWidth) / 2.0f);
+						var adjustedY = (float)Math.Floor((clientRectangle.Height - adjustedHeight) / 2.0f);
+
+						modelviewMatrix = Matrix4.CreateScale(adjustedWidth, adjustedHeight, 1.0f) * Matrix4.CreateTranslation(adjustedX, adjustedY, 1.0f);
+
+						outputViewport = (clientRectangle.X, clientRectangle.Y, clientRectangle.Width, clientRectangle.Height);
+					}
+					break;
+
+				case ScreenSizeMode.Integer:
+					{
+						var multiplier = (float)Math.Min(Math.Floor(clientRectangle.Width / (double)inputViewport.Width), Math.Floor(clientRectangle.Height / (double)inputViewport.Height));
+
+						var adjustedWidth = inputViewport.Width * multiplier;
+						var adjustedHeight = inputViewport.Height * multiplier;
+						var adjustedX = (float)Math.Floor((clientRectangle.Width - adjustedWidth) / 2.0f);
+						var adjustedY = (float)Math.Floor((clientRectangle.Height - adjustedHeight) / 2.0f);
+
+						modelviewMatrix = Matrix4.CreateScale(adjustedWidth, adjustedHeight, 1.0f) * Matrix4.CreateTranslation(adjustedX, adjustedY, 1.0f);
+
+						outputViewport = ((int)adjustedX, (int)adjustedY, (int)adjustedWidth, (int)adjustedHeight);
+					}
+					break;
 			}
 
-			onScreenDisplayHandler.SetViewport(outputViewport);
+			onScreenDisplayHandler.SetViewport((clientRectangle.X, clientRectangle.Y, clientRectangle.Width, clientRectangle.Height));
 			onScreenDisplayHandler.SetProjectionMatrix(projectionMatrix);
 			onScreenDisplayHandler.SetModelviewMatrix(modelviewMatrix);
 
-			shaderBundle.SetProjectionMatrix(projectionMatrix);
-			shaderBundle.SetModelviewMatrix(modelviewMatrix);
+			refreshRendererAndShader = true;
 		}
 
 		public void Render()

@@ -14,6 +14,6 @@ namespace Essgee.Emulation.CPU
 		int Step();
 
 		void SetStackPointer(ushort value);
-		void SetInterruptLine(InterruptType type, InterruptState state);
+		void SetProgramCounter(ushort value);
 	}
 }

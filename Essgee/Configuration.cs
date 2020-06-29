@@ -29,6 +29,9 @@ namespace Essgee
 		[JsonConverter(typeof(StringEnumConverter))]
 		public ScreenSizeMode ScreenSizeMode { get; set; }
 		public string LastShader { get; set; }
+		public bool EnableXInput { get; set; }
+		public bool EnableRumble { get; set; }
+		public bool AutoPause { get; set; }
 
 		public List<string> RecentFiles { get; set; }
 
@@ -48,6 +51,9 @@ namespace Essgee
 			ScreenSize = 2;
 			ScreenSizeMode = ScreenSizeMode.Scale;
 			LastShader = DefaultShaderName;
+			EnableXInput = false;
+			EnableRumble = false;
+			AutoPause = true;
 
 			RecentFiles = new List<string>(RecentFilesCapacity);
 

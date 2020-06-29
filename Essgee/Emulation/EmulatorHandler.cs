@@ -76,6 +76,18 @@ namespace Essgee.Emulation
 			remove { emulator.EnqueueSamples -= value; }
 		}
 
+		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData
+		{
+			add { emulator.SaveExtraData += value; }
+			remove { emulator.SaveExtraData -= value; }
+		}
+
+		public event EventHandler<EventArgs> EnableRumble
+		{
+			add { emulator.EnableRumble += value; }
+			remove { emulator.EnableRumble -= value; }
+		}
+
 		public event EventHandler<EventArgs> PauseChanged;
 
 		GameMetadata currentGameMetadata;
@@ -87,7 +99,8 @@ namespace Essgee.Emulation
 
 		public bool IsHandlingSaveState => (stateLoadRequested || stateSaveRequested);
 
-		public (string Manufacturer, string Model, string DatFileName, double RefreshRate) Information => (emulator.ManufacturerName, emulator.ModelName, emulator.DatFilename, emulator.RefreshRate);
+		public (string Manufacturer, string Model, string DatFileName, double RefreshRate, double PixelAspectRatio, (string Name, string Description)[] RuntimeOptions) Information =>
+			(emulator.ManufacturerName, emulator.ModelName, emulator.DatFilename, emulator.RefreshRate, emulator.PixelAspectRatio, emulator.RuntimeOptions);
 
 		public EmulatorHandler(Type type, Action<Exception> exceptionHandler = null)
 		{
@@ -120,7 +133,7 @@ namespace Essgee.Emulation
 			emulator.Startup();
 			emulator.Reset();
 
-			emulationThread = new Thread(ThreadMainLoop) { Name = "EssgeeEmulation", Priority = ThreadPriority.AboveNormal, IsBackground = true };
+			emulationThread = new Thread(ThreadMainLoop) { Name = "EssgeeEmulation", Priority = ThreadPriority.Normal };
 			emulationThread.Start();
 		}
 
@@ -204,14 +217,14 @@ namespace Essgee.Emulation
 			limitFps = value;
 		}
 
-		public void SetGraphicsEnableStates(GraphicsEnableState state)
+		public object GetRuntimeOption(string name)
 		{
-			emulator.GraphicsEnableStates = state;
+			return emulator.GetRuntimeOption(name);
 		}
 
-		public void SetSoundEnableStates(SoundEnableState state)
+		public void SetRuntimeOption(string name, object value)
 		{
-			emulator.SoundEnableStates = state;
+			emulator.SetRuntimeOption(name, value);
 		}
 
 		public int FramesPerSecond { get; private set; }

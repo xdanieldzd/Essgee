@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 using Essgee.Emulation.Configuration;
 using Essgee.Emulation.CPU;
-using Essgee.Emulation.VDP;
-using Essgee.Emulation.PSG;
+using Essgee.Emulation.Video;
+using Essgee.Emulation.Audio;
 using Essgee.Emulation.Cartridges;
+using Essgee.Emulation.Cartridges.Sega;
 using Essgee.EventArguments;
 using Essgee.Exceptions;
 using Essgee.Utilities;
@@ -57,30 +58,25 @@ namespace Essgee.Emulation.Machines
 			remove { psg.EnqueueSamples -= value; }
 		}
 
+		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
+		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
+
+		public event EventHandler<EventArgs> EnableRumble { add { } remove { } }
+
 		public string ManufacturerName => "Sega";
 		public string ModelName => "Game Gear";
 		public string DatFilename => "Sega - Game Gear.dat";
 		public (string Extension, string Description) FileFilter => (".gg", "Game Gear ROMs");
 		public bool HasBootstrap => true;
 		public double RefreshRate => refreshRate;
-
-		public GraphicsEnableState GraphicsEnableStates
-		{
-			get { return vdp.GraphicsEnableStates; }
-			set { vdp.GraphicsEnableStates = value; }
-		}
-
-		public SoundEnableState SoundEnableStates
-		{
-			get { return psg.SoundEnableStates; }
-			set { psg.SoundEnableStates = value; }
-		}
+		public double PixelAspectRatio => 8.0 / 7.0;
+		public (string Name, string Description)[] RuntimeOptions => vdp.RuntimeOptions.Concat(psg.RuntimeOptions).ToArray();
 
 		ICartridge bootstrap, cartridge;
 		byte[] wram;
-		ICPU cpu;
-		IVDP vdp;
-		IPSG psg;
+		Z80A cpu;
+		SegaGGVDP vdp;
+		SegaGGPSG psg;
 
 		[Flags]
 		enum IOPortABInputs : byte
@@ -153,6 +149,24 @@ namespace Essgee.Emulation.Machines
 			configuration = (Configuration.GameGear)config;
 
 			ReconfigureSystem();
+		}
+
+		public object GetRuntimeOption(string name)
+		{
+			if (name.StartsWith("Graphics"))
+				return vdp.GetRuntimeOption(name);
+			else if (name.StartsWith("Audio"))
+				return psg.GetRuntimeOption(name);
+			else
+				return null;
+		}
+
+		public void SetRuntimeOption(string name, object value)
+		{
+			if (name.StartsWith("Graphics"))
+				vdp.SetRuntimeOption(name, value);
+			else if (name.StartsWith("Audio"))
+				psg.SetRuntimeOption(name, value);
 		}
 
 		private void ReconfigureSystem()
@@ -337,24 +351,34 @@ namespace Essgee.Emulation.Machines
 
 			psg.Step((int)Math.Round(currentCpuClockCycles));
 
+			cartridge?.Step((int)Math.Round(currentCpuClockCycles));
+
 			currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
 		}
 
 		private void ParseInput(PollInputEventArgs eventArgs)
 		{
-			var keysDown = eventArgs.Keyboard;
-
 			portAInputsPressed = 0;
 			portBInputsPressed = 0;
 			portCInputsPressed = 0;
 
-			if (keysDown.Contains(configuration.ControlsUp)) portAInputsPressed |= IOPortABInputs.PortAUp;
-			if (keysDown.Contains(configuration.ControlsDown)) portAInputsPressed |= IOPortABInputs.PortADown;
-			if (keysDown.Contains(configuration.ControlsLeft)) portAInputsPressed |= IOPortABInputs.PortALeft;
-			if (keysDown.Contains(configuration.ControlsRight)) portAInputsPressed |= IOPortABInputs.PortARight;
-			if (keysDown.Contains(configuration.ControlsButton1)) portAInputsPressed |= IOPortABInputs.PortATL;
-			if (keysDown.Contains(configuration.ControlsButton2)) portAInputsPressed |= IOPortABInputs.PortATR;
-			if (keysDown.Contains(configuration.ControlsStart)) portCInputsPressed |= IOPortCInputs.Start;
+			/* Keyboard */
+			if (eventArgs.Keyboard.Contains(configuration.ControlsUp)) portAInputsPressed |= IOPortABInputs.PortAUp;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsDown)) portAInputsPressed |= IOPortABInputs.PortADown;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsLeft)) portAInputsPressed |= IOPortABInputs.PortALeft;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsRight)) portAInputsPressed |= IOPortABInputs.PortARight;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsButton1)) portAInputsPressed |= IOPortABInputs.PortATL;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsButton2)) portAInputsPressed |= IOPortABInputs.PortATR;
+			if (eventArgs.Keyboard.Contains(configuration.ControlsStart)) portCInputsPressed |= IOPortCInputs.Start;
+
+			/* XInput controller */
+			if (eventArgs.ControllerState.IsAnyUpDirectionPressed() && !eventArgs.ControllerState.IsAnyDownDirectionPressed()) portAInputsPressed |= IOPortABInputs.PortAUp;
+			if (eventArgs.ControllerState.IsAnyDownDirectionPressed() && !eventArgs.ControllerState.IsAnyUpDirectionPressed()) portAInputsPressed |= IOPortABInputs.PortADown;
+			if (eventArgs.ControllerState.IsAnyLeftDirectionPressed() && !eventArgs.ControllerState.IsAnyRightDirectionPressed()) portAInputsPressed |= IOPortABInputs.PortALeft;
+			if (eventArgs.ControllerState.IsAnyRightDirectionPressed() && !eventArgs.ControllerState.IsAnyLeftDirectionPressed()) portAInputsPressed |= IOPortABInputs.PortARight;
+			if (eventArgs.ControllerState.IsAPressed()) portAInputsPressed |= IOPortABInputs.PortATL;
+			if (eventArgs.ControllerState.IsXPressed() || eventArgs.ControllerState.IsBPressed()) portAInputsPressed |= IOPortABInputs.PortATR;
+			if (eventArgs.ControllerState.IsStartPressed()) portCInputsPressed |= IOPortCInputs.Start;
 
 			portIoAB |= (byte)(IOPortABInputs.PortAUp | IOPortABInputs.PortADown | IOPortABInputs.PortALeft | IOPortABInputs.PortARight | IOPortABInputs.PortATL | IOPortABInputs.PortATR | IOPortABInputs.PortBUp | IOPortABInputs.PortBDown);
 			portIoBMisc |= (byte)(IOPortBMiscInputs.PortBLeft | IOPortBMiscInputs.PortBRight | IOPortBMiscInputs.PortBTL | IOPortBMiscInputs.PortBTR | IOPortBMiscInputs.Reset | IOPortBMiscInputs.CartSlotCONTPin | IOPortBMiscInputs.PortATH | IOPortBMiscInputs.PortBTH);

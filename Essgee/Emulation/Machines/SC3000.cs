@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 using Essgee.Emulation.Configuration;
 using Essgee.Emulation.CPU;
-using Essgee.Emulation.VDP;
-using Essgee.Emulation.PSG;
+using Essgee.Emulation.Video;
+using Essgee.Emulation.Audio;
 using Essgee.Emulation.Cartridges;
+using Essgee.Emulation.Cartridges.Sega;
 using Essgee.Emulation.Peripherals;
 using Essgee.EventArguments;
 using Essgee.Exceptions;
@@ -64,30 +65,25 @@ namespace Essgee.Emulation.Machines
 			remove { psg.EnqueueSamples -= value; }
 		}
 
+		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
+		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
+
+		public event EventHandler<EventArgs> EnableRumble { add { } remove { } }
+
 		public string ManufacturerName => "Sega";
 		public string ModelName => "SC-3000";
 		public string DatFilename => "Sega - SG-1000.dat";      // TODO: SC-3000 .dat does not exist?
 		public (string Extension, string Description) FileFilter => (".sc", "SC-3000 ROMs");
 		public bool HasBootstrap => false;
 		public double RefreshRate { get; private set; }
-
-		public GraphicsEnableState GraphicsEnableStates
-		{
-			get { return vdp.GraphicsEnableStates; }
-			set { vdp.GraphicsEnableStates = value; }
-		}
-
-		public SoundEnableState SoundEnableStates
-		{
-			get { return psg.SoundEnableStates; }
-			set { psg.SoundEnableStates = value; }
-		}
+		public double PixelAspectRatio => 8.0 / 7.0;
+		public (string Name, string Description)[] RuntimeOptions => vdp.RuntimeOptions.Concat(psg.RuntimeOptions).ToArray();
 
 		ICartridge cartridge;
 		byte[] wram;
-		ICPU cpu;
-		IVDP vdp;
-		IPSG psg;
+		Z80A cpu;
+		TMS99xxA vdp;
+		SN76489 psg;
 		Intel8255 ppi;
 		bool[,] keyboard;
 
@@ -159,6 +155,24 @@ namespace Essgee.Emulation.Machines
 			configuration = (Configuration.SC3000)config;
 
 			ReconfigureSystem();
+		}
+
+		public object GetRuntimeOption(string name)
+		{
+			if (name.StartsWith("Graphics"))
+				return vdp.GetRuntimeOption(name);
+			else if (name.StartsWith("Audio"))
+				return psg.GetRuntimeOption(name);
+			else
+				return null;
+		}
+
+		public void SetRuntimeOption(string name, object value)
+		{
+			if (name.StartsWith("Graphics"))
+				vdp.SetRuntimeOption(name, value);
+			else if (name.StartsWith("Audio"))
+				psg.SetRuntimeOption(name, value);
 		}
 
 		private void ReconfigureSystem()
@@ -320,6 +334,8 @@ namespace Essgee.Emulation.Machines
 
 			psg.Step((int)Math.Round(currentCpuClockCycles));
 
+			cartridge?.Step((int)Math.Round(currentCpuClockCycles));
+
 			currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
 		}
 
@@ -447,19 +463,27 @@ namespace Essgee.Emulation.Machines
 				portAInputsPressed = 0;
 				portBInputsPressed = 0;
 
+				/* Keyboard */
 				if (keysDown.Contains(configuration.Joypad1Up)) portAInputsPressed |= PortAInputs.P1Up;
 				if (keysDown.Contains(configuration.Joypad1Down)) portAInputsPressed |= PortAInputs.P1Down;
 				if (keysDown.Contains(configuration.Joypad1Left)) portAInputsPressed |= PortAInputs.P1Left;
 				if (keysDown.Contains(configuration.Joypad1Right)) portAInputsPressed |= PortAInputs.P1Right;
 				if (keysDown.Contains(configuration.Joypad1Button1)) portAInputsPressed |= PortAInputs.P1Button1;
 				if (keysDown.Contains(configuration.Joypad1Button2)) portAInputsPressed |= PortAInputs.P1Button2;
-
 				if (keysDown.Contains(configuration.Joypad2Up)) portAInputsPressed |= PortAInputs.P2Up;
 				if (keysDown.Contains(configuration.Joypad2Down)) portAInputsPressed |= PortAInputs.P2Down;
 				if (keysDown.Contains(configuration.Joypad2Left)) portBInputsPressed |= PortBInputs.P2Left;
 				if (keysDown.Contains(configuration.Joypad2Right)) portBInputsPressed |= PortBInputs.P2Right;
 				if (keysDown.Contains(configuration.Joypad2Button1)) portBInputsPressed |= PortBInputs.P2Button1;
 				if (keysDown.Contains(configuration.Joypad2Button2)) portBInputsPressed |= PortBInputs.P2Button2;
+
+				/* XInput controller */
+				if (eventArgs.ControllerState.IsAnyUpDirectionPressed() && !eventArgs.ControllerState.IsAnyDownDirectionPressed()) portAInputsPressed |= PortAInputs.P1Up;
+				if (eventArgs.ControllerState.IsAnyDownDirectionPressed() && !eventArgs.ControllerState.IsAnyUpDirectionPressed()) portAInputsPressed |= PortAInputs.P1Down;
+				if (eventArgs.ControllerState.IsAnyLeftDirectionPressed() && !eventArgs.ControllerState.IsAnyRightDirectionPressed()) portAInputsPressed |= PortAInputs.P1Left;
+				if (eventArgs.ControllerState.IsAnyRightDirectionPressed() && !eventArgs.ControllerState.IsAnyLeftDirectionPressed()) portAInputsPressed |= PortAInputs.P1Right;
+				if (eventArgs.ControllerState.IsAPressed()) portAInputsPressed |= PortAInputs.P1Button1;
+				if (eventArgs.ControllerState.IsXPressed() || eventArgs.ControllerState.IsBPressed()) portAInputsPressed |= PortAInputs.P1Button2;
 			}
 		}
 

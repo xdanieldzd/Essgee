@@ -258,6 +258,8 @@ namespace Essgee.Graphics
 
 			if (stringList.Count > maxStringListLength)
 				stringList.RemoveRange(0, stringListPurgeSize);
+
+			fontTexture.Deactivate();
 		}
 
 		private int MeasureString(string @string)

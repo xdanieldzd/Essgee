@@ -62,9 +62,11 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.tcConfigs.Location = new System.Drawing.Point(9, 9);
 			this.tcConfigs.Margin = new System.Windows.Forms.Padding(0);
+			this.tcConfigs.Multiline = true;
 			this.tcConfigs.Name = "tcConfigs";
 			this.tcConfigs.SelectedIndex = 0;
 			this.tcConfigs.Size = new System.Drawing.Size(383, 65);
+			this.tcConfigs.SizeMode = System.Windows.Forms.TabSizeMode.FillToRight;
 			this.tcConfigs.TabIndex = 3;
 			// 
 			// SettingsForm

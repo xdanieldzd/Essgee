@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 using Essgee.Emulation.Configuration;
 using Essgee.Emulation.CPU;
-using Essgee.Emulation.VDP;
-using Essgee.Emulation.PSG;
+using Essgee.Emulation.Video;
+using Essgee.Emulation.Audio;
 using Essgee.Emulation.Cartridges;
+using Essgee.Emulation.Cartridges.Coleco;
 using Essgee.EventArguments;
 using Essgee.Exceptions;
 using Essgee.Utilities;
@@ -57,30 +58,25 @@ namespace Essgee.Emulation.Machines
 			remove { psg.EnqueueSamples -= value; }
 		}
 
+		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
+		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
+
+		public event EventHandler<EventArgs> EnableRumble { add { } remove { } }
+
 		public string ManufacturerName => "Coleco";
 		public string ModelName => "ColecoVision";
 		public string DatFilename => "Coleco - ColecoVision.dat";
 		public (string Extension, string Description) FileFilter => (".col", "ColecoVision ROMs");
 		public bool HasBootstrap => true;
 		public double RefreshRate => refreshRate;
-
-		public GraphicsEnableState GraphicsEnableStates
-		{
-			get { return vdp.GraphicsEnableStates; }
-			set { vdp.GraphicsEnableStates = value; }
-		}
-
-		public SoundEnableState SoundEnableStates
-		{
-			get { return psg.SoundEnableStates; }
-			set { psg.SoundEnableStates = value; }
-		}
+		public double PixelAspectRatio => 8.0 / 7.0;
+		public (string Name, string Description)[] RuntimeOptions => vdp.RuntimeOptions.Concat(psg.RuntimeOptions).ToArray();
 
 		ICartridge bios, cartridge;
 		byte[] wram;
-		ICPU cpu;
-		IVDP vdp;
-		IPSG psg;
+		Z80A cpu;
+		TMS99xxA vdp;
+		SN76489 psg;
 
 		[Flags]
 		enum KeyJoyButtons : ushort
@@ -144,6 +140,24 @@ namespace Essgee.Emulation.Machines
 			configuration = (Configuration.ColecoVision)config;
 
 			ReconfigureSystem();
+		}
+
+		public object GetRuntimeOption(string name)
+		{
+			if (name.StartsWith("Graphics"))
+				return vdp.GetRuntimeOption(name);
+			else if (name.StartsWith("Audio"))
+				return psg.GetRuntimeOption(name);
+			else
+				return null;
+		}
+
+		public void SetRuntimeOption(string name, object value)
+		{
+			if (name.StartsWith("Graphics"))
+				vdp.SetRuntimeOption(name, value);
+			else if (name.StartsWith("Audio"))
+				psg.SetRuntimeOption(name, value);
 		}
 
 		private void ReconfigureSystem()
@@ -295,6 +309,8 @@ namespace Essgee.Emulation.Machines
 			}
 
 			psg.Step((int)Math.Round(currentCpuClockCycles));
+
+			cartridge?.Step((int)Math.Round(currentCpuClockCycles));
 
 			currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
 		}

@@ -28,6 +28,7 @@ namespace Essgee
 			public static readonly bool EnableCustomUnhandledExceptionHandler = true;
 			public static readonly bool TemporaryDisableCustomExceptionForm = false;
 
+			public static readonly bool EnableLogger = false;
 			public static readonly bool EnableSuperSlowCPULogger = false;
 
 			public static readonly bool EnableOpenGLDebug = false;
@@ -37,6 +38,7 @@ namespace Essgee
 		const string saveDataDirectoryName = "Saves";
 		const string screenshotDirectoryName = "Screenshots";
 		const string saveStateDirectoryName = "Savestates";
+		const string extraDataDirectoryName = "Extras";
 
 		readonly static string programDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), Application.ProductName);
 		readonly static string programConfigPath = Path.Combine(programDataDirectory, jsonConfigFileName);
@@ -47,10 +49,21 @@ namespace Essgee
 		public static string SaveDataPath = Path.Combine(programDataDirectory, saveDataDirectoryName);
 		public static string ScreenshotPath = Path.Combine(programDataDirectory, screenshotDirectoryName);
 		public static string SaveStatePath = Path.Combine(programDataDirectory, saveStateDirectoryName);
+		public static string ExtraDataPath = Path.Combine(programDataDirectory, extraDataDirectoryName);
+
+		public static TextWriter Logger { get; private set; }
+		public static Random Random { get; private set; }
 
 		[STAThread]
 		static void Main()
 		{
+			if (AppEnvironment.EnableLogger)
+			{
+				Logger = new StreamWriter(@"D:\Temp\Essgee\slowlog.txt", false);
+			}
+
+			Random = new Random();
+
 			System.Threading.Thread.CurrentThread.CurrentCulture = System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
 
 			Application.SetUnhandledExceptionMode(AppEnvironment.EnableCustomUnhandledExceptionHandler ? UnhandledExceptionMode.ThrowException : UnhandledExceptionMode.CatchException);
@@ -66,9 +79,18 @@ namespace Essgee
 			if (!Directory.Exists(SaveStatePath))
 				Directory.CreateDirectory(SaveStatePath);
 
+			if (!Directory.Exists(ExtraDataPath))
+				Directory.CreateDirectory(ExtraDataPath);
+
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 			Application.Run(new MainForm());
+
+			if (AppEnvironment.EnableLogger)
+			{
+				Logger.Flush();
+				Logger.Close();
+			}
 		}
 
 		private static void LoadConfiguration()

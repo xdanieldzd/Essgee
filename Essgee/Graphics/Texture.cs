@@ -185,5 +185,16 @@ namespace Essgee.Graphics
 			GL.ActiveTexture(textureUnit);
 			GL.BindTexture(TextureTarget.Texture2D, textureHandle);
 		}
+
+		public void Deactivate()
+		{
+			Deactivate(TextureUnit.Texture0);
+		}
+
+		public void Deactivate(TextureUnit textureUnit)
+		{
+			GL.ActiveTexture(textureUnit);
+			GL.BindTexture(TextureTarget.Texture2D, 0);
+		}
 	}
 }

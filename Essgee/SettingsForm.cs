@@ -38,7 +38,7 @@ namespace Essgee
 			InitializeComponent();
 
 			Configurations = new Dictionary<string, IConfiguration>();
-			foreach (var currentConfig in configs.OrderBy(x => x.Value.GetType().GetAttribute<RootPagePriorityAttribute>().Priority))
+			foreach (var currentConfig in configs.OrderBy(x => x.Value.GetType().GetAttribute<ElementPriorityAttribute>().Priority))
 			{
 				var configClone = currentConfig.Value.CloneObject();
 
@@ -307,11 +307,11 @@ namespace Essgee
 	}
 
 	[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-	public class RootPagePriorityAttribute : Attribute
+	public class ElementPriorityAttribute : Attribute
 	{
 		public int Priority { get; set; }
 
-		public RootPagePriorityAttribute(int priority)
+		public ElementPriorityAttribute(int priority)
 		{
 			Priority = priority;
 		}
@@ -334,27 +334,13 @@ namespace Essgee
 
 	public class DropDownControlAttribute : ControlAttribute
 	{
-		// TODO: does this even help??
-		static readonly Dictionary<string, List<KeyValuePair<string, object>>> cache = new Dictionary<string, List<KeyValuePair<string, object>>>();
-
 		public List<KeyValuePair<string, object>> Values { get; set; }
-
-		public DropDownControlAttribute(string category, string label, Dictionary<string, object> dictionary) : base(category, label)
-		{
-			var dictHash = dictionary.GetHashCode().ToString();
-			if (cache.ContainsKey(dictHash))
-				Values = cache[dictHash];
-			else
-				cache[dictHash] = Values = dictionary.ToList();
-		}
 
 		public DropDownControlAttribute(string category, string label, Type valueType, params object[] ignoredValues) : base(category, label)
 		{
-			if (cache.ContainsKey(valueType.FullName))
-				Values = cache[valueType.FullName];
-			else
+			var dict = new Dictionary<string, object>();
+			if (valueType.IsEnum)
 			{
-				var dict = new Dictionary<string, object>();
 				foreach (var value in Enum.GetValues(valueType))
 				{
 					if (value.GetType().GetField(value.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored ?? false) continue;
@@ -363,8 +349,23 @@ namespace Essgee
 					var key = value.GetType().GetField(value.ToString())?.GetAttribute<DescriptionAttribute>()?.Description ?? value.ToString();
 					if (!dict.ContainsKey(key)) dict.Add(key, value);
 				}
-				cache[valueType.FullName] = Values = dict.ToList();
 			}
+			else if (valueType.IsInterface)
+			{
+				var unsortedDict = new Dictionary<string, (int prio, object value)>();
+				foreach (var value in Assembly.GetExecutingAssembly().GetTypes().Where(x => valueType.IsAssignableFrom(x) && !x.IsInterface))
+				{
+					if (value.GetType().GetField(value.ToString())?.GetAttribute<ValueIgnoredAttribute>()?.IsIgnored ?? false) continue;
+					if (ignoredValues?.Contains(value) ?? false) continue;
+
+					var prio = value.GetAttribute<ElementPriorityAttribute>()?.Priority ?? 0;
+
+					var key = value.GetAttribute<DescriptionAttribute>()?.Description ?? value.ToString();
+					if (!unsortedDict.ContainsKey(key)) unsortedDict.Add(key, (prio, value));
+				}
+				dict = unsortedDict.OrderBy(x => x.Value.prio).ToDictionary(x => x.Key, y => y.Value.value);
+			}
+			Values = dict.ToList();
 		}
 	}
 

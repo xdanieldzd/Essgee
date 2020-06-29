@@ -18,6 +18,8 @@ namespace Essgee.Emulation.Machines
 		event EventHandler<ChangeViewportEventArgs> ChangeViewport;
 		event EventHandler<PollInputEventArgs> PollInput;
 		event EventHandler<EnqueueSamplesEventArgs> EnqueueSamples;
+		event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
+		event EventHandler<EventArgs> EnableRumble;
 
 		string ManufacturerName { get; }
 		string ModelName { get; }
@@ -25,13 +27,15 @@ namespace Essgee.Emulation.Machines
 		(string Extension, string Description) FileFilter { get; }
 		bool HasBootstrap { get; }
 		double RefreshRate { get; }
-
-		GraphicsEnableState GraphicsEnableStates { get; set; }
-		SoundEnableState SoundEnableStates { get; set; }
+		double PixelAspectRatio { get; }
+		(string Name, string Description)[] RuntimeOptions { get; }
 
 		Dictionary<string, dynamic> GetDebugInformation();
 
 		void SetConfiguration(IConfiguration config);
+
+		object GetRuntimeOption(string name);
+		void SetRuntimeOption(string name, object value);
 
 		void Initialize();
 		void Startup();

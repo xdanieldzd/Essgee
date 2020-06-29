@@ -49,7 +49,7 @@
 			// tlpWaveforms
 			// 
 			this.tlpWaveforms.ColumnCount = 2;
-			this.tlpWaveforms.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+			this.tlpWaveforms.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 100F));
 			this.tlpWaveforms.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
 			this.tlpWaveforms.Controls.Add(this.lblChannel4Muted, 0, 7);
 			this.tlpWaveforms.Controls.Add(this.lblChannel3Muted, 0, 5);
@@ -125,36 +125,36 @@
 			this.lblChannel1.AutoSize = true;
 			this.lblChannel1.Location = new System.Drawing.Point(6, 3);
 			this.lblChannel1.Name = "lblChannel1";
-			this.lblChannel1.Size = new System.Drawing.Size(98, 13);
+			this.lblChannel1.Size = new System.Drawing.Size(55, 13);
 			this.lblChannel1.TabIndex = 6;
-			this.lblChannel1.Text = "Channel 1 (Tone 1)";
+			this.lblChannel1.Text = "Channel 1";
 			// 
 			// lblChannel2
 			// 
 			this.lblChannel2.AutoSize = true;
 			this.lblChannel2.Location = new System.Drawing.Point(6, 125);
 			this.lblChannel2.Name = "lblChannel2";
-			this.lblChannel2.Size = new System.Drawing.Size(98, 13);
+			this.lblChannel2.Size = new System.Drawing.Size(55, 13);
 			this.lblChannel2.TabIndex = 7;
-			this.lblChannel2.Text = "Channel 2 (Tone 2)";
+			this.lblChannel2.Text = "Channel 2";
 			// 
 			// lblChannel3
 			// 
 			this.lblChannel3.AutoSize = true;
 			this.lblChannel3.Location = new System.Drawing.Point(6, 247);
 			this.lblChannel3.Name = "lblChannel3";
-			this.lblChannel3.Size = new System.Drawing.Size(98, 13);
+			this.lblChannel3.Size = new System.Drawing.Size(55, 13);
 			this.lblChannel3.TabIndex = 11;
-			this.lblChannel3.Text = "Channel 3 (Tone 3)";
+			this.lblChannel3.Text = "Channel 3";
 			// 
 			// lblChannel4
 			// 
 			this.lblChannel4.AutoSize = true;
 			this.lblChannel4.Location = new System.Drawing.Point(6, 369);
 			this.lblChannel4.Name = "lblChannel4";
-			this.lblChannel4.Size = new System.Drawing.Size(91, 13);
+			this.lblChannel4.Size = new System.Drawing.Size(55, 13);
 			this.lblChannel4.TabIndex = 12;
-			this.lblChannel4.Text = "Channel 4 (Noise)";
+			this.lblChannel4.Text = "Channel 4";
 			// 
 			// lblChannelAll
 			// 
@@ -172,10 +172,10 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.waveformControlChAll.BackColor = System.Drawing.Color.Black;
 			this.waveformControlChAll.ForeColor = System.Drawing.Color.LightSteelBlue;
-			this.waveformControlChAll.Location = new System.Drawing.Point(110, 494);
+			this.waveformControlChAll.Location = new System.Drawing.Point(106, 494);
 			this.waveformControlChAll.Name = "waveformControlChAll";
 			this.tlpWaveforms.SetRowSpan(this.waveformControlChAll, 2);
-			this.waveformControlChAll.Size = new System.Drawing.Size(768, 116);
+			this.waveformControlChAll.Size = new System.Drawing.Size(722, 116);
 			this.waveformControlChAll.TabIndex = 14;
 			// 
 			// waveformControlCh4
@@ -185,10 +185,10 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.waveformControlCh4.BackColor = System.Drawing.Color.Black;
 			this.waveformControlCh4.ForeColor = System.Drawing.Color.White;
-			this.waveformControlCh4.Location = new System.Drawing.Point(110, 372);
+			this.waveformControlCh4.Location = new System.Drawing.Point(106, 372);
 			this.waveformControlCh4.Name = "waveformControlCh4";
 			this.tlpWaveforms.SetRowSpan(this.waveformControlCh4, 2);
-			this.waveformControlCh4.Size = new System.Drawing.Size(768, 116);
+			this.waveformControlCh4.Size = new System.Drawing.Size(722, 116);
 			this.waveformControlCh4.TabIndex = 13;
 			// 
 			// waveformControlCh1
@@ -198,10 +198,10 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.waveformControlCh1.BackColor = System.Drawing.Color.Black;
 			this.waveformControlCh1.ForeColor = System.Drawing.Color.Tomato;
-			this.waveformControlCh1.Location = new System.Drawing.Point(110, 6);
+			this.waveformControlCh1.Location = new System.Drawing.Point(106, 6);
 			this.waveformControlCh1.Name = "waveformControlCh1";
 			this.tlpWaveforms.SetRowSpan(this.waveformControlCh1, 2);
-			this.waveformControlCh1.Size = new System.Drawing.Size(768, 116);
+			this.waveformControlCh1.Size = new System.Drawing.Size(722, 116);
 			this.waveformControlCh1.TabIndex = 8;
 			// 
 			// waveformControlCh2
@@ -211,10 +211,10 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.waveformControlCh2.BackColor = System.Drawing.Color.Black;
 			this.waveformControlCh2.ForeColor = System.Drawing.Color.Gold;
-			this.waveformControlCh2.Location = new System.Drawing.Point(110, 128);
+			this.waveformControlCh2.Location = new System.Drawing.Point(106, 128);
 			this.waveformControlCh2.Name = "waveformControlCh2";
 			this.tlpWaveforms.SetRowSpan(this.waveformControlCh2, 2);
-			this.waveformControlCh2.Size = new System.Drawing.Size(768, 116);
+			this.waveformControlCh2.Size = new System.Drawing.Size(722, 116);
 			this.waveformControlCh2.TabIndex = 9;
 			// 
 			// waveformControlCh3
@@ -224,10 +224,10 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.waveformControlCh3.BackColor = System.Drawing.Color.Black;
 			this.waveformControlCh3.ForeColor = System.Drawing.Color.Turquoise;
-			this.waveformControlCh3.Location = new System.Drawing.Point(110, 250);
+			this.waveformControlCh3.Location = new System.Drawing.Point(106, 250);
 			this.waveformControlCh3.Name = "waveformControlCh3";
 			this.tlpWaveforms.SetRowSpan(this.waveformControlCh3, 2);
-			this.waveformControlCh3.Size = new System.Drawing.Size(768, 116);
+			this.waveformControlCh3.Size = new System.Drawing.Size(722, 116);
 			this.waveformControlCh3.TabIndex = 10;
 			// 
 			// SoundDebuggerForm

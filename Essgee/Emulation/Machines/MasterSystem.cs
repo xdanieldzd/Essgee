@@ -7,12 +7,14 @@ using System.Windows.Forms;
 
 using Essgee.Emulation.Configuration;
 using Essgee.Emulation.CPU;
-using Essgee.Emulation.VDP;
-using Essgee.Emulation.PSG;
+using Essgee.Emulation.Video;
+using Essgee.Emulation.Audio;
 using Essgee.Emulation.Cartridges;
+using Essgee.Emulation.Cartridges.Sega;
 using Essgee.EventArguments;
 using Essgee.Exceptions;
 using Essgee.Utilities;
+using Essgee.Utilities.XInput;
 
 using static Essgee.Emulation.Utilities;
 
@@ -61,30 +63,25 @@ namespace Essgee.Emulation.Machines
 			remove { psg.EnqueueSamples -= value; }
 		}
 
+		public event EventHandler<SaveExtraDataEventArgs> SaveExtraData;
+		protected virtual void OnSaveExtraData(SaveExtraDataEventArgs e) { SaveExtraData?.Invoke(this, e); }
+
+		public event EventHandler<EventArgs> EnableRumble { add { } remove { } }
+
 		public string ManufacturerName => "Sega";
 		public string ModelName => "Master System";
 		public string DatFilename => "Sega - Master System - Mark III.dat";
 		public (string Extension, string Description) FileFilter => (".sms", "Master System ROMs");
 		public bool HasBootstrap => true;
 		public double RefreshRate { get; private set; }
-
-		public GraphicsEnableState GraphicsEnableStates
-		{
-			get { return vdp.GraphicsEnableStates; }
-			set { vdp.GraphicsEnableStates = value; }
-		}
-
-		public SoundEnableState SoundEnableStates
-		{
-			get { return psg.SoundEnableStates; }
-			set { psg.SoundEnableStates = value; }
-		}
+		public double PixelAspectRatio => 8.0 / 7.0;
+		public (string Name, string Description)[] RuntimeOptions => vdp.RuntimeOptions.Concat(psg.RuntimeOptions).ToArray();
 
 		ICartridge bootstrap, cartridge;
 		byte[] wram;
-		ICPU cpu;
-		IVDP vdp;
-		IPSG psg;
+		Z80A cpu;
+		SegaSMSVDP vdp;
+		SegaSMSPSG psg;
 
 		InputDevice[] inputDevices;
 
@@ -134,6 +131,7 @@ namespace Essgee.Emulation.Machines
 		Configuration.MasterSystem configuration;
 
 		IEnumerable<Keys> lastKeysDown;
+		ControllerState lastControllerState;
 		MouseButtons lastMouseButtons;
 		(int x, int y) lastMousePosition;
 
@@ -154,6 +152,7 @@ namespace Essgee.Emulation.Machines
 			inputDevices[1] = InputDevice.None;
 
 			lastKeysDown = new List<Keys>();
+			lastControllerState = new ControllerState();
 
 			vdp.EndOfScanline += (s, e) =>
 			{
@@ -161,6 +160,7 @@ namespace Essgee.Emulation.Machines
 				OnPollInput(pollInputEventArgs);
 
 				lastKeysDown = pollInputEventArgs.Keyboard;
+				lastControllerState = pollInputEventArgs.ControllerState;
 				lastMouseButtons = pollInputEventArgs.MouseButtons;
 				lastMousePosition = pollInputEventArgs.MousePosition;
 
@@ -173,6 +173,24 @@ namespace Essgee.Emulation.Machines
 			configuration = (Configuration.MasterSystem)config;
 
 			ReconfigureSystem();
+		}
+
+		public object GetRuntimeOption(string name)
+		{
+			if (name.StartsWith("Graphics"))
+				return vdp.GetRuntimeOption(name);
+			else if (name.StartsWith("Audio"))
+				return psg.GetRuntimeOption(name);
+			else
+				return null;
+		}
+
+		public void SetRuntimeOption(string name, object value)
+		{
+			if (name.StartsWith("Graphics"))
+				vdp.SetRuntimeOption(name, value);
+			else if (name.StartsWith("Audio"))
+				psg.SetRuntimeOption(name, value);
 		}
 
 		private void ReconfigureSystem()
@@ -356,13 +374,15 @@ namespace Essgee.Emulation.Machines
 
 			psg.Step((int)Math.Round(currentCpuClockCycles));
 
+			cartridge?.Step((int)Math.Round(currentCpuClockCycles));
+
 			currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
 		}
 
 		private void HandlePauseButton()
 		{
-			var pausePressed = lastKeysDown.Contains(configuration.InputPause);
-			var pauseButtonHeld = (pauseButtonToggle && pausePressed);
+			var pausePressed = lastKeysDown.Contains(configuration.InputPause) || lastControllerState.IsStartPressed();
+			var pauseButtonHeld = pauseButtonToggle && pausePressed;
 			if (pausePressed)
 			{
 				if (!pauseButtonHeld) pauseButtonPressed = true;
@@ -383,16 +403,22 @@ namespace Essgee.Emulation.Machines
 					break;
 
 				case InputDevice.Controller:
-					if (lastKeysDown.Contains((port == 0 ? configuration.Joypad1Up : configuration.Joypad2Up))) state &= (byte)~ControllerInputs.Up;
-					if (lastKeysDown.Contains((port == 0 ? configuration.Joypad1Down : configuration.Joypad2Down))) state &= (byte)~ControllerInputs.Down;
-					if (lastKeysDown.Contains((port == 0 ? configuration.Joypad1Left : configuration.Joypad2Left))) state &= (byte)~ControllerInputs.Left;
-					if (lastKeysDown.Contains((port == 0 ? configuration.Joypad1Right : configuration.Joypad2Right))) state &= (byte)~ControllerInputs.Right;
-					if (lastKeysDown.Contains((port == 0 ? configuration.Joypad1Button1 : configuration.Joypad2Button1))) state &= (byte)~ControllerInputs.TL;
-					if (lastKeysDown.Contains((port == 0 ? configuration.Joypad1Button2 : configuration.Joypad2Button2))) state &= (byte)~ControllerInputs.TR;
+					if (lastKeysDown.Contains(port == 0 ? configuration.Joypad1Up : configuration.Joypad2Up) || (port == 0 && lastControllerState.IsAnyUpDirectionPressed() && !lastControllerState.IsAnyDownDirectionPressed()))
+						state &= (byte)~ControllerInputs.Up;
+					if (lastKeysDown.Contains(port == 0 ? configuration.Joypad1Down : configuration.Joypad2Down) || (port == 0 && lastControllerState.IsAnyDownDirectionPressed() && !lastControllerState.IsAnyUpDirectionPressed()))
+						state &= (byte)~ControllerInputs.Down;
+					if (lastKeysDown.Contains(port == 0 ? configuration.Joypad1Left : configuration.Joypad2Left) || (port == 0 && lastControllerState.IsAnyLeftDirectionPressed() && !lastControllerState.IsAnyRightDirectionPressed()))
+						state &= (byte)~ControllerInputs.Left;
+					if (lastKeysDown.Contains(port == 0 ? configuration.Joypad1Right : configuration.Joypad2Right) || (port == 0 && lastControllerState.IsAnyRightDirectionPressed() && !lastControllerState.IsAnyLeftDirectionPressed()))
+						state &= (byte)~ControllerInputs.Right;
+					if (lastKeysDown.Contains(port == 0 ? configuration.Joypad1Button1 : configuration.Joypad2Button1) || (port == 0 && lastControllerState.IsAPressed()))
+						state &= (byte)~ControllerInputs.TL;
+					if (lastKeysDown.Contains(port == 0 ? configuration.Joypad1Button2 : configuration.Joypad2Button2) || (port == 0 && (lastControllerState.IsXPressed() || lastControllerState.IsBPressed())))
+						state &= (byte)~ControllerInputs.TR;
 					break;
 
 				case InputDevice.Lightgun:
-					if (GetIOControlDirection((port == 0 ? IOControlPort.A : IOControlPort.B), IOControlPin.TH, portIoControl) == IOControlDirection.Input)
+					if (GetIOControlDirection(port == 0 ? IOControlPort.A : IOControlPort.B, IOControlPin.TH, portIoControl) == IOControlDirection.Input)
 					{
 						var diffX = Math.Abs(lastMousePosition.x - (vdp.ReadPort(SegaSMSVDP.PortHCounter) << 1));
 						var diffY = Math.Abs(lastMousePosition.y - vdp.ReadPort(SegaSMSVDP.PortVCounter));
@@ -410,7 +436,7 @@ namespace Essgee.Emulation.Machines
 							lightgunLatched = false;
 					}
 
-					var mouseButton = (port == 0 ? MouseButtons.Left : MouseButtons.Right);
+					var mouseButton = port == 0 ? MouseButtons.Left : MouseButtons.Right;
 					if ((lastMouseButtons & mouseButton) == mouseButton)
 						state &= (byte)~ControllerInputs.TL;
 					break;

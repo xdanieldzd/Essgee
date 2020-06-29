@@ -37,14 +37,10 @@ namespace Essgee.Graphics.Shaders
 		readonly static string defaultVertexOuts = "out vec4 vertColor; out vec2 vertTexCoord;\n";
 		readonly static string defaultVertexMain = $"vertColor = inColor; gl_Position = {glslUniformProjection} * {glslUniformModelview} * vec4(inPosition.x, inPosition.y, inPosition.z, 1.0);\n";
 
-		// TODO: kinda ugly... but seems to work fine?
-		readonly static string defaultVertexTexCoord =
-			$"vertTexCoord = vec2(" +
-			$"(inTexCoord.x == 0.0 ? ({glslUniformInputViewport}.x + 0.5) / {glslUniformTextureSize}.x : ({glslUniformInputViewport}.z + {glslUniformInputViewport}.x - 0.5) / {glslUniformTextureSize}.x)," +
-			$"(inTexCoord.y == 0.0 ? ({glslUniformInputViewport}.y + 0.5) / {glslUniformTextureSize}.y : ({glslUniformInputViewport}.w + {glslUniformInputViewport}.y - 0.5) / {glslUniformTextureSize}.y));\n";
+		readonly static string defaultVertexTexCoord = "vertTexCoord = inTexCoord;";
 
 		readonly static string defaultFragmentUniforms = $"uniform sampler2D {glslUniformSourceSamplers}[{MaxNumSourceSamplers}]; uniform vec2 {glslUniformTextureSize}; uniform vec4 {glslUniformInputViewport}; uniform vec4 {glslUniformOutputViewport};";
-		readonly static string defaultFragmentIns = "in vec4 vertColor; in vec2 vertTexCoord;\n";
+		readonly static string defaultFragmentIns = "in vec4 vertColor; in vec2 vertTexCoord; layout(origin_upper_left, pixel_center_integer) in vec4 gl_FragCoord;\n";
 		readonly static string defaultFragmentOuts = "out vec4 fragColor;\n";
 
 		readonly List<VertexElement> vertexElements;
