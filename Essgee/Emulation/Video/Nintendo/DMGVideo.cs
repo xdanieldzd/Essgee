@@ -449,6 +449,8 @@ namespace Essgee.Emulation.Video.Nintendo
 				return;
 			}
 
+			screenUsageFlags[x, y] = screenUsageEmpty;
+
 			if (bgEnable)
 			{
 				RenderBackground(y, x);
@@ -487,8 +489,8 @@ namespace Essgee.Emulation.Video.Nintendo
 			// Draw pixel
 			if (layerBackgroundForceEnable)
 				SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
-			else if (screenUsageFlags[x, y] == screenUsageEmpty)
-				SetPixel(y, x, 0x00, 0x00, 0x00);
+			else
+				SetPixel(y, x, (byte)(bgPalette & 0x03));
 		}
 
 		protected virtual void RenderWindow(int y, int x)
@@ -522,8 +524,8 @@ namespace Essgee.Emulation.Video.Nintendo
 			// Draw pixel
 			if (layerWindowForceEnable)
 				SetPixel(y, x, (byte)((bgPalette >> (c << 1)) & 0x03));
-			else if (screenUsageFlags[x, y] == screenUsageEmpty)
-				SetPixel(y, x, 0x00, 0x00, 0x00);
+			else
+				SetPixel(y, x, (byte)(bgPalette & 0x03));
 		}
 
 		protected virtual void RenderSprites(int y, int x)
@@ -585,8 +587,6 @@ namespace Essgee.Emulation.Video.Nintendo
 						// Draw pixel
 						if (layerSpritesForceEnable)
 							SetPixel(y, x, (byte)((pal >> (c << 1)) & 0x03));
-						else if (screenUsageFlags[x, y] == screenUsageEmpty)
-							SetPixel(y, x, 0x00, 0x00, 0x00);
 					}
 				}
 			}

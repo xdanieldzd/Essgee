@@ -152,6 +152,8 @@ namespace Essgee.Emulation.Video.Nintendo
 				return;
 			}
 
+			screenUsageFlags[x, y] = screenUsageEmpty;
+
 			RenderBackground(y, x);
 
 			if (wndEnable) RenderWindow(y, x);
@@ -198,8 +200,8 @@ namespace Essgee.Emulation.Video.Nintendo
 				var paletteAddress = (tileBgPalette << 3) + ((c & 0b11) << 1);
 				SetPixel(y, x, (ushort)((bgPaletteData[paletteAddress + 1] << 8) | bgPaletteData[paletteAddress + 0]));
 			}
-			else if (screenUsageFlags[x, y] == screenUsageEmpty)
-				SetPixel(y, x, 0x00, 0x00, 0x00);
+			else
+				SetPixel(y, x, (ushort)((bgPaletteData[1] << 8) | bgPaletteData[0]));
 		}
 
 		protected override void RenderWindow(int y, int x)
@@ -246,8 +248,8 @@ namespace Essgee.Emulation.Video.Nintendo
 				var paletteAddress = (tileBgPalette << 3) + ((c & 0b11) << 1);
 				SetPixel(y, x, (ushort)((bgPaletteData[paletteAddress + 1] << 8) | bgPaletteData[paletteAddress + 0]));
 			}
-			else if (screenUsageFlags[x, y] == screenUsageEmpty)
-				SetPixel(y, x, 0x00, 0x00, 0x00);
+			else
+				SetPixel(y, x, (ushort)((bgPaletteData[1] << 8) | bgPaletteData[0]));
 		}
 
 		protected override void RenderSprites(int y, int x)
@@ -312,8 +314,6 @@ namespace Essgee.Emulation.Video.Nintendo
 							var paletteAddress = (objPalNumber << 3) + ((c & 0b11) << 1);
 							SetPixel(y, x, (ushort)((objPaletteData[paletteAddress + 1] << 8) | objPaletteData[paletteAddress + 0]));
 						}
-						else if (screenUsageFlags[x, y] == screenUsageEmpty)
-							SetPixel(y, x, 0x00, 0x00, 0x00);
 					}
 				}
 			}
