@@ -1,5 +1,5 @@
 # Essgee
-Essgee is an emulator for various 8-bit consoles and handhelds, mostly by Sega, supporting the Sega SG-1000, SC-3000 (partially), Mark III/Master System and Game Gear, as well as the Coleco ColecoVision (partially). It is written in C# and uses .NET Framework v4.7.1, [OpenTK](https://www.nuget.org/packages/OpenTK) and [OpenTK.GLControl](https://www.nuget.org/packages/OpenTK.GLControl) for graphics and sound output, [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json) for JSON parsing, as well as [MSBuildTasks](https://www.nuget.org/packages/MSBuildTasks) for including build information.
+Essgee is an emulator for various 8-bit consoles and handhelds, mostly by Sega, supporting the Sega SG-1000, SC-3000 (partially), Mark III/Master System and Game Gear, as well as the Coleco ColecoVision (partially), and Nintendo Game Boy and Game Boy Color (partially). It is written in C# and uses .NET Framework v4.7.1, [OpenTK](https://www.nuget.org/packages/OpenTK) and [OpenTK.GLControl](https://www.nuget.org/packages/OpenTK.GLControl) for graphics and sound output, [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json) for JSON parsing, as well as [MSBuildTasks](https://www.nuget.org/packages/MSBuildTasks) for including build information.
 
 It also improves just enough on [its](https://github.com/xdanieldzd/MasterFudge) [predecessors](https://github.com/xdanieldzd/MasterFudgeMk2) to no longer be called "fudged", hence its new, pun-y name.
 
@@ -11,7 +11,7 @@ It also improves just enough on [its](https://github.com/xdanieldzd/MasterFudge)
 * [Acknowledgements & Attribution](#acknowledgements--attribution)
 
 ## Usage
-Run `Essgee.exe` to start the emulator. Open a ROM to run via the __File__ menu, recently opened files can also be found there. The emulator recognizes ROMs for each emulated system by the file extension, so ensure SG-1000 ROMs are suffixed `.sg`, SC-3000 ones `.sc`, Mark III/Master System ones `.sms`, Game Gear ones `.gg` and ColecoVision ones `.col`. Zipped files can be loaded as well; in that case, the first file in the archive recognized as a valid ROM will be loaded.
+Run `Essgee.exe` to start the emulator. Open a ROM to run via the __File__ menu, recently opened files can also be found there. The emulator recognizes ROMs for each emulated system by the file extension, so ensure SG-1000 ROMs are suffixed `.sg`, SC-3000 ones `.sc`, Mark III/Master System ones `.sms`, Game Gear ones `.gg`, ColecoVision ones `.col`, Game Boy ones `.gb` and Game Boy Color ones `.gbc`. Zipped files can be loaded as well; in that case, the first file in the archive recognized as a valid ROM will be loaded.
 
 Emulator settings can be changed via the __Options__ menu, each option should be self-explanatory. System-specific settings can be found in the __Settings__ dialog. These include controller configurations, region and TV standard selection, bootstrap ROM paths and similar things.
 
@@ -29,22 +29,30 @@ The SC-3000 keyboard is (currently) not configurable; the current layout can be 
 
 ### CPUs
 * __Zilog Z80__: All opcodes implemented, documented and undocumented; the two undocumented flags are (possibly?) not fully supported yet; disassembly features incomplete
+* __Sharp SM83__: Core of Game Boy and Game Boy Color CPUs; all opcodes implemented; disassembly features incomplete
 
-### VDPs
+### Graphics
 * __Texas Instruments TMS9918A__: Scanline-based, not fully accurate and possibly with some bugs here and there; still missing the multicolor graphics mode
   * __Sega 315-5124__ and __315-5246__: Mark III/Master System and Master System II VDPs, TMS9918A with additional graphics mode, line interrupts, etc.; also not fully accurate, also currently emulating a bit of a hybrid of both
   * __Sega 315-5378__: Game Gear VDP based on Master System II VDP, with higher color depth, etc.; also not fully accurate
+* __Nintendo DMG__: Original Game Boy graphics system; pixel-based, with certain inaccuracies and possibly some bugs
+  * __Nintendo CGB__: Game Boy Color graphics system; similar status as DMG
 
-### PSGs
+### Sound
 * __Texas Instruments SN76489__: Fully emulated, accuracy is probably not very high, but still sounds decent enough
   * __Sega 315-5246__: Master System II PSG (integrated into VDP chip), SN76489 with minor differences in noise channel; same issues as SN76489
   * __Sega 315-5378__: Game Gear PSG (integrated into VDP) based on Master System II PSG, with stereo output extension; same issues as other PSGs
+* __Nintendo DMG__: Game Boy sound system; fully emulated but likely not 100% accurate
+  * __Nintendo CGB__: Game Boy Color sound system; similar status as DMG
 
 ### Support Chips
 * __Intel 8255__: Peripheral interface chip used in the SC-3000; not fully tested nor accurate, enough for controller and keyboard support where applicable
 
 ### Media
-* Support for various cartridge types, ex. standard Sega mapper, Codemasters mapper and various Korean mappers
+* Support for various cartridge types, ex. standard Sega mapper, Codemasters mapper, various Korean mappers, various Game Boy MBCs and Game Boy Camera
+
+### External Devices
+* Support for Game Boy Printer and partial support for Game Boy Color infrared port, including Pocket Pikachu Color data transfer
 
 ### Input Devices
 * __SG-1000__: Standard controllers
@@ -55,11 +63,14 @@ The SC-3000 keyboard is (currently) not configurable; the current layout can be 
   * Light Phaser support is still somewhat rudimentary
 * __Game Gear__: Integrated controls
 * __ColecoVision__: Standard controllers
+* __Game Boy__: Integrated controls
+* __Game Boy Color__: Integrated controls
 
 ## Notes
 * Overall accuracy of the emulation is nowhere near exact, but it is certainly accurate enough to play many games quite well
 * Sound output _might_ stutter from time to time, the corresponding sound management code isn't too great
 * The framerate limiter and FPS counter are somewhat inaccurate and might contribute to the aforementioned sound stuttering issues
+* Pocket Pikachu Color requires data file from [GB Enhanced+](https://github.com/shonumi/gbe-plus) by [shonumi](https://github.com/shonumi)
 
 ## Screenshots
 * __Girl's Garden__ (SG-1000, using Pseudo-Monitor shader):<br><br>
