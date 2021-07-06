@@ -15,7 +15,7 @@ namespace Essgee.Graphics.Shaders
 {
 	public class ShaderBundle : IDisposable
 	{
-		public const int MaxNumSourceSamplers = 3;
+		public const int MaxNumSourceSamplers = 8;
 
 		readonly static string manifestFilename = "Manifest.json";
 		readonly static string fragmentFilename = "Fragment.glsl";
